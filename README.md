@@ -6,6 +6,8 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 - Rechtecke (Bleche, Flachstahl, Laschen) mit Dicke und Werkstoff
 - **Profile**: Winkelstahl (EN 10056-1), U-Stahl (DIN 1026-1), Quadrat- und Rechteckrohr (EN 10219), Rundrohr (EN 10220), Rundstahl (EN 10060), als Längsansicht oder Querschnitt
 - **Schweißnähte**: Kehlnaht, V-, HV- und I-Naht mit Symbol nach ISO 2553 (a-Maß, Länge, ringsum)
+- **Wellen**: abgesetzte Wellen (Ø×Länge je Absatz), Fasen, Passfedernut nach DIN 6885, Werkstoffe C45 / 42CrMo4 / 11SMnPb30
+- **Beispiel-Projekte**: Wandkonsole, Antriebswelle mit Lagerböcken, Tischgestell aus Quadratrohr
 - Bohrungen: Durchgangsbohrungen nach ISO 273 oder Gewinde mit Kernloch
 - Schrauben, Muttern und Scheiben (ISO 4017, ISO 4762, ISO 4032, ISO 7089), von oben oder von der Seite
 - Linien, Mittellinien und Maße
