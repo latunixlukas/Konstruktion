@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Werkstatt-Zeichenbrett</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Werkzeugleiste oben, Zeichenblatt in der Mitte, Eigenschaften + Stückliste rechts (am Handy darunter) */
+:root{
+  --bg:#e8ebee; --panel:#f6f7f8; --line:#cdd3d9; --fg:#1c2228; --muted:#5b6670;
+  --accent:#c2410c; --accent-fg:#ffffff; --accent-soft:#fbe4d6;
+  --paper:#fcfcfa; --grid:#e7ebee; --grid-major:#cfd7de; --axis:#a9b6c2;
+  --ink:#15191e; --part:#dbe3ea; --metal:#c3ced8; --dimc:#1d5ea8; --sel:#c2410c;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"Consolas",monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15191d; --panel:#1d2227; --line:#323a42; --fg:#e3e7eb; --muted:#97a2ac;
+    --accent:#f97316; --accent-fg:#1a0d04; --accent-soft:#3b2516;
+    --paper:#1a1f24; --grid:#22282e; --grid-major:#313941; --axis:#4a5662;
+    --ink:#e8ecef; --part:#2a3540; --metal:#3d4b58; --dimc:#6fa9ee; --sel:#fb923c;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15191d; --panel:#1d2227; --line:#323a42; --fg:#e3e7eb; --muted:#97a2ac;
+  --accent:#f97316; --accent-fg:#1a0d04; --accent-soft:#3b2516;
+  --paper:#1a1f24; --grid:#22282e; --grid-major:#313941; --axis:#4a5662;
+  --ink:#e8ecef; --part:#2a3540; --metal:#3d4b58; --dimc:#6fa9ee; --sel:#fb923c;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-body)}
+button,input,select{font:inherit;color:inherit}
+.app{height:100%;display:grid;grid-template-rows:auto auto minmax(0,1fr);}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand h1{font:700 1.5rem/1 var(--f-display);letter-spacing:.02em;margin:0;text-transform:uppercase}
+.brand span{font:500 .8rem var(--f-mono);color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.btn{border:1px solid var(--line);background:var(--paper);border-radius:var(--r);padding:6px 10px;cursor:pointer;line-height:1.2;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible,.tool:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn.danger{color:var(--accent)}
+.btn.warn{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.seg button{border:0;background:var(--paper);padding:6px 11px;cursor:pointer;font-family:var(--f-mono);font-size:.85rem}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--paper)}
+label.chk{display:inline-flex;align-items:center;gap:6px;font-size:.9rem;color:var(--muted)}
+
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--bg)}
+.tools{display:flex;flex-wrap:wrap;gap:4px}
+.tool{display:flex;align-items:center;gap:6px;border:1px solid transparent;background:transparent;border-radius:var(--r);padding:6px 10px;cursor:pointer}
+.tool svg{width:20px;height:20px;flex:none}
+.tool kbd{background:transparent;font:500 .7rem var(--f-mono);color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px}
+.tool:hover{background:var(--panel)}
+.tool[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.tool[aria-pressed="true"] kbd{color:inherit;border-color:currentColor}
+.toolopts{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:.9rem;padding-left:14px;border-left:2px solid var(--line);min-height:34px}
+.toolopts label{display:flex;align-items:center;gap:5px;color:var(--muted)}
+.toolopts input,.toolopts select{width:auto;min-width:0}
+.toolopts input:not([type]){width:6.5em}
+input,select{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:4px 6px;font-family:var(--f-mono);font-size:.88rem}
+
+main{display:grid;grid-template-columns:minmax(0,1fr) 390px;min-height:0}
+.stage{position:relative;min-height:420px;background:var(--paper);border-right:1px solid var(--line);overflow:hidden}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
+.status{position:absolute;left:10px;bottom:8px;display:flex;flex-wrap:wrap;gap:4px 14px;font:500 .78rem var(--f-mono);color:var(--muted);background:color-mix(in srgb,var(--paper) 85%,transparent);padding:4px 8px;border-radius:4px;pointer-events:none;max-width:calc(100% - 20px)}
+.hint{position:absolute;left:10px;top:10px;font-size:.85rem;color:var(--muted);background:color-mix(in srgb,var(--paper) 88%,transparent);padding:4px 8px;border-radius:4px;pointer-events:none;max-width:calc(100% - 120px)}
+.zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px}
+.zoom .btn{padding:4px 0;width:38px;text-align:center;font-family:var(--f-mono)}
+.titleblock{position:absolute;right:10px;bottom:10px;border:1.5px solid var(--ink);background:var(--paper);font-size:.72rem;display:grid;grid-template-columns:auto auto;min-width:230px;pointer-events:none}
+.titleblock div{padding:2px 6px;border-bottom:1px solid var(--ink)}
+.titleblock div:nth-child(odd){border-right:1px solid var(--ink);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:.62rem;display:flex;align-items:center}
+.titleblock .big{grid-column:1/-1;font:700 1.05rem/1.2 var(--f-display);text-transform:uppercase;letter-spacing:.03em;border-right:0!important;color:var(--ink)!important;font-size:1.05rem!important}
+.titleblock div:nth-last-child(-n+2){border-bottom:0}
+
+aside{background:var(--panel);overflow:auto;min-width:0}
+aside section{padding:14px 16px;border-bottom:1px solid var(--line)}
+aside h2{font:700 1.05rem/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+aside h2 small{font:500 .75rem var(--f-mono);color:var(--muted);text-transform:none;letter-spacing:0}
+.props{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center}
+.props label{font-size:.88rem;color:var(--muted)}
+.props label em{font-style:normal;font-family:var(--f-mono);font-size:.75rem;color:var(--muted);opacity:.8}
+.props input,.props select{width:100%}
+.props .full{grid-column:1/-1}
+.empty{color:var(--muted);font-size:.92rem;margin:0}
+.badge{display:inline-block;font:600 .72rem var(--f-mono);background:var(--accent-soft);color:var(--accent);padding:2px 7px;border-radius:99px}
+.note{font-size:.82rem;color:var(--muted);margin:8px 0 0}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.84rem}
+th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f-mono);white-space:nowrap}
+td.mono{font-family:var(--f-mono);font-size:.8rem}
+tfoot td{font-weight:600;border-bottom:0}
+details summary{cursor:pointer;font:700 1.05rem var(--f-display);text-transform:uppercase;letter-spacing:.06em}
+details ul{margin:8px 0 0;padding-left:18px;font-size:.9rem}
+details li{margin:3px 0}
+kbd{font:500 .75rem var(--f-mono);border:1px solid var(--line);border-radius:3px;padding:0 4px;background:var(--paper)}
+
+/* Zeichnungselemente */
+#cv .gmin{stroke:var(--grid);stroke-width:1;fill:none}
+#cv .gmaj{stroke:var(--grid-major);stroke-width:1;fill:none}
+#cv .axis{stroke:var(--axis);stroke-width:1.2;fill:none}
+.part{fill:var(--part);stroke:var(--ink);stroke-width:1.8}
+.metal{fill:var(--metal);stroke:var(--ink);stroke-width:1.6}
+.hole{fill:var(--paper);stroke:var(--ink);stroke-width:1.6}
+.edge{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round}
+.thin{fill:none;stroke:var(--ink);stroke-width:.8}
+.center{fill:none;stroke:var(--ink);stroke-width:.7;stroke-dasharray:14 3 2 3}
+.hidden{fill:none;stroke:var(--ink);stroke-width:.8;stroke-dasharray:5 3}
+.dim{fill:none;stroke:var(--dimc);stroke-width:.9}
+.arrow{fill:var(--dimc);stroke:none}
+.dimtext{fill:var(--dimc);font:500 12px var(--f-mono);paint-order:stroke;stroke:var(--paper);stroke-width:3.5px;stroke-linejoin:round}
+.lbl{fill:var(--ink);font:500 11px var(--f-mono);paint-order:stroke;stroke:var(--paper);stroke-width:3px;stroke-linejoin:round}
+.sel .part,.sel .metal,.sel .edge,.sel .hole{stroke:var(--sel)}
+.sel .thin,.sel .center,.sel .hidden{stroke:var(--sel)}
+.sel .dim{stroke:var(--sel)} .sel .arrow{fill:var(--sel)} .sel .dimtext{fill:var(--sel)}
+.handle{fill:var(--paper);stroke:var(--sel);stroke-width:1.6}
+.ghost{fill:none;stroke:var(--sel);stroke-width:1;stroke-dasharray:4 3}
+
+@media (max-width: 900px){
+  .app{height:auto;min-height:100%}
+  main{grid-template-columns:minmax(0,1fr)}
+  .stage{height:62vh;min-height:360px;border-right:0;border-bottom:1px solid var(--line)}
+  .tool span{display:none}
+  .tool kbd{display:none}
+  .toolopts{padding-left:0;border-left:0}
+}
+@media (max-width: 640px){ .titleblock{display:none} .hint{max-width:calc(100% - 70px)} }
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><h1>Werkstatt-Zeichenbrett</h1><span>Metallbau · Schlosserei</span></div>
+    <div class="row" aria-label="Einheit">
+      <span style="color:var(--muted);font-size:.85rem">Einheit</span>
+      <div class="seg" id="units">
+        <button type="button" data-u="mm">mm</button><button type="button" data-u="cm">cm</button><button type="button" data-u="m">m</button>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="bUndo" type="button" title="Rückgängig (Strg+Z)">↶ Zurück</button>
+      <button class="btn" id="bRedo" type="button" title="Wiederholen (Strg+Y)">↷ Vor</button>
+      <button class="btn" id="bNew" type="button">Neu</button>
+      <button class="btn" id="bSave" type="button" title="Zeichnung als Datei speichern">Speichern</button>
+      <button class="btn" id="bOpen" type="button" title="Gespeicherte Zeichnung öffnen">Öffnen</button>
+      <button class="btn" id="bPng" type="button" title="Als Bild exportieren">Bild (PNG)</button>
+      <button class="btn" id="bSvg" type="button" title="Als Vektorgrafik exportieren">SVG</button>
+      <input type="file" id="fileIn" accept=".json,application/json" hidden>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="tools" id="tools" role="toolbar" aria-label="Werkzeuge"></div>
+    <div class="toolopts" id="toolopts"></div>
+  </div>
+
+  <main>
+    <div class="stage" id="stage">
+      <svg id="cv" xmlns="http://www.w3.org/2000/svg" aria-label="Zeichenfläche"></svg>
+      <div class="hint" id="hint"></div>
+      <div class="zoom">
+        <button class="btn" type="button" id="zIn" title="Hineinzoomen">+</button>
+        <button class="btn" type="button" id="zOut" title="Herauszoomen">−</button>
+        <button class="btn" type="button" id="zFit" title="Alles anzeigen">⤢</button>
+      </div>
+      <div class="status" id="status"></div>
+      <div class="titleblock" id="tblock"></div>
+    </div>
+
+    <aside>
+      <section>
+        <details id="help">
+          <summary>So geht's</summary>
+          <ul>
+            <li><b>Rechteck</b>: auf dem Blatt ziehen (oder einmal tippen für 100 × 50 mm). Für Bleche, Flachstahl, Laschen.</li>
+            <li><b>Bohrung</b>: tippen, wo die Bohrung hin soll. Oben wählen: Durchgangsbohrung oder Gewinde.</li>
+            <li><b>Schraube</b>: tippen. Auf einer Bohrung rastet sie mittig ein. Art, Größe und Länge oben wählen.</li>
+            <li><b>Maß</b>: von Punkt zu Punkt ziehen. Der Abstand wird automatisch beschriftet.</li>
+            <li><b>Auswahl</b>: Teil anklicken, verschieben, an den Ecken ziehen. Werte rechts genau eintippen, z.&nbsp;B. <kbd>25cm</kbd> oder <kbd>0,3m</kbd>.</li>
+            <li>Verschieben der Ansicht: leere Fläche ziehen. Zoomen: Mausrad oder zwei Finger.</li>
+            <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
+          </ul>
+        </details>
+      </section>
+      <section>
+        <h2>Eigenschaften <small id="selInfo"></small></h2>
+        <div id="props"></div>
+      </section>
+      <section>
+        <h2>Stückliste <button class="btn" type="button" id="bCopyBom" style="font:500 .78rem var(--f-body);text-transform:none;letter-spacing:0">Kopieren</button></h2>
+        <div id="bom"></div>
+      </section>
+      <section>
+        <h2>Schriftfeld</h2>
+        <div class="props" id="tprops"></div>
+        <p class="note">Die Zeichnung wird automatisch in diesem Browser gespeichert.</p>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const svg = $('#cv');
+const STORE = 'werkstatt-zeichenbrett-v1';
+
+/* ---------- Normteile ---------- */
+// d Nenndurchmesser, s Schlüsselweite, k Kopfhöhe (ISO 4017), dk/sw Zylinderkopf (ISO 4762),
+// m Mutterhöhe (ISO 4032), d1/d2/h Scheibe (ISO 7089), dh Durchgangsloch mittel (ISO 273), kl Kernloch
+const NORM = {
+  M3:{d:3, s:5.5,k:2,  dk:5.5,sw:2.5,m:2.4, d1:3.2, d2:7, h:.5, dh:3.4, kl:2.5},
+  M4:{d:4, s:7,  k:2.8,dk:7,  sw:3,  m:3.2, d1:4.3, d2:9, h:.8, dh:4.5, kl:3.3},
+  M5:{d:5, s:8,  k:3.5,dk:8.5,sw:4,  m:4.7, d1:5.3, d2:10,h:1,  dh:5.5, kl:4.2},
+  M6:{d:6, s:10, k:4,  dk:10, sw:5,  m:5.2, d1:6.4, d2:12,h:1.6,dh:6.6, kl:5},
+  M8:{d:8, s:13, k:5.3,dk:13, sw:6,  m:6.8, d1:8.4, d2:16,h:1.6,dh:9,   kl:6.8},
+  M10:{d:10,s:16,k:6.4,dk:16, sw:8,  m:8.4, d1:10.5,d2:20,h:2,  dh:11,  kl:8.5},
+  M12:{d:12,s:18,k:7.5,dk:18, sw:10, m:10.8,d1:13,  d2:24,h:2.5,dh:13.5,kl:10.2},
+  M16:{d:16,s:24,k:10, dk:24, sw:14, m:14.8,d1:17,  d2:30,h:3,  dh:17.5,kl:14},
+  M20:{d:20,s:30,k:12.5,dk:30,sw:17, m:18,  d1:21,  d2:37,h:3,  dh:22,  kl:17.5},
+};
+const SIZES = Object.keys(NORM);
+const LENGTHS = [6,8,10,12,16,20,25,30,35,40,45,50,55,60,65,70,80,90,100,110,120,130,140,150,160,180,200];
+const KINDS = {
+  hex:{name:'Sechskantschraube', norm:'ISO 4017', len:true},
+  cyl:{name:'Zylinderschraube (Innensechskant)', norm:'ISO 4762', len:true},
+  nut:{name:'Sechskantmutter', norm:'ISO 4032', len:false},
+  washer:{name:'Scheibe', norm:'ISO 7089', len:false},
+};
+const GRADES = {hex:['8.8','10.9','A2-70'], cyl:['8.8','10.9','12.9','A2-70'], nut:['8','10','A2-70'], washer:['200 HV','A2']};
+const MATS = {
+  'S235JR':{name:'Stahl S235JR', rho:7.85},
+  'S355J2':{name:'Stahl S355J2', rho:7.85},
+  '1.4301':{name:'Edelstahl 1.4301', rho:7.9},
+  'AlMg3':{name:'Aluminium AlMg3', rho:2.66},
+};
+const FITS = {frei:'Freier Durchmesser'};
+SIZES.forEach(m => { FITS['D-'+m] = `Durchgang ${m} (Ø${dec(NORM[m].dh)})`; });
+SIZES.forEach(m => { FITS['G-'+m] = `Gewinde ${m} (Kernloch Ø${dec(NORM[m].kl)})`; });
+function dec(v){ return String(v).replace('.', ','); }
+
+/* ---------- Einheiten ---------- */
+const UNITS = {mm:1, cm:10, m:1000};
+const DECS = {mm:1, cm:2, m:3};
+function num(mm, u = state.unit){
+  const p = 10 ** DECS[u];
+  return String(Math.round(mm / UNITS[u] * p) / p).replace('.', ',');
+}
+function fmt(mm, u = state.unit){ return num(mm, u) + ' ' + u; }
+function parseLen(str){
+  const m = String(str).trim().toLowerCase().replace(',', '.').match(/^(-?\d*\.?\d+)\s*(mm|cm|m)?$/);
+  if (!m) return NaN;
+  return parseFloat(m[1]) * UNITS[m[2] || state.unit];
+}
+
+/* ---------- Zustand ---------- */
+const today = new Date().toLocaleDateString('de-DE');
+let state, nextId = 1;
+let view = {cx:110, cy:60, z:2.5};
+let tool = 'select', selId = null;
+let undoStack = [], redoStack = [];
+const opts = {
+  rect:{name:'Flachstahl', t:10, mat:'S235JR'},
+  hole:{fit:'D-M8', d:9},
+  screw:{kind:'hex', size:'M8', len:30, grade:'8.8', view:'top'},
+  line:{style:'solid'},
+};
+
+function sample(){
+  const s = [];
+  s.push({type:'rect', name:'Grundplatte', x:0, y:0, w:220, h:120, t:10, mat:'S235JR'});
+  [[25,25],[195,25],[25,95],[195,95]].forEach(([x,y]) => s.push({type:'hole', x, y, d:11, fit:'D-M10'}));
+  s.push({type:'hole', x:110, y:60, d:10.2, fit:'G-M12'});
+  s.push({type:'screw', kind:'hex', size:'M10', len:40, grade:'8.8', view:'top', rot:0, x:25, y:95});
+  s.push({type:'screw', kind:'hex', size:'M10', len:40, grade:'8.8', view:'top', rot:0, x:195, y:95});
+  s.push({type:'rect', name:'Lasche', x:280, y:0, w:40, h:120, t:8, mat:'S235JR'});
+  s.push({type:'hole', x:300, y:95, d:13.5, fit:'D-M12'});
+  s.push({type:'screw', kind:'hex', size:'M12', len:50, grade:'8.8', view:'side', rot:0, x:380, y:60});
+  s.push({type:'dim', x1:25, y1:95, x2:195, y2:95, off:35});
+  s.push({type:'line', x1:110, y1:-12, x2:110, y2:132, style:'center'});
+  s.forEach(o => o.id = nextId++);
+  return s;
+}
+function freshState(withSample){
+  return {shapes: withSample ? sample() : [], unit:'mm', snap:5, snapOn:true, showDims:true,
+    title:{name: withSample ? 'Wandkonsole (Beispiel)' : 'Neue Zeichnung', by:'', date:today}};
+}
+function load(){
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw){ const d = JSON.parse(raw); if (d && Array.isArray(d.shapes)) return Object.assign(freshState(false), d); }
+  } catch(e){}
+  return freshState(true);
+}
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch(e){} }
+state = load();
+nextId = state.shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
+state.shapes.forEach(s => { if (!s.id) s.id = nextId++; });
+
+function snapshot(){
+  undoStack.push(JSON.stringify(state.shapes));
+  if (undoStack.length > 150) undoStack.shift();
+  redoStack = [];
+}
+function undo(){
+  if (!undoStack.length) return;
+  redoStack.push(JSON.stringify(state.shapes));
+  state.shapes = JSON.parse(undoStack.pop());
+  if (!byId(selId)) selId = null;
+  changed();
+}
+function redo(){
+  if (!redoStack.length) return;
+  undoStack.push(JSON.stringify(state.shapes));
+  state.shapes = JSON.parse(redoStack.pop());
+  if (!byId(selId)) selId = null;
+  changed();
+}
+const byId = id => state.shapes.find(s => s.id === id);
+function changed(full = true){ save(); render(); if (full){ renderProps(); renderBom(); renderTitle(); } }
+
+/* ---------- Ansicht ---------- */
+let W = 800, H = 500;
+function mkT(v, w, h){ return {z:v.z, x:x => (x - v.cx) * v.z + w/2, y:y => -(y - v.cy) * v.z + h/2}; }
+function toWorld(cx, cy){
+  const r = svg.getBoundingClientRect();
+  return {x:(cx - r.left - W/2) / view.z + view.cx, y:-(cy - r.top - H/2) / view.z + view.cy, sx:cx - r.left, sy:cy - r.top};
+}
+const snapStep = () => state.snap;
+function snapV(v, free){ if (free || !state.snapOn) return Math.round(v * 10) / 10; const s = snapStep(); return Math.round(v / s) * s; }
+function snapP(p, free){ return {x:snapV(p.x, free), y:snapV(p.y, free)}; }
+
+/* ---------- Geometrie ---------- */
+function screwPrims(s){
+  const g = NORM[s.size], d = g.d, P = [];
+  const e = g.s * 2 / Math.sqrt(3);
+  const hex = (sw, cls) => { const R = sw / Math.sqrt(3), pts = []; for (let i = 0; i < 6; i++){ const a = Math.PI/3*i; pts.push([R*Math.cos(a), R*Math.sin(a)]); } P.push({t:'poly', pts, cls}); };
+  const circ = (r, cls) => P.push({t:'circ', r, cls});
+  const rect = (x1, y1, x2, y2, cls) => P.push({t:'poly', pts:[[x1,y1],[x2,y1],[x2,y2],[x1,y2]], cls});
+  const ln = (x1, y1, x2, y2, cls) => P.push({t:'line', pts:[[x1,y1],[x2,y2]], cls});
+  if (s.view === 'top'){
+    let R;
+    if (s.kind === 'hex'){ hex(g.s, 'metal'); circ(g.s/2*.94, 'thin'); R = e/2; }
+    else if (s.kind === 'cyl'){ circ(g.dk/2, 'metal'); hex(g.sw, 'thin'); R = g.dk/2; }
+    else if (s.kind === 'nut'){ hex(g.s, 'metal'); circ(g.s/2*.94, 'thin'); circ(g.kl/2, 'hole'); P.push({t:'arc', r:d/2, cls:'thin'}); R = e/2; }
+    else { circ(g.d2/2, 'metal'); circ(g.d1/2, 'hole'); R = g.d2/2; }
+    const x = R + 3; ln(-x, 0, x, 0, 'center'); ln(0, -x, 0, x, 'center');
+  } else {
+    const shank = () => {
+      const L = s.len, b = Math.min(L, 2*d + 6);
+      rect(-d/2, -L, d/2, 0, 'metal');
+      ln(-g.kl/2, -L, -g.kl/2, -L + b, 'thin'); ln(g.kl/2, -L, g.kl/2, -L + b, 'thin');
+      if (b < L) ln(-d/2, -L + b, d/2, -L + b, 'edge');
+    };
+    let top = 0, bot = 0;
+    if (s.kind === 'hex'){ shank(); rect(-e/2, 0, e/2, g.k, 'metal'); ln(-e/4, 0, -e/4, g.k, 'thin'); ln(e/4, 0, e/4, g.k, 'thin'); top = g.k; bot = -s.len; }
+    else if (s.kind === 'cyl'){ shank(); rect(-g.dk/2, 0, g.dk/2, d, 'metal'); ln(-g.sw/2, d, -g.sw/2, d - g.sw*.6, 'hidden'); ln(g.sw/2, d, g.sw/2, d - g.sw*.6, 'hidden'); top = d; bot = -s.len; }
+    else if (s.kind === 'nut'){ rect(-e/2, 0, e/2, g.m, 'metal'); ln(-e/4, 0, -e/4, g.m, 'thin'); ln(e/4, 0, e/4, g.m, 'thin'); ln(-d/2, 0, -d/2, g.m, 'hidden'); ln(d/2, 0, d/2, g.m, 'hidden'); top = g.m; }
+    else { rect(-g.d2/2, 0, g.d2/2, g.h, 'metal'); ln(-g.d1/2, 0, -g.d1/2, g.h, 'hidden'); ln(g.d1/2, 0, g.d1/2, g.h, 'hidden'); top = g.h; }
+    ln(0, top + 3, 0, bot - 3, 'center');
+  }
+  return P;
+}
+function localToWorld(s, px, py){
+  const a = (s.rot || 0) * Math.PI / 180, c = Math.cos(a), n = Math.sin(a);
+  return {x:s.x + px*c - py*n, y:s.y + px*n + py*c};
+}
+function worldToLocal(s, p){
+  const a = (s.rot || 0) * Math.PI / 180, c = Math.cos(a), n = Math.sin(a);
+  const dx = p.x - s.x, dy = p.y - s.y;
+  return {x:dx*c + dy*n, y:-dx*n + dy*c};
+}
+function screwLocalBox(s){
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  screwPrims(s).forEach(p => {
+    if (p.cls === 'center') return;
+    if (p.pts) p.pts.forEach(([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); });
+    else { x0 = Math.min(x0, -p.r); x1 = Math.max(x1, p.r); y0 = Math.min(y0, -p.r); y1 = Math.max(y1, p.r); }
+  });
+  return {x0, y0, x1, y1};
+}
+function bbox(s){
+  if (s.type === 'rect') return {x0:s.x, y0:s.y, x1:s.x + s.w, y1:s.y + s.h};
+  if (s.type === 'hole') return {x0:s.x - s.d/2, y0:s.y - s.d/2, x1:s.x + s.d/2, y1:s.y + s.d/2};
+  if (s.type === 'screw'){
+    const b = screwLocalBox(s);
+    const ps = [[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]].map(([x, y]) => localToWorld(s, x, y));
+    return {x0:Math.min(...ps.map(p => p.x)), y0:Math.min(...ps.map(p => p.y)), x1:Math.max(...ps.map(p => p.x)), y1:Math.max(...ps.map(p => p.y))};
+  }
+  return {x0:Math.min(s.x1, s.x2), y0:Math.min(s.y1, s.y2), x1:Math.max(s.x1, s.x2), y1:Math.max(s.y1, s.y2)};
+}
+function distSeg(p, a, b){
+  const dx = b.x - a.x, dy = b.y - a.y, L = dx*dx + dy*dy;
+  let t = L ? ((p.x - a.x)*dx + (p.y - a.y)*dy) / L : 0; t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (a.x + t*dx), p.y - (a.y + t*dy));
+}
+function dimNormal(s){ const L = Math.hypot(s.x2 - s.x1, s.y2 - s.y1) || 1; return {x:-(s.y2 - s.y1)/L, y:(s.x2 - s.x1)/L}; }
+function hit(s, p, tol){
+  if (s.type === 'rect') return p.x >= s.x - tol && p.x <= s.x + s.w + tol && p.y >= s.y - tol && p.y <= s.y + s.h + tol;
+  if (s.type === 'hole') return Math.hypot(p.x - s.x, p.y - s.y) <= s.d/2 + tol;
+  if (s.type === 'screw'){ const l = worldToLocal(s, p), b = screwLocalBox(s); return l.x >= b.x0 - tol && l.x <= b.x1 + tol && l.y >= b.y0 - tol && l.y <= b.y1 + tol; }
+  if (s.type === 'line') return distSeg(p, {x:s.x1, y:s.y1}, {x:s.x2, y:s.y2}) <= tol;
+  if (s.type === 'dim'){
+    const n = dimNormal(s);
+    return distSeg(p, {x:s.x1 + n.x*s.off, y:s.y1 + n.y*s.off}, {x:s.x2 + n.x*s.off, y:s.y2 + n.y*s.off}) <= tol * 1.5;
+  }
+  return false;
+}
+const LAYER = {rect:0, line:1, hole:2, screw:3, dim:4};
+const ordered = () => state.shapes.slice().sort((a, b) => LAYER[a.type] - LAYER[b.type]);
+function pick(p){
+  const tol = 6 / view.z, list = ordered().reverse();
+  // zuerst nicht-flächige Objekte (Linien, Maße, Bohrungen, Schrauben), dann Rechtecke
+  return list.find(s => s.type !== 'rect' && hit(s, p, tol)) || list.find(s => hit(s, p, tol)) || null;
+}
+function handles(s){
+  if (!s) return [];
+  if (s.type === 'rect') return [{k:'ll', x:s.x, y:s.y}, {k:'lr', x:s.x + s.w, y:s.y}, {k:'ur', x:s.x + s.w, y:s.y + s.h}, {k:'ul', x:s.x, y:s.y + s.h}];
+  if (s.type === 'line') return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}];
+  if (s.type === 'dim'){ const n = dimNormal(s); return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}, {k:'off', x:(s.x1 + s.x2)/2 + n.x*s.off, y:(s.y1 + s.y2)/2 + n.y*s.off}]; }
+  if (s.type === 'hole') return [{k:'r', x:s.x + s.d/2, y:s.y}];
+  return [];
+}
+
+/* ---------- Zeichnen ---------- */
+const f1 = v => Math.round(v * 10) / 10;
+function dimMarkup(T, x1, y1, x2, y2, offPx, text){
+  const ax = T.x(x1), ay = T.y(y1), bx = T.x(x2), by = T.y(y2);
+  const dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy);
+  if (L < 2) return '';
+  const ux = dx/L, uy = dy/L, nx = uy, ny = -ux;
+  const sg = offPx >= 0 ? 1 : -1;
+  const a2x = ax + nx*offPx, a2y = ay + ny*offPx, b2x = bx + nx*offPx, b2y = by + ny*offPx;
+  let o = '';
+  if (Math.abs(offPx) > 1){
+    o += `<line class="dim" x1="${f1(ax + nx*sg*3)}" y1="${f1(ay + ny*sg*3)}" x2="${f1(a2x + nx*sg*5)}" y2="${f1(a2y + ny*sg*5)}"/>`;
+    o += `<line class="dim" x1="${f1(bx + nx*sg*3)}" y1="${f1(by + ny*sg*3)}" x2="${f1(b2x + nx*sg*5)}" y2="${f1(b2y + ny*sg*5)}"/>`;
+  }
+  o += `<line class="dim" x1="${f1(a2x)}" y1="${f1(a2y)}" x2="${f1(b2x)}" y2="${f1(b2y)}"/>`;
+  const al = L > 26 ? 9 : -9, aw = 3;
+  const arrow = (tx, ty, dir) => `<polygon class="arrow" points="${f1(tx)},${f1(ty)} ${f1(tx + ux*al*dir + nx*aw)},${f1(ty + uy*al*dir + ny*aw)} ${f1(tx + ux*al*dir - nx*aw)},${f1(ty + uy*al*dir - ny*aw)}"/>`;
+  o += arrow(a2x, a2y, 1) + arrow(b2x, b2y, -1);
+  let ang = Math.atan2(uy, ux) * 180 / Math.PI;
+  if (ang > 90.5 || ang <= -89.5) ang += 180;
+  const r = ang * Math.PI / 180, upx = Math.sin(r), upy = -Math.cos(r);
+  const mx = (a2x + b2x)/2 + upx*5, my = (a2y + b2y)/2 + upy*5;
+  o += `<text class="dimtext" x="${f1(mx)}" y="${f1(my)}" text-anchor="middle" transform="rotate(${f1(ang)} ${f1(mx)} ${f1(my)})">${text}</text>`;
+  return o;
+}
+function primMarkup(s, T){
+  return screwPrims(s).map(p => {
+    if (p.t === 'circ'){ const c = localToWorld(s, 0, 0); return `<circle class="${p.cls}" cx="${f1(T.x(c.x))}" cy="${f1(T.y(c.y))}" r="${f1(p.r*T.z)}"/>`; }
+    if (p.t === 'arc'){ const c = localToWorld(s, 0, 0), cx = T.x(c.x), cy = T.y(c.y), R = p.r*T.z; return `<path class="${p.cls}" d="M${f1(cx)},${f1(cy - R)} A${f1(R)},${f1(R)} 0 1 0 ${f1(cx + R)},${f1(cy)}"/>`; }
+    const pts = p.pts.map(([x, y]) => { const w = localToWorld(s, x, y); return f1(T.x(w.x)) + ',' + f1(T.y(w.y)); });
+    if (p.t === 'line') { const [a, b] = pts.map(q => q.split(',')); return `<line class="${p.cls}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`; }
+    return `<polygon class="${p.cls}" points="${pts.join(' ')}"/>`;
+  }).join('');
+}
+function screwLabel(s){
+  const k = KINDS[s.kind];
+  return k.len ? `${s.size}×${s.len}` : (s.kind === 'washer' ? `Scheibe ${NORM[s.size].d}` : s.size);
+}
+function holeLabel(s){ return s.fit && s.fit.startsWith('G-') ? s.fit.slice(2) : 'Ø' + num(s.d); }
+function shapeMarkup(s, T, showDims){
+  let o = '';
+  if (s.type === 'rect'){
+    o += `<rect class="part" x="${f1(T.x(s.x))}" y="${f1(T.y(s.y + s.h))}" width="${f1(s.w*T.z)}" height="${f1(s.h*T.z)}"/>`;
+    if (showDims){
+      o += dimMarkup(T, s.x, s.y, s.x + s.w, s.y, -22, num(s.w));
+      o += dimMarkup(T, s.x, s.y, s.x, s.y + s.h, 22, num(s.h));
+    }
+    if (s.w*T.z > 70 && s.h*T.z > 26){
+      o += `<text class="lbl" x="${f1(T.x(s.x) + 6)}" y="${f1(T.y(s.y + s.h) + 15)}">${esc(s.name)} · t=${num(s.t)}</text>`;
+    }
+  } else if (s.type === 'hole'){
+    const cx = T.x(s.x), cy = T.y(s.y), R = s.d/2*T.z, ex = R + 6;
+    o += `<circle class="hole" cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(R)}"/>`;
+    if (s.fit && s.fit.startsWith('G-')){
+      const Rn = NORM[s.fit.slice(2)].d/2*T.z;
+      o += `<path class="thin" d="M${f1(cx)},${f1(cy - Rn)} A${f1(Rn)},${f1(Rn)} 0 1 0 ${f1(cx + Rn)},${f1(cy)}"/>`;
+    }
+    o += `<line class="center" x1="${f1(cx - ex)}" y1="${f1(cy)}" x2="${f1(cx + ex)}" y2="${f1(cy)}"/><line class="center" x1="${f1(cx)}" y1="${f1(cy - ex)}" x2="${f1(cx)}" y2="${f1(cy + ex)}"/>`;
+    if (showDims) o += `<text class="lbl" x="${f1(cx + R*.72 + 3)}" y="${f1(cy - R*.72 - 4)}">${holeLabel(s)}</text>`;
+  } else if (s.type === 'screw'){
+    o += primMarkup(s, T);
+    if (showDims){
+      const b = screwLocalBox(s), w = localToWorld(s, b.x1, b.y1);
+      o += `<text class="lbl" x="${f1(T.x(w.x) + 4)}" y="${f1(T.y(w.y) - 4)}">${screwLabel(s)}</text>`;
+    }
+  } else if (s.type === 'line'){
+    o += `<line class="${s.style === 'center' ? 'center' : 'edge'}" x1="${f1(T.x(s.x1))}" y1="${f1(T.y(s.y1))}" x2="${f1(T.x(s.x2))}" y2="${f1(T.y(s.y2))}"/>`;
+  } else if (s.type === 'dim'){
+    o += dimMarkup(T, s.x1, s.y1, s.x2, s.y2, s.off*T.z, num(Math.hypot(s.x2 - s.x1, s.y2 - s.y1)));
+  }
+  return o;
+}
+function esc(t){ return String(t ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function gridMarkup(T){
+  const cands = [1,2,5,10,20,50,100,200,500,1000,2000,5000];
+  const step = cands.find(c => c * T.z >= 10) || 5000;
+  const lead = String(step)[0];
+  const major = lead === '2' ? step*5 : step*10;
+  const x0 = view.cx - W/2/T.z, x1 = view.cx + W/2/T.z, y0 = view.cy - H/2/T.z, y1 = view.cy + H/2/T.z;
+  let mn = '', mj = '';
+  for (let x = Math.floor(x0/step)*step; x <= x1; x += step){
+    const sx = f1(T.x(x)), d = `M${sx},0V${H}`;
+    if (Math.abs(x/major - Math.round(x/major)) < 1e-6) mj += d; else mn += d;
+  }
+  for (let y = Math.floor(y0/step)*step; y <= y1; y += step){
+    const sy = f1(T.y(y)), d = `M0,${sy}H${W}`;
+    if (Math.abs(y/major - Math.round(y/major)) < 1e-6) mj += d; else mn += d;
+  }
+  gridInfo = {step, major};
+  return `<path class="gmin" d="${mn}"/><path class="gmaj" d="${mj}"/>` +
+    `<path class="axis" d="M${f1(T.x(0))},0V${H}M0,${f1(T.y(0))}H${W}"/>`;
+}
+let gridInfo = {step:10, major:100};
+let preview = '';
+function render(){
+  const r = svg.getBoundingClientRect();
+  W = Math.max(50, r.width); H = Math.max(50, r.height);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const T = mkT(view, W, H);
+  let o = gridMarkup(T);
+  ordered().forEach(s => { o += `<g class="${s.id === selId ? 'sel' : ''}">${shapeMarkup(s, T, state.showDims)}</g>`; });
+  const sel = byId(selId);
+  if (sel && tool === 'select'){
+    const b = bbox(sel);
+    if (sel.type !== 'rect') o += `<rect class="ghost" x="${f1(T.x(b.x0) - 4)}" y="${f1(T.y(b.y1) - 4)}" width="${f1((b.x1 - b.x0)*T.z + 8)}" height="${f1((b.y1 - b.y0)*T.z + 8)}"/>`;
+    handles(sel).forEach(h => { o += `<rect class="handle" x="${f1(T.x(h.x) - 5)}" y="${f1(T.y(h.y) - 5)}" width="10" height="10"/>`; });
+  }
+  o += preview;
+  svg.innerHTML = o;
+  renderStatus();
+}
+let cursor = null;
+function renderStatus(){
+  const parts = [];
+  if (cursor) parts.push(`X ${fmt(cursor.x)}`, `Y ${fmt(cursor.y)}`);
+  parts.push(`Kästchen ${fmt(gridInfo.step)}`);
+  parts.push(state.snapOn ? `Raster ${fmt(state.snap)}` : 'Raster aus');
+  $('#status').innerHTML = parts.map(p => `<span>${p}</span>`).join('');
+}
+
+/* ---------- Werkzeuge ---------- */
+const ICONS = {
+  select:'<path d="M5 3l12 8-5 1.5 3 6-2.2 1-3-6L5 17z" fill="currentColor"/>',
+  rect:'<rect x="3.5" y="6.5" width="17" height="11" fill="none" stroke="currentColor" stroke-width="2"/>',
+  hole:'<circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1" stroke-dasharray="3 1.5"/>',
+  screw:'<path d="M7.5 3h9l2 4h-13z" fill="currentColor"/><rect x="9.5" y="7" width="5" height="14" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 11l5 2M9.5 15l5 2" stroke="currentColor" stroke-width="1.2"/>',
+  line:'<path d="M4 19L20 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  dim:'<path d="M3 7v10M21 7v10M4 12h16" stroke="currentColor" stroke-width="1.6"/><path d="M4 12l4-2.5v5zM20 12l-4-2.5v5z" fill="currentColor"/>',
+};
+const TOOLS = [
+  {k:'select', n:'Auswahl', key:'V', hint:'Teil anklicken zum Bearbeiten. Leere Fläche ziehen = Ansicht verschieben.'},
+  {k:'rect', n:'Rechteck', key:'R', hint:'Rechteck aufziehen – oder einmal tippen für 100 × 50 mm.'},
+  {k:'hole', n:'Bohrung', key:'B', hint:'Tippen, wo die Bohrung sitzen soll (Mittelpunkt).'},
+  {k:'screw', n:'Schraube', key:'S', hint:'Tippen zum Setzen. Auf einer Bohrung rastet die Schraube mittig ein.'},
+  {k:'line', n:'Linie', key:'L', hint:'Linie von Punkt zu Punkt ziehen.'},
+  {k:'dim', n:'Maß', key:'M', hint:'Von Punkt zu Punkt ziehen. Der Abstand wird automatisch angezeigt.'},
+];
+function renderTools(){
+  $('#tools').innerHTML = TOOLS.map(t => `<button type="button" class="tool" data-tool="${t.k}" aria-pressed="${tool === t.k}" title="${t.n} (${t.key})"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[t.k]}</svg><span>${t.n}</span><kbd>${t.key}</kbd></button>`).join('');
+  $('#hint').textContent = TOOLS.find(t => t.k === tool).hint;
+  renderToolOpts();
+}
+function setTool(t){ tool = t; preview = ''; renderTools(); render(); }
+$('#tools').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); });
+
+function optSelect(id, entries, val){ return `<select id="${id}">${entries.map(([v, l]) => `<option value="${esc(v)}"${String(v) === String(val) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`; }
+function renderToolOpts(){
+  const el = $('#toolopts'); let h = '';
+  if (tool === 'select'){
+    h = `<label>Raster ${optSelect('o-snap', [1,2,5,10,25,50,100].map(v => [v, fmt(v)]), state.snap)}</label>
+      <label class="chk"><input type="checkbox" id="o-snapOn"${state.snapOn ? ' checked' : ''}> einrasten</label>
+      <label class="chk"><input type="checkbox" id="o-dims"${state.showDims ? ' checked' : ''}> Maße anzeigen</label>`;
+  } else if (tool === 'rect'){
+    h = `<label>Benennung <input id="o-name" value="${esc(opts.rect.name)}" style="width:9em;font-family:var(--f-body)"></label>
+      <label>Dicke <input id="o-t" value="${num(opts.rect.t)}" inputmode="decimal"> ${state.unit}</label>
+      <label>Werkstoff ${optSelect('o-mat', Object.entries(MATS).map(([k, m]) => [k, m.name]), opts.rect.mat)}</label>`;
+  } else if (tool === 'hole'){
+    h = `<label>Art ${optSelect('o-fit', Object.entries(FITS), opts.hole.fit)}</label>
+      <label>Ø <input id="o-d" value="${num(opts.hole.d)}" inputmode="decimal"> ${state.unit}</label>`;
+  } else if (tool === 'screw'){
+    const k = opts.screw.kind;
+    h = `<label>Art ${optSelect('o-kind', Object.entries(KINDS).map(([v, o]) => [v, o.name]), k)}</label>
+      <label>Größe ${optSelect('o-size', SIZES.map(v => [v, v]), opts.screw.size)}</label>
+      ${KINDS[k].len ? `<label>Länge ${optSelect('o-len', LENGTHS.map(v => [v, v + ' mm']), opts.screw.len)}</label>` : ''}
+      <label>Ansicht ${optSelect('o-view', [['top','von oben'],['side','von der Seite']], opts.screw.view)}</label>`;
+  } else if (tool === 'line'){
+    h = `<label>Linienart ${optSelect('o-style', [['solid','Körperkante (breit)'],['center','Mittellinie']], opts.line.style)}</label>`;
+  } else {
+    h = `<span style="color:var(--muted)">Tipp: Rasterweite und Einheit gelten auch hier.</span>`;
+  }
+  el.innerHTML = h;
+}
+$('#toolopts').addEventListener('change', e => {
+  const id = e.target.id, v = e.target.value;
+  if (id === 'o-snap') state.snap = +v;
+  if (id === 'o-snapOn') state.snapOn = e.target.checked;
+  if (id === 'o-dims') state.showDims = e.target.checked;
+  if (id === 'o-name') opts.rect.name = v;
+  if (id === 'o-t'){ const t = parseLen(v); if (t > 0) opts.rect.t = t; }
+  if (id === 'o-mat') opts.rect.mat = v;
+  if (id === 'o-fit'){ opts.hole.fit = v; if (v !== 'frei'){ const g = NORM[v.slice(2)]; opts.hole.d = v[0] === 'G' ? g.kl : g.dh; } }
+  if (id === 'o-d'){ const d = parseLen(v); if (d > 0){ opts.hole.d = d; opts.hole.fit = 'frei'; } }
+  if (id === 'o-kind'){ opts.screw.kind = v; opts.screw.grade = GRADES[v][0]; }
+  if (id === 'o-size') opts.screw.size = v;
+  if (id === 'o-len') opts.screw.len = +v;
+  if (id === 'o-view') opts.screw.view = v;
+  if (id === 'o-style') opts.line.style = v;
+  renderToolOpts(); save(); render();
+});
+
+/* ---------- Maus / Touch ---------- */
+const pointers = new Map();
+let drag = null, pinch = null;
+function evtPoint(e){ return toWorld(e.clientX, e.clientY); }
+
+svg.addEventListener('pointerdown', e => {
+  svg.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if (pointers.size === 2){
+    if (drag && drag.created) { state.shapes = state.shapes.filter(s => s !== drag.shape); undoStack.pop(); }
+    drag = null; preview = '';
+    const [a, b] = [...pointers.values()];
+    pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), mx:(a.x + b.x)/2, my:(a.y + b.y)/2};
+    return;
+  }
+  const p = evtPoint(e), free = e.shiftKey, sp = snapP(p, free);
+  if (e.button === 1 || spaceDown){ drag = {mode:'pan', sx:e.clientX, sy:e.clientY, cx:view.cx, cy:view.cy}; return; }
+
+  if (tool === 'select'){
+    const sel = byId(selId);
+    const hz = 8 / view.z;
+    const h = handles(sel).find(h => Math.abs(h.x - p.x) <= hz && Math.abs(h.y - p.y) <= hz);
+    if (h){
+      snapshot();
+      drag = {mode:'handle', h:h.k, shape:sel, orig:{...sel}, moved:false};
+      return;
+    }
+    const s = pick(p);
+    if (s){
+      selId = s.id; snapshot();
+      drag = {mode:'move', shape:s, orig:{...s}, start:p, moved:false};
+      renderProps(); render();
+      return;
+    }
+    if (selId){ selId = null; renderProps(); render(); }
+    drag = {mode:'pan', sx:e.clientX, sy:e.clientY, cx:view.cx, cy:view.cy};
+    return;
+  }
+  snapshot();
+  let s;
+  if (tool === 'rect'){ s = {type:'rect', name:opts.rect.name, x:sp.x, y:sp.y, w:0, h:0, t:opts.rect.t, mat:opts.rect.mat}; drag = {mode:'create', shape:s, start:sp, created:true}; }
+  else if (tool === 'line'){ s = {type:'line', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, style:opts.line.style}; drag = {mode:'create', shape:s, start:sp, created:true}; }
+  else if (tool === 'dim'){ s = {type:'dim', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, off:Math.round(20 / view.z)}; drag = {mode:'create', shape:s, start:sp, created:true}; }
+  else if (tool === 'hole'){ s = {type:'hole', x:sp.x, y:sp.y, d:opts.hole.d, fit:opts.hole.fit}; }
+  else if (tool === 'screw'){
+    const hole = state.shapes.find(h => h.type === 'hole' && Math.hypot(h.x - p.x, h.y - p.y) <= Math.max(h.d/2, 6 / view.z));
+    const c = hole && opts.screw.view === 'top' ? {x:hole.x, y:hole.y} : sp;
+    s = {type:'screw', kind:opts.screw.kind, size:opts.screw.size, len:opts.screw.len, grade:opts.screw.grade, view:opts.screw.view, rot:0, x:c.x, y:c.y};
+  }
+  s.id = nextId++;
+  state.shapes.push(s); selId = s.id;
+  if (!drag) changed();
+  else render();
+});
+
+svg.addEventListener('pointermove', e => {
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if (pinch && pointers.size === 2){
+    const [a, b] = [...pointers.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x)/2, my = (a.y + b.y)/2;
+    zoomAt(mx, my, d / pinch.d);
+    view.cx -= (mx - pinch.mx) / view.z; view.cy += (my - pinch.my) / view.z;
+    pinch = {d, mx, my}; render(); return;
+  }
+  const p = evtPoint(e), free = e.shiftKey, sp = snapP(p, free);
+  cursor = sp;
+  if (!drag){ renderStatus(); updateCursor(p); return; }
+  const s = drag.shape;
+  if (drag.mode === 'pan'){
+    view.cx = drag.cx - (e.clientX - drag.sx) / view.z;
+    view.cy = drag.cy + (e.clientY - drag.sy) / view.z;
+  } else if (drag.mode === 'create'){
+    const a = drag.start;
+    if (s.type === 'rect'){ s.x = Math.min(a.x, sp.x); s.y = Math.min(a.y, sp.y); s.w = Math.abs(sp.x - a.x); s.h = Math.abs(sp.y - a.y); }
+    else { s.x2 = sp.x; s.y2 = sp.y; }
+    drag.moved = true;
+  } else if (drag.mode === 'move'){
+    const o = drag.orig;
+    const dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+    if (!drag.moved && Math.hypot(dx, dy) * view.z < 3) return;
+    drag.moved = true;
+    if ('x1' in o){
+      const nx = snapV(o.x1 + dx, free), ny = snapV(o.y1 + dy, free);
+      s.x1 = nx; s.y1 = ny; s.x2 = o.x2 + (nx - o.x1); s.y2 = o.y2 + (ny - o.y1);
+    } else { s.x = snapV(o.x + dx, free); s.y = snapV(o.y + dy, free); }
+  } else if (drag.mode === 'handle'){
+    const o = drag.orig; drag.moved = true;
+    if (s.type === 'rect'){
+      const fx = drag.h[1] === 'l' ? o.x + o.w : o.x;
+      const fy = drag.h[0] === 'l' ? o.y + o.h : o.y;
+      s.x = Math.min(fx, sp.x); s.w = Math.abs(sp.x - fx); s.y = Math.min(fy, sp.y); s.h = Math.abs(sp.y - fy);
+    } else if (drag.h === 'p1'){ s.x1 = sp.x; s.y1 = sp.y; }
+    else if (drag.h === 'p2'){ s.x2 = sp.x; s.y2 = sp.y; }
+    else if (drag.h === 'off'){ const n = dimNormal(s); s.off = Math.round(((p.x - s.x1)*n.x + (p.y - s.y1)*n.y) * 2) / 2; }
+    else if (drag.h === 'r'){ s.d = Math.max(.5, Math.round(Math.hypot(p.x - s.x, p.y - s.y) * 4) / 2); s.fit = 'frei'; }
+  }
+  render();
+  if (drag.mode !== 'pan') renderProps();
+});
+
+function endPointer(e){
+  pointers.delete(e.pointerId);
+  if (pinch){ if (pointers.size < 2) pinch = null; return; }
+  if (!drag) return;
+  const d = drag; drag = null;
+  if (d.mode === 'pan') return;
+  if (d.mode === 'create'){
+    const s = d.shape;
+    if (s.type === 'rect' && (s.w < .5 || s.h < .5)){ s.w = 100; s.h = 50; }
+    if ((s.type === 'line' || s.type === 'dim') && Math.hypot(s.x2 - s.x1, s.y2 - s.y1) < .5){
+      state.shapes = state.shapes.filter(x => x !== s); undoStack.pop(); selId = null; changed(); return;
+    }
+  }
+  if ((d.mode === 'move' || d.mode === 'handle') && !d.moved){ undoStack.pop(); changed(); return; }
+  changed();
+}
+svg.addEventListener('pointerup', endPointer);
+svg.addEventListener('pointercancel', endPointer);
+svg.addEventListener('pointerleave', () => { cursor = null; renderStatus(); });
+function updateCursor(p){
+  let c = tool === 'select' ? (pick(p) ? 'move' : 'grab') : 'crosshair';
+  if (tool === 'select'){ const hz = 8 / view.z; if (handles(byId(selId)).some(h => Math.abs(h.x - p.x) <= hz && Math.abs(h.y - p.y) <= hz)) c = 'pointer'; }
+  svg.style.cursor = c;
+}
+
+function zoomAt(cx, cy, f){
+  const r = svg.getBoundingClientRect(), w = toWorld(cx, cy);
+  view.z = Math.min(120, Math.max(.02, view.z * f));
+  view.cx = w.x - (cx - r.left - W/2) / view.z;
+  view.cy = w.y + (cy - r.top - H/2) / view.z;
+}
+svg.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * .0015)); render(); }, {passive:false});
+function zoomCenter(f){ const r = svg.getBoundingClientRect(); zoomAt(r.left + W/2, r.top + H/2, f); render(); }
+$('#zIn').onclick = () => zoomCenter(1.4);
+$('#zOut').onclick = () => zoomCenter(1/1.4);
+$('#zFit').onclick = () => { fit(); render(); };
+function allBox(){
+  if (!state.shapes.length) return {x0:0, y0:0, x1:200, y1:120};
+  return state.shapes.map(bbox).reduce((a, b) => ({x0:Math.min(a.x0, b.x0), y0:Math.min(a.y0, b.y0), x1:Math.max(a.x1, b.x1), y1:Math.max(a.y1, b.y1)}));
+}
+function fit(){
+  const r = svg.getBoundingClientRect(); W = r.width || W; H = r.height || H;
+  const b = allBox(), bw = Math.max(20, b.x1 - b.x0), bh = Math.max(20, b.y1 - b.y0);
+  view.z = Math.min(120, Math.min((W - 120) / bw, (H - 140) / bh));
+  view.cx = (b.x0 + b.x1)/2; view.cy = (b.y0 + b.y1)/2 - 10 / view.z;
+}
+
+/* ---------- Eigenschaften ---------- */
+function fieldsFor(s){
+  const len = (k, l) => ({k, l, kind:'len'});
+  if (s.type === 'rect') return [
+    {k:'name', l:'Benennung', kind:'text'}, len('w', 'Breite'), len('h', 'Höhe'), len('t', 'Dicke'),
+    {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
+    len('x', 'X links'), len('y', 'Y unten')];
+  if (s.type === 'hole') return [
+    {k:'fit', l:'Art', kind:'select', o:Object.entries(FITS)}, len('d', 'Durchmesser'), len('x', 'X Mitte'), len('y', 'Y Mitte')];
+  if (s.type === 'screw') return [
+    {k:'kind', l:'Art', kind:'select', o:Object.entries(KINDS).map(([v, o]) => [v, o.name])},
+    {k:'size', l:'Gewinde', kind:'select', o:SIZES.map(v => [v, v])},
+    ...(KINDS[s.kind].len ? [{k:'len', l:'Länge', kind:'select', o:LENGTHS.map(v => [v, v + ' mm'])}] : []),
+    {k:'grade', l:'Festigkeit', kind:'select', o:GRADES[s.kind].map(v => [v, v])},
+    {k:'view', l:'Ansicht', kind:'select', o:[['top','von oben'],['side','von der Seite']]},
+    {k:'rot', l:'Drehung', kind:'select', o:[[0,'0°'],[90,'90°'],[180,'180°'],[270,'270°']]},
+    len('x', 'X'), len('y', 'Y')];
+  if (s.type === 'line') return [
+    {k:'style', l:'Linienart', kind:'select', o:[['solid','Körperkante (breit)'],['center','Mittellinie']]},
+    {k:'_len', l:'Länge', kind:'len'}, {k:'_ang', l:'Winkel', kind:'deg'},
+    len('x1', 'X Start'), len('y1', 'Y Start'), len('x2', 'X Ende'), len('y2', 'Y Ende')];
+  if (s.type === 'dim') return [
+    {k:'_len', l:'Maß', kind:'len'}, len('off', 'Abstand Maßlinie'),
+    len('x1', 'X Start'), len('y1', 'Y Start'), len('x2', 'X Ende'), len('y2', 'Y Ende')];
+  return [];
+}
+function getVal(s, k){
+  if (k === '_len') return Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
+  if (k === '_ang') return Math.round(Math.atan2(s.y2 - s.y1, s.x2 - s.x1) * 1800 / Math.PI) / 10;
+  return s[k];
+}
+const TYPENAMES = {rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß'};
+function renderProps(){
+  const s = byId(selId), el = $('#props');
+  if (!s){
+    $('#selInfo').textContent = '';
+    el.innerHTML = `<p class="empty">Nichts ausgewählt. Wähle oben ein Werkzeug oder klicke mit <b>Auswahl</b> ein Teil an.</p>`;
+    return;
+  }
+  $('#selInfo').innerHTML = `<span class="badge">${TYPENAMES[s.type]}</span>`;
+  let h = '<div class="props">';
+  fieldsFor(s).forEach(f => {
+    const id = 'p-' + f.k, v = getVal(s, f.k);
+    if (f.kind === 'select') h += `<label for="${id}">${f.l}</label>${optSelect(id, f.o, v)}`;
+    else if (f.kind === 'text') h += `<label for="${id}">${f.l}</label><input id="${id}" value="${esc(v)}" style="font-family:var(--f-body)">`;
+    else if (f.kind === 'deg') h += `<label for="${id}">${f.l} <em>°</em></label><input id="${id}" value="${dec(v)}" inputmode="decimal">`;
+    else h += `<label for="${id}">${f.l} <em>${state.unit}</em></label><input id="${id}" value="${num(v)}" inputmode="decimal">`;
+  });
+  h += '</div>';
+  if (s.type === 'rect'){
+    const m = rectMass(s);
+    h += `<p class="note">Fläche ${num(s.w*s.h/100, 'mm')} cm² · Masse ca. <b>${dec(m.toFixed(2))} kg</b> (${MATS[s.mat].name}, ρ = ${dec(MATS[s.mat].rho)} g/cm³, Bohrungen abgezogen)</p>`;
+  }
+  if (s.type === 'screw'){
+    const g = NORM[s.size];
+    h += `<p class="note">${KINDS[s.kind].norm} · Schlüsselweite SW ${dec(s.kind === 'cyl' ? g.sw : g.s)} · Durchgangsloch Ø${dec(g.dh)} · Kernloch Ø${dec(g.kl)}</p>`;
+  }
+  if (s.type === 'hole' && s.fit && s.fit.startsWith('G-')){
+    const g = NORM[s.fit.slice(2)];
+    h += `<p class="note">Erst mit Ø${dec(g.kl)} bohren, dann ${s.fit.slice(2)} schneiden. Das dünne ¾-Kreis-Bogen zeigt das Gewinde.</p>`;
+  }
+  h += `<div class="row" style="margin-top:12px">
+    <button class="btn" type="button" id="aDup">Duplizieren</button>
+    ${s.type === 'rect' ? '<button class="btn" type="button" id="aRot">Drehen 90°</button>' : ''}
+    <button class="btn danger" type="button" id="aDel">Löschen</button></div>`;
+  el.innerHTML = h;
+  $('#aDup').onclick = duplicate;
+  $('#aDel').onclick = del;
+  if ($('#aRot')) $('#aRot').onclick = () => { snapshot(); const cx = s.x + s.w/2, cy = s.y + s.h/2; [s.w, s.h] = [s.h, s.w]; s.x = snapV(cx - s.w/2, true); s.y = snapV(cy - s.h/2, true); changed(); };
+}
+$('#props').addEventListener('change', e => {
+  const s = byId(selId); if (!s || !e.target.id.startsWith('p-')) return;
+  const k = e.target.id.slice(2), f = fieldsFor(s).find(f => f.k === k), v = e.target.value;
+  snapshot();
+  if (f.kind === 'select'){
+    s[k] = (k === 'len' || k === 'rot') ? +v : v;
+    if (k === 'fit' && v !== 'frei'){ const g = NORM[v.slice(2)]; s.d = v[0] === 'G' ? g.kl : g.dh; }
+    if (k === 'kind' && !GRADES[v].includes(s.grade)) s.grade = GRADES[v][0];
+  } else if (f.kind === 'text'){ s[k] = v; }
+  else if (f.kind === 'deg' || k === '_len'){
+    const L = k === '_len' ? parseLen(v) : getVal(s, '_len');
+    const a = (k === '_ang' ? parseFloat(v.replace(',', '.')) : getVal(s, '_ang')) * Math.PI / 180;
+    if (!(L > 0) || isNaN(a)){ undoStack.pop(); renderProps(); return; }
+    s.x2 = Math.round((s.x1 + L*Math.cos(a)) * 100) / 100; s.y2 = Math.round((s.y1 + L*Math.sin(a)) * 100) / 100;
+  } else {
+    const n = parseLen(v);
+    const positive = ['w','h','t','d'].includes(k);
+    if (isNaN(n) || (positive && n <= 0)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
+    s[k] = Math.round(n * 1000) / 1000;
+    if (k === 'd') s.fit = 'frei';
+  }
+  changed();
+});
+function flash(id){ const i = document.getElementById(id); if (!i) return; i.style.borderColor = 'var(--accent)'; i.title = 'Bitte eine Zahl eingeben, z. B. 120 oder 12cm'; }
+function duplicate(){
+  const s = byId(selId); if (!s) return;
+  snapshot();
+  const c = JSON.parse(JSON.stringify(s)); c.id = nextId++;
+  const d = Math.max(state.snap, 10);
+  if ('x1' in c){ c.x1 += d; c.x2 += d; c.y1 -= d; c.y2 -= d; } else { c.x += d; c.y -= d; }
+  state.shapes.push(c); selId = c.id; changed();
+}
+function del(){
+  if (!selId) return;
+  snapshot(); state.shapes = state.shapes.filter(s => s.id !== selId); selId = null; changed();
+}
+
+/* ---------- Stückliste ---------- */
+function rectMass(s){
+  let area = s.w * s.h;
+  state.shapes.forEach(h => { if (h.type === 'hole' && h.x > s.x && h.x < s.x + s.w && h.y > s.y && h.y < s.y + s.h) area -= Math.PI * (h.d/2) ** 2; });
+  return area * s.t / 1e6 * MATS[s.mat].rho;
+}
+function bomRows(){
+  const rows = [], map = new Map();
+  const add = (key, row) => { if (map.has(key)) map.get(key).qty++; else { row.qty = 1; map.set(key, row); rows.push(row); } };
+  state.shapes.filter(s => s.type === 'rect').forEach(s => {
+    const m = rectMass(s);
+    add(`r|${s.name}|${s.w}|${s.h}|${s.t}|${s.mat}|${m.toFixed(3)}`, {name:s.name || 'Blech', dim:`${num(s.w)} × ${num(s.h)} × ${num(s.t)} ${state.unit}`, mat:MATS[s.mat].name, mass:m});
+  });
+  state.shapes.filter(s => s.type === 'screw').forEach(s => {
+    const k = KINDS[s.kind];
+    const dim = k.len ? `${k.norm} – ${s.size} × ${s.len}` : (s.kind === 'washer' ? `${k.norm} – ${NORM[s.size].d}` : `${k.norm} – ${s.size}`);
+    add(`s|${s.kind}|${s.size}|${k.len ? s.len : ''}|${s.grade}`, {name:k.name, dim, mat:s.grade, mass:null});
+  });
+  return rows;
+}
+function holeRows(){
+  const map = new Map();
+  state.shapes.filter(s => s.type === 'hole').forEach(s => {
+    const key = s.fit && s.fit !== 'frei' ? FITS[s.fit] : 'Bohrung Ø' + num(s.d, 'mm') + ' mm';
+    map.set(key, (map.get(key) || 0) + 1);
+  });
+  return [...map];
+}
+function renderBom(){
+  const rows = bomRows(), holes = holeRows();
+  if (!rows.length && !holes.length){ $('#bom').innerHTML = '<p class="empty">Noch keine Teile. Zeichne ein Rechteck oder setze eine Schraube.</p>'; return; }
+  const total = rows.reduce((a, r) => a + (r.mass ? r.mass * r.qty : 0), 0);
+  let h = `<div class="tbl-wrap"><table><thead><tr><th class="num">Pos</th><th class="num">Stk</th><th>Benennung / Abmessung</th><th>Werkstoff</th><th class="num">kg</th></tr></thead><tbody>`;
+  rows.forEach((r, i) => { h += `<tr><td class="num">${i + 1}</td><td class="num">${r.qty}</td><td>${esc(r.name)}<br><span class="mono" style="font-family:var(--f-mono);font-size:.78rem;color:var(--muted)">${esc(r.dim)}</span></td><td>${esc(r.mat)}</td><td class="num">${r.mass == null ? '–' : dec(r.mass.toFixed(2))}</td></tr>`; });
+  h += `</tbody><tfoot><tr><td></td><td></td><td colspan="2">Gesamtmasse Bleche</td><td class="num">${dec(total.toFixed(2))}</td></tr></tfoot></table></div>`;
+  if (holes.length){
+    h += `<div class="tbl-wrap" style="margin-top:12px"><table><thead><tr><th class="num">Stk</th><th>Bohrungen</th></tr></thead><tbody>`;
+    holes.forEach(([k, n]) => { h += `<tr><td class="num">${n}</td><td>${esc(k)}</td></tr>`; });
+    h += `</tbody></table></div>`;
+  }
+  $('#bom').innerHTML = h;
+}
+$('#bCopyBom').onclick = async () => {
+  const rows = bomRows();
+  let t = `Stückliste – ${state.title.name}\nPos\tStk\tBenennung\tAbmessung\tWerkstoff\tkg/Stk\n`;
+  rows.forEach((r, i) => { t += `${i + 1}\t${r.qty}\t${r.name}\t${r.dim}\t${r.mat}\t${r.mass == null ? '' : dec(r.mass.toFixed(2))}\n`; });
+  holeRows().forEach(([k, n]) => { t += `\t${n}\t${k}\n`; });
+  const b = $('#bCopyBom');
+  try { await navigator.clipboard.writeText(t); b.textContent = 'Kopiert'; }
+  catch(e){ b.textContent = 'Nicht möglich'; }
+  setTimeout(() => b.textContent = 'Kopieren', 1600);
+};
+
+/* ---------- Schriftfeld ---------- */
+function renderTitle(){
+  const t = state.title;
+  const mats = [...new Set(state.shapes.filter(s => s.type === 'rect').map(s => MATS[s.mat].name))].join(', ') || '–';
+  $('#tblock').innerHTML = `<div class="big">${esc(t.name || 'Ohne Namen')}</div>
+    <div>Gezeichnet</div><div>${esc(t.by || '–')}</div>
+    <div>Datum</div><div>${esc(t.date)}</div>
+    <div>Werkstoff</div><div>${esc(mats)}</div>
+    <div>Maße in</div><div>${state.unit}</div>`;
+  if (!document.activeElement || !document.activeElement.id.startsWith('t-')){
+    $('#tprops').innerHTML = `<label for="t-name">Benennung</label><input id="t-name" value="${esc(t.name)}" style="font-family:var(--f-body)">
+      <label for="t-by">Gezeichnet von</label><input id="t-by" value="${esc(t.by)}" placeholder="Name Azubi" style="font-family:var(--f-body)">
+      <label for="t-date">Datum</label><input id="t-date" value="${esc(t.date)}">`;
+  }
+}
+$('#tprops').addEventListener('input', e => {
+  const k = e.target.id.slice(2); state.title[k] = e.target.value; save(); renderTitle();
+});
+
+/* ---------- Einheit ---------- */
+function renderUnits(){ document.querySelectorAll('#units button').forEach(b => b.setAttribute('aria-pressed', b.dataset.u === state.unit)); }
+$('#units').addEventListener('click', e => {
+  const b = e.target.closest('[data-u]'); if (!b) return;
+  state.unit = b.dataset.u; renderUnits(); renderToolOpts(); changed();
+});
+
+/* ---------- Datei ---------- */
+function download(name, blob){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+const fileBase = () => (state.title.name || 'zeichnung').replace(/[^\wäöüÄÖÜß-]+/g, '_');
+$('#bSave').onclick = () => download(fileBase() + '.json', new Blob([JSON.stringify(state, null, 1)], {type:'application/json'}));
+$('#bOpen').onclick = () => $('#fileIn').click();
+$('#fileIn').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!Array.isArray(d.shapes)) throw 0;
+    snapshot(); state = Object.assign(freshState(false), d);
+    nextId = state.shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
+    selId = null; renderUnits(); renderToolOpts(); fit(); changed();
+  } catch(err){ $('#hint').textContent = 'Die Datei konnte nicht gelesen werden. Bitte eine mit „Speichern“ erzeugte .json-Datei wählen.'; }
+  e.target.value = '';
+};
+let newArmed = null;
+$('#bNew').onclick = () => {
+  const b = $('#bNew');
+  if (!newArmed){ b.textContent = 'Wirklich alles löschen?'; b.classList.add('warn'); newArmed = setTimeout(() => { newArmed = null; b.textContent = 'Neu'; b.classList.remove('warn'); }, 3000); return; }
+  clearTimeout(newArmed); newArmed = null; b.textContent = 'Neu'; b.classList.remove('warn');
+  snapshot(); const keepUnit = state.unit; state.shapes = []; state.title = {name:'Neue Zeichnung', by:state.title.by, date:today}; state.unit = keepUnit;
+  selId = null; view = {cx:100, cy:60, z:2.5}; changed();
+};
+const EXPORT_CSS = `.part{fill:#e4e9ee;stroke:#111;stroke-width:1.8}.metal{fill:#cfd8e0;stroke:#111;stroke-width:1.6}.hole{fill:#fff;stroke:#111;stroke-width:1.6}
+.edge{fill:none;stroke:#111;stroke-width:1.8;stroke-linecap:round}.thin{fill:none;stroke:#111;stroke-width:.8}.center{fill:none;stroke:#111;stroke-width:.7;stroke-dasharray:14 3 2 3}
+.hidden{fill:none;stroke:#111;stroke-width:.8;stroke-dasharray:5 3}.dim{fill:none;stroke:#1d5ea8;stroke-width:.9}.arrow{fill:#1d5ea8}
+.dimtext{fill:#1d5ea8;font:500 12px Consolas,monospace;paint-order:stroke;stroke:#fff;stroke-width:3.5px}.lbl{fill:#111;font:500 11px Consolas,monospace;paint-order:stroke;stroke:#fff;stroke-width:3px}
+.tb{fill:#111;font:12px Arial,sans-serif}.tbh{fill:#111;font:bold 15px Arial,sans-serif}`;
+function exportSVG(){
+  const b = allBox(), pad = 60, bw = Math.max(20, b.x1 - b.x0), bh = Math.max(20, b.y1 - b.y0);
+  const z = Math.min(1400 / bw, 1000 / bh, 8);
+  const w = Math.round(bw*z + pad*2), hh = Math.round(bh*z + pad*2) + 70;
+  const v = {cx:(b.x0 + b.x1)/2, cy:(b.y0 + b.y1)/2, z};
+  const T = mkT(v, w, hh - 70);
+  let o = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hh}" viewBox="0 0 ${w} ${hh}"><style>${EXPORT_CSS}</style><rect width="100%" height="100%" fill="#fff"/>`;
+  ordered().forEach(s => { o += shapeMarkup(s, T, state.showDims); });
+  const y = hh - 60, x = Math.max(10, w - 330);
+  o += `<rect x="${x}" y="${y}" width="320" height="50" fill="#fff" stroke="#111" stroke-width="1.5"/><text class="tbh" x="${x + 8}" y="${y + 19}">${esc(state.title.name)}</text>`;
+  o += `<text class="tb" x="${x + 8}" y="${y + 40}">${esc(state.title.by || '–')} · ${esc(state.title.date)} · Maße in ${state.unit}</text></svg>`;
+  return {o, w, hh};
+}
+$('#bSvg').onclick = () => download(fileBase() + '.svg', new Blob([exportSVG().o], {type:'image/svg+xml'}));
+$('#bPng').onclick = () => {
+  const {o, w, hh} = exportSVG(), img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas'); c.width = w*2; c.height = hh*2;
+    const g = c.getContext('2d'); g.scale(2, 2); g.drawImage(img, 0, 0);
+    c.toBlob(bl => bl && download(fileBase() + '.png', bl), 'image/png');
+  };
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(o);
+};
+
+/* ---------- Tastatur ---------- */
+let spaceDown = false;
+document.addEventListener('keydown', e => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+  const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+  if (ctrl && k === 'z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
+  if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))){ e.preventDefault(); redo(); return; }
+  if (ctrl && k === 'd'){ e.preventDefault(); duplicate(); return; }
+  if (ctrl) return;
+  if (e.key === ' '){ spaceDown = true; svg.style.cursor = 'grab'; e.preventDefault(); return; }
+  if (e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); del(); return; }
+  if (e.key === 'Escape'){ selId = null; setTool('select'); renderProps(); return; }
+  const t = TOOLS.find(t => t.key.toLowerCase() === k);
+  if (t){ setTool(t.k); return; }
+  const arrows = {ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,1], ArrowDown:[0,-1]};
+  if (arrows[e.key] && selId){
+    e.preventDefault();
+    const s = byId(selId), st = e.shiftKey ? 1 : state.snap, [dx, dy] = arrows[e.key];
+    snapshot();
+    if ('x1' in s){ s.x1 += dx*st; s.x2 += dx*st; s.y1 += dy*st; s.y2 += dy*st; } else { s.x += dx*st; s.y += dy*st; }
+    changed();
+  }
+});
+document.addEventListener('keyup', e => { if (e.key === ' ') spaceDown = false; });
+$('#bUndo').onclick = undo;
+$('#bRedo').onclick = redo;
+
+/* ---------- Start ---------- */
+new ResizeObserver(() => render()).observe($('#stage'));
+renderUnits(); renderTools();
+requestAnimationFrame(() => { fit(); render(); renderProps(); renderBom(); renderTitle(); });
+})();
+</script>
+</body>
+</html>
