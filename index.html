@@ -56,7 +56,8 @@ header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding:10px
 .tool kbd{display:none}
 .tool:hover{color:var(--fg)}
 .tool[aria-pressed="true"]{background:var(--fg);color:var(--invert)}
-.actions{display:flex;align-items:center;gap:6px}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+html.locked,html.locked body{overflow:hidden}
 .row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--raised);border-radius:var(--r-sm);padding:6px 11px;cursor:pointer;line-height:1.2;white-space:nowrap;font-weight:500;transition:border-color .15s,background .15s}
@@ -79,6 +80,49 @@ header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding:10px
 .menu-list button:hover{background:var(--surface)}
 .menu-list button.warn{background:#dc2626;color:#fff}
 .menu-list hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
+
+.brandtxt{min-width:0}
+.brandtxt span{display:flex;gap:6px;align-items:baseline;max-width:min(46vw,460px)}
+#projName{font-weight:500;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;max-width:60%}
+#saveState{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 auto}
+#saveState[data-state="error"],#saveState[data-state="code"]{color:#dc2626}
+
+/* Startbildschirm */
+.start{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding:48px 16px calc(48px + env(safe-area-inset-bottom, 0px))}
+.start-card{max-width:980px;margin:0 auto;display:grid;gap:20px}
+.start-head{display:flex;align-items:center;gap:14px}
+.start-head .logo{width:42px;height:42px;border-radius:11px}
+.start-head .logo svg{width:24px;height:24px}
+.start-head h2{font:600 1.6rem/1.15 var(--f-body);letter-spacing:-.02em;margin:0;text-wrap:balance}
+.start-head p{margin:2px 0 0;color:var(--muted)}
+.start-head .btn{margin-left:auto}
+.storeinfo{display:flex;align-items:center;gap:10px;font-size:.86rem;color:var(--muted)}
+.storeinfo .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.storeinfo[data-mode="cloud"] .dot{background:#16a34a}
+.start-grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;align-items:start}
+.panel{border:1px solid var(--line);border-radius:14px;padding:20px;background:var(--raised)}
+.panel h3{font:600 1rem var(--f-body);margin:0}
+.newform{display:grid;gap:6px}
+.newform h3{margin-bottom:8px}
+.newform label,.codeform label{font-size:.82rem;color:var(--muted);margin-top:6px}
+.newform input,.newform select,.codeform input{width:100%;padding:9px 11px;font-size:.92rem}
+.newform .btn{margin-top:10px;padding:10px}
+.codeform{display:grid;gap:8px}
+.codeform .row{flex-wrap:nowrap}
+.err{color:#dc2626;font-size:.84rem;margin:4px 0 0;min-height:1.2em}
+.plist-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.plist-head input{max-width:220px;width:100%}
+.plist{display:grid;gap:8px}
+.prow{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--raised);cursor:pointer;text-align:left;transition:border-color .15s,background .15s}
+.prow:hover{border-color:var(--line-strong);background:var(--surface)}
+.prow:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
+.prow.current{border-color:var(--fg)}
+.prow .pi{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:var(--surface);border:1px solid var(--line);flex:none;font:600 .8rem var(--f-mono);color:var(--muted)}
+.prow .pt{min-width:0;flex:1}
+.prow .pn{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .pm{display:block;font-size:.8rem;color:var(--muted)}
+.prow .btn{padding:4px 10px;font-size:.78rem}
+@media (max-width: 760px){ .start{padding-top:24px} .start-grid{grid-template-columns:1fr} }
 
 /* Optionsleiste */
 .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--surface);min-height:50px}
@@ -122,7 +166,7 @@ aside h2 .btn{text-transform:none;letter-spacing:0;font-size:.78rem;padding:4px 
 .props label{font-size:.84rem;color:var(--muted)}
 .props label em{font-style:normal;font-family:var(--f-mono);font-size:.72rem;opacity:.75}
 .props input,.props select{width:100%}
-.props input.txt,.toolopts input.txt{font-family:var(--f-body)}
+input.txt{font-family:var(--f-body)}
 .empty{color:var(--muted);font-size:.88rem;margin:0}
 .badge{display:inline-block;font:500 .72rem var(--f-body);text-transform:none;letter-spacing:0;background:var(--sel-soft);color:var(--sel);padding:3px 9px;border-radius:99px}
 .note{font-size:.8rem;color:var(--muted);margin:12px 0 0;line-height:1.5}
@@ -156,16 +200,22 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
 .center{fill:none;stroke:var(--ink);stroke-width:.6;stroke-dasharray:14 3 2 3;opacity:.8}
 .hidden{fill:none;stroke:var(--ink);stroke-width:.7;stroke-dasharray:5 3}
 .dim{fill:none;stroke:var(--dimc);stroke-width:.8}
+.cut{fill:url(#hatch);stroke:var(--ink);stroke-width:1.6}
+.hatchbg{fill:var(--part)} .hatchl{stroke:var(--ink);stroke-width:.7}
+.weld{fill:none;stroke:var(--ink);stroke-width:1.1}
+.wsym{fill:none;stroke:var(--ink);stroke-width:1}
+.warrow{fill:var(--ink)}
 .arrow{fill:var(--dimc);stroke:none}
 .dimtext{fill:var(--dimc);font:500 11.5px var(--f-mono);paint-order:stroke;stroke:var(--paper);stroke-width:4px;stroke-linejoin:round}
 .lbl{fill:var(--ink);font:500 10.5px var(--f-mono);paint-order:stroke;stroke:var(--paper);stroke-width:3px;stroke-linejoin:round}
-.sel .part,.sel .metal,.sel .edge,.sel .hole,.sel .thin,.sel .center,.sel .hidden,.sel .dim{stroke:var(--sel)}
+.sel .part,.sel .metal,.sel .edge,.sel .hole,.sel .thin,.sel .center,.sel .hidden,.sel .dim,.sel .cut,.sel .weld,.sel .wsym{stroke:var(--sel)}
+.sel .warrow{fill:var(--sel)}
 .sel .part{fill:var(--sel-soft)}
 .sel .arrow{fill:var(--sel)} .sel .dimtext,.sel .lbl{fill:var(--sel)}
 .handle{fill:var(--paper);stroke:var(--sel);stroke-width:1.5}
 .ghost{fill:none;stroke:var(--sel);stroke-width:1;stroke-dasharray:4 3}
 
-@media (max-width: 1360px){ .tool span{display:none} .tool{padding:7px 10px} }
+@media (max-width: 1560px){ .tool span{display:none} .tool{padding:7px 10px} }
 @media (max-width: 900px){
   .app{height:auto;min-height:100%}
   main{grid-template-columns:minmax(0,1fr)}
@@ -174,7 +224,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
   .tools{order:3;width:100%;justify-content:space-between;margin:0}
   .actions{margin-left:auto}
 }
-@media (max-width: 640px){ .titleblock{display:none} .brand span{display:none} }
+@media (max-width: 640px){ .brandtxt span{max-width:calc(100vw - 90px)} .titleblock{display:none} #bProjects span{display:none} .brandtxt h1{font-size:.9rem} }
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
@@ -183,7 +233,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
   <header>
     <div class="brand">
       <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg></div>
-      <div><h1>Werkstatt-Zeichenbrett</h1><span>Metallbau · Schlosserei</span></div>
+      <div class="brandtxt"><h1>Werkstatt-Zeichenbrett</h1><span><b id="projName">Kein Projekt</b><i id="saveState"></i></span></div>
     </div>
     <div class="tools" id="tools" role="toolbar" aria-label="Werkzeuge"></div>
     <div class="actions">
@@ -194,13 +244,14 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       <button class="btn icon" id="bUndo" type="button" title="Rückgängig (Strg+Z)" aria-label="Rückgängig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
       <button class="btn icon" id="bRedo" type="button" title="Wiederholen (Strg+Y)" aria-label="Wiederholen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/></svg></button>
       <button class="btn icon" id="bTheme" type="button" title="Hell / Dunkel umschalten" aria-label="Hell oder Dunkel"></button>
+      <button class="btn" id="bProjects" type="button" title="Projekte öffnen oder neu anlegen"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Projekte</span></button>
       <details class="menu" id="fileMenu">
         <summary class="btn primary">Datei</summary>
         <div class="menu-list">
-          <button id="bNew" type="button">Neue Zeichnung</button>
+          <button id="bNew" type="button">Neues Projekt …</button>
           <hr>
-          <button id="bSave" type="button">Speichern (.json)</button>
-          <button id="bOpen" type="button">Öffnen …</button>
+          <button id="bSave" type="button">Als Datei sichern (.json)</button>
+          <button id="bOpen" type="button">Datei importieren …</button>
           <hr>
           <button id="bPng" type="button">Als Bild (PNG)</button>
           <button id="bSvg" type="button">Als Vektorgrafik (SVG)</button>
@@ -209,6 +260,39 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       <input type="file" id="fileIn" accept=".json,application/json" hidden>
     </div>
   </header>
+
+  <div class="start" id="start" hidden>
+    <div class="start-card">
+      <div class="start-head">
+        <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg></div>
+        <div><h2>Werkstatt-Zeichenbrett</h2><p>Projekt öffnen oder ein neues anlegen.</p></div>
+        <button class="btn icon" id="startClose" type="button" title="Zurück zum Projekt" aria-label="Zurück zum Projekt" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div class="storeinfo" id="storeInfo"><span class="dot"></span><span>Speicher wird geprüft …</span></div>
+      <form class="panel codeform" id="codeForm" hidden>
+        <label for="codeIn">Werkstatt-Code</label>
+        <div class="row"><input id="codeIn" class="txt" autocomplete="off" placeholder="Code vom Ausbilder"><button class="btn primary" type="submit">Freischalten</button></div>
+        <p class="err" id="codeErr"></p>
+      </form>
+      <div class="start-grid">
+        <form class="panel newform" id="newForm" novalidate>
+          <h3>Neues Projekt</h3>
+          <label for="npName">Projektname</label>
+          <input id="npName" class="txt" maxlength="80" placeholder="z. B. Wandkonsole Halle 2">
+          <label for="npBy">Dein Name</label>
+          <input id="npBy" class="txt" maxlength="60" placeholder="Vor- und Nachname">
+          <label for="npTpl">Vorlage</label>
+          <select id="npTpl"><option value="leer">Leeres Blatt</option><option value="beispiel">Beispiel: Wandkonsole</option></select>
+          <p class="err" id="npErr"></p>
+          <button class="btn primary" type="submit">Projekt anlegen</button>
+        </form>
+        <div class="panel plist-panel">
+          <div class="plist-head"><h3>Projekte</h3><input id="pSearch" class="txt" placeholder="Suchen …" autocomplete="off"></div>
+          <div class="plist" id="plist"><p class="empty">Wird geladen …</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="toolbar">
     <div class="toolopts" id="toolopts"></div>
@@ -236,10 +320,12 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Rechteck</b>: auf dem Blatt ziehen (oder einmal tippen für 100 × 50 mm). Für Bleche, Flachstahl, Laschen.</li>
             <li><b>Bohrung</b>: tippen, wo die Bohrung hin soll. Oben wählen: Durchgangsbohrung oder Gewinde.</li>
             <li><b>Schraube</b>: tippen. Auf einer Bohrung rastet sie mittig ein. Art, Größe und Länge oben wählen.</li>
+            <li><b>Profil</b>: Winkel, U-Stahl, Rohre und Rundstahl. Längsansicht in Richtung der Länge ziehen, Querschnitt einfach antippen.</li>
+            <li><b>Naht</b>: entlang der Kante ziehen, an die geschweißt wird. Art und a-Maß oben wählen.</li>
             <li><b>Maß</b>: von Punkt zu Punkt ziehen. Der Abstand wird automatisch beschriftet.</li>
             <li><b>Auswahl</b>: Teil anklicken, verschieben, an den Ecken ziehen. Werte rechts genau eintippen, z.&nbsp;B. <kbd>25cm</kbd> oder <kbd>0,3m</kbd>.</li>
             <li>Verschieben der Ansicht: leere Fläche ziehen. Zoomen: Mausrad oder zwei Finger.</li>
-            <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
+            <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>P</kbd> <kbd>N</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
           </ul>
         </details>
       </section>
@@ -254,7 +340,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       <section>
         <h2>Schriftfeld</h2>
         <div class="props" id="tprops"></div>
-        <p class="note">Die Zeichnung wird automatisch in diesem Browser gespeichert.</p>
+        <p class="note">Alles wird automatisch im Projekt gespeichert.</p>
       </section>
     </aside>
   </main>
@@ -296,6 +382,18 @@ const MATS = {
   '1.4301':{name:'Edelstahl 1.4301', rho:7.9},
   'AlMg3':{name:'Aluminium AlMg3', rho:2.66},
 };
+// Profile: Abmessungen nach Norm (Radien vereinfacht weggelassen)
+const PROFILES = {
+  L:{name:'Winkelstahl', norm:'EN 10056-1', sizes:{'L 20×3':{a:20,t:3},'L 25×3':{a:25,t:3},'L 30×3':{a:30,t:3},'L 40×4':{a:40,t:4},'L 50×5':{a:50,t:5},'L 60×6':{a:60,t:6},'L 70×7':{a:70,t:7},'L 80×8':{a:80,t:8},'L 100×10':{a:100,t:10}}},
+  U:{name:'U-Stahl (UNP)', norm:'DIN 1026-1', sizes:{'U 50':{h:50,b:38,s:5,t:7},'U 65':{h:65,b:42,s:5.5,t:7.5},'U 80':{h:80,b:45,s:6,t:8},'U 100':{h:100,b:50,s:6,t:8.5},'U 120':{h:120,b:55,s:7,t:9},'U 140':{h:140,b:60,s:7,t:10},'U 160':{h:160,b:65,s:7.5,t:10.5}}},
+  QR:{name:'Quadratrohr', norm:'EN 10219', sizes:{'20×20×2':{B:20,H:20,t:2},'30×30×2':{B:30,H:30,t:2},'40×40×3':{B:40,H:40,t:3},'50×50×3':{B:50,H:50,t:3},'60×60×4':{B:60,H:60,t:4},'80×80×4':{B:80,H:80,t:4},'100×100×5':{B:100,H:100,t:5}}},
+  RR:{name:'Rechteckrohr', norm:'EN 10219', sizes:{'40×20×2':{B:40,H:20,t:2},'50×30×3':{B:50,H:30,t:3},'60×40×3':{B:60,H:40,t:3},'80×40×4':{B:80,H:40,t:4},'100×50×4':{B:100,H:50,t:4}}},
+  RO:{name:'Rundrohr', norm:'EN 10220', sizes:{'21,3×2':{D:21.3,t:2},'26,9×2,3':{D:26.9,t:2.3},'33,7×2,6':{D:33.7,t:2.6},'42,4×2,6':{D:42.4,t:2.6},'48,3×2,9':{D:48.3,t:2.9},'60,3×3,2':{D:60.3,t:3.2},'76,1×3,6':{D:76.1,t:3.6}}},
+  RS:{name:'Rundstahl', norm:'EN 10060', sizes:{'Ø6':{D:6},'Ø8':{D:8},'Ø10':{D:10},'Ø12':{D:12},'Ø16':{D:16},'Ø20':{D:20},'Ø25':{D:25},'Ø30':{D:30},'Ø40':{D:40},'Ø50':{D:50}}},
+};
+// Schweißnähte nach ISO 2553: a = Kehlnahtdicke, s = Nahtdicke bei Stumpfnähten
+const WELDS = {kehl:{name:'Kehlnaht', pre:'a'}, v:{name:'V-Naht', pre:'s'}, hv:{name:'HV-Naht', pre:'s'}, i:{name:'I-Naht', pre:'s'}};
+const WELD_A = [2,3,4,5,6,7,8,10,12];
 const FITS = {frei:'Freier Durchmesser'};
 SIZES.forEach(m => { FITS['D-'+m] = `Durchgang ${m} (Ø${dec(NORM[m].dh)})`; });
 SIZES.forEach(m => { FITS['G-'+m] = `Gewinde ${m} (Kernloch Ø${dec(NORM[m].kl)})`; });
@@ -326,6 +424,8 @@ const opts = {
   hole:{fit:'D-M8', d:9},
   screw:{kind:'hex', size:'M8', len:30, grade:'8.8', view:'top'},
   line:{style:'solid'},
+  profile:{kind:'L', size:'L 50×5', len:500, view:'side', mat:'S235JR'},
+  weld:{kind:'kehl', a:4, around:false},
 };
 
 function sample(){
@@ -340,6 +440,9 @@ function sample(){
   s.push({type:'screw', kind:'hex', size:'M12', len:50, grade:'8.8', view:'side', rot:0, x:380, y:60});
   s.push({type:'dim', x1:25, y1:95, x2:195, y2:95, off:35});
   s.push({type:'line', x1:110, y1:-12, x2:110, y2:132, style:'center'});
+  s.push({type:'weld', kind:'kehl', a:4, around:false, x1:280, y1:0, x2:280, y2:120});
+  s.push({type:'profile', kind:'L', size:'L 50×5', len:220, view:'side', mat:'S235JR', rot:0, x:0, y:190});
+  s.push({type:'profile', kind:'L', size:'L 50×5', len:150, view:'section', mat:'S235JR', rot:0, x:280, y:190});
   s.forEach(o => o.id = nextId++);
   return s;
 }
@@ -347,17 +450,8 @@ function freshState(withSample){
   return {shapes: withSample ? sample() : [], unit:'mm', snap:5, snapOn:true, showDims:true,
     title:{name: withSample ? 'Wandkonsole (Beispiel)' : 'Neue Zeichnung', by:'', date:today}};
 }
-function load(){
-  try {
-    const raw = localStorage.getItem(STORE);
-    if (raw){ const d = JSON.parse(raw); if (d && Array.isArray(d.shapes)) return Object.assign(freshState(false), d); }
-  } catch(e){}
-  return freshState(true);
-}
-function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch(e){} }
-state = load();
-nextId = state.shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
-state.shapes.forEach(s => { if (!s.id) s.id = nextId++; });
+let project = null;
+state = freshState(false);
 
 function snapshot(){
   undoStack.push(JSON.stringify(state.shapes));
@@ -441,7 +535,30 @@ function screwLocalBox(s){
   });
   return {x0, y0, x1, y1};
 }
+function circPts(cx, cy, r, n = 48){ const p = []; for (let i = 0; i < n; i++){ const a = i/n*Math.PI*2; p.push([cx + r*Math.cos(a), cy + r*Math.sin(a)]); } return p; }
+function polyArea(p){ let a = 0; p.forEach(([x1, y1], i) => { const [x2, y2] = p[(i + 1) % p.length]; a += x1*y2 - x2*y1; }); return Math.abs(a) / 2; }
+// Querschnitt eines Profils in (u, v): u = Breite, v = Höhe; inner = sichtbare/verdeckte Kanten in der Längsansicht
+function section(s){
+  const p = PROFILES[s.kind].sizes[s.size];
+  let outer, hole = null, w, h, inner;
+  if (s.kind === 'L'){ const {a, t} = p; outer = [[0,0],[a,0],[a,t],[t,t],[t,a],[0,a]]; w = a; h = a; inner = [{u:t, cls:'edge'}]; }
+  else if (s.kind === 'U'){ const {h:Hh, b, s:sw, t} = p; outer = [[0,0],[Hh,0],[Hh,b],[Hh-t,b],[Hh-t,sw],[t,sw],[t,b],[0,b]]; w = Hh; h = b; inner = [{u:t, cls:'edge'}, {u:Hh-t, cls:'edge'}]; }
+  else if (s.kind === 'QR' || s.kind === 'RR'){ const {B, H:Hh, t} = p; outer = [[0,0],[B,0],[B,Hh],[0,Hh]]; hole = [[t,t],[B-t,t],[B-t,Hh-t],[t,Hh-t]]; w = B; h = Hh; inner = [{u:t, cls:'hidden'}, {u:B-t, cls:'hidden'}]; }
+  else if (s.kind === 'RO'){ const {D, t} = p; outer = circPts(D/2, D/2, D/2); hole = circPts(D/2, D/2, D/2 - t); w = D; h = D; inner = [{u:t, cls:'hidden'}, {u:D-t, cls:'hidden'}, {u:D/2, cls:'center'}]; }
+  else { const {D} = p; outer = circPts(D/2, D/2, D/2); w = D; h = D; inner = [{u:D/2, cls:'center'}]; }
+  let area = polyArea(outer) - (hole ? polyArea(hole) : 0);
+  if (s.kind === 'RO') area = Math.PI/4 * (p.D**2 - (p.D - 2*p.t)**2);
+  if (s.kind === 'RS') area = Math.PI/4 * p.D**2;
+  return {outer, hole, w, h, area, inner};
+}
+const profileMass = s => section(s).area * s.len / 1e6 * MATS[s.mat].rho;
+function profileLocalBox(s){ const q = section(s); return s.view === 'section' ? {x0:0, y0:0, x1:q.w, y1:q.h} : {x0:0, y0:0, x1:s.len, y1:q.w}; }
+function rotBox(s, b){
+  const ps = [[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]].map(([x, y]) => localToWorld(s, x, y));
+  return {x0:Math.min(...ps.map(p => p.x)), y0:Math.min(...ps.map(p => p.y)), x1:Math.max(...ps.map(p => p.x)), y1:Math.max(...ps.map(p => p.y))};
+}
 function bbox(s){
+  if (s.type === 'profile') return rotBox(s, profileLocalBox(s));
   if (s.type === 'rect') return {x0:s.x, y0:s.y, x1:s.x + s.w, y1:s.y + s.h};
   if (s.type === 'hole') return {x0:s.x - s.d/2, y0:s.y - s.d/2, x1:s.x + s.d/2, y1:s.y + s.d/2};
   if (s.type === 'screw'){
@@ -461,14 +578,16 @@ function hit(s, p, tol){
   if (s.type === 'rect') return p.x >= s.x - tol && p.x <= s.x + s.w + tol && p.y >= s.y - tol && p.y <= s.y + s.h + tol;
   if (s.type === 'hole') return Math.hypot(p.x - s.x, p.y - s.y) <= s.d/2 + tol;
   if (s.type === 'screw'){ const l = worldToLocal(s, p), b = screwLocalBox(s); return l.x >= b.x0 - tol && l.x <= b.x1 + tol && l.y >= b.y0 - tol && l.y <= b.y1 + tol; }
+  if (s.type === 'profile'){ const l = worldToLocal(s, p), b = profileLocalBox(s); return l.x >= b.x0 - tol && l.x <= b.x1 + tol && l.y >= b.y0 - tol && l.y <= b.y1 + tol; }
   if (s.type === 'line') return distSeg(p, {x:s.x1, y:s.y1}, {x:s.x2, y:s.y2}) <= tol;
+  if (s.type === 'weld') return distSeg(p, {x:s.x1, y:s.y1}, {x:s.x2, y:s.y2}) <= tol * 1.5;
   if (s.type === 'dim'){
     const n = dimNormal(s);
     return distSeg(p, {x:s.x1 + n.x*s.off, y:s.y1 + n.y*s.off}, {x:s.x2 + n.x*s.off, y:s.y2 + n.y*s.off}) <= tol * 1.5;
   }
   return false;
 }
-const LAYER = {rect:0, line:1, hole:2, screw:3, dim:4};
+const LAYER = {rect:0, profile:1, line:2, hole:3, weld:4, screw:5, dim:6};
 const ordered = () => state.shapes.slice().sort((a, b) => LAYER[a.type] - LAYER[b.type]);
 function pick(p){
   const tol = 6 / view.z, list = ordered().reverse();
@@ -478,7 +597,8 @@ function pick(p){
 function handles(s){
   if (!s) return [];
   if (s.type === 'rect') return [{k:'ll', x:s.x, y:s.y}, {k:'lr', x:s.x + s.w, y:s.y}, {k:'ur', x:s.x + s.w, y:s.y + s.h}, {k:'ul', x:s.x, y:s.y + s.h}];
-  if (s.type === 'line') return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}];
+  if (s.type === 'line' || s.type === 'weld') return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}];
+  if (s.type === 'profile' && s.view === 'side'){ const w = localToWorld(s, s.len, section(s).w / 2); return [{k:'len', x:w.x, y:w.y}]; }
   if (s.type === 'dim'){ const n = dimNormal(s); return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}, {k:'off', x:(s.x1 + s.x2)/2 + n.x*s.off, y:(s.y1 + s.y2)/2 + n.y*s.off}]; }
   if (s.type === 'hole') return [{k:'r', x:s.x + s.d/2, y:s.y}];
   return [];
@@ -518,6 +638,50 @@ function primMarkup(s, T){
     return `<polygon class="${p.cls}" points="${pts.join(' ')}"/>`;
   }).join('');
 }
+function profileMarkup(s, T, showDims){
+  const q = section(s);
+  const P = (x, y) => { const w = localToWorld(s, x, y); return [f1(T.x(w.x)), f1(T.y(w.y))]; };
+  const ln = (cls, a, b) => `<line class="${cls}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`;
+  let o = '';
+  if (s.view === 'section'){
+    const d = pts => 'M' + pts.map(([x, y]) => P(x, y).join(',')).join('L') + 'Z';
+    o += `<path class="cut" fill-rule="evenodd" d="${d(q.outer)}${q.hole ? d(q.hole) : ''}"/>`;
+    if (s.kind === 'RO' || s.kind === 'RS'){ const r = q.w/2 + 3; o += ln('center', P(q.w/2 - r, q.w/2), P(q.w/2 + r, q.w/2)) + ln('center', P(q.w/2, q.w/2 - r), P(q.w/2, q.w/2 + r)); }
+  } else {
+    o += `<polygon class="part" points="${[[0,0],[s.len,0],[s.len,q.w],[0,q.w]].map(([x, y]) => P(x, y).join(',')).join(' ')}"/>`;
+    q.inner.forEach(l => { const e = l.cls === 'center' ? 3 : 0; o += ln(l.cls, P(-e, l.u), P(s.len + e, l.u)); });
+    if (showDims){ const a = localToWorld(s, 0, 0), b = localToWorld(s, s.len, 0); o += dimMarkup(T, a.x, a.y, b.x, b.y, -22, num(s.len)); }
+  }
+  if (showDims){
+    const b = profileLocalBox(s), w = localToWorld(s, s.view === 'section' ? b.x1 : 0, b.y1);
+    o += `<text class="lbl" x="${f1(T.x(w.x) + 4)}" y="${f1(T.y(w.y) - 5)}">${esc(s.size)}</text>`;
+  }
+  return o;
+}
+function weldMarkup(s, T){
+  const ax = T.x(s.x1), ay = T.y(s.y1), bx = T.x(s.x2), by = T.y(s.y2), L = Math.hypot(bx - ax, by - ay);
+  if (L < 1) return '';
+  const ux = (bx - ax)/L, uy = (by - ay)/L, nx = uy, ny = -ux;
+  // Schweißraupe als kurze Schrägstriche entlang der Naht
+  let d = ''; const n = Math.max(2, Math.floor(L / 5));
+  for (let i = 0; i <= n; i++){ const px = ax + ux*L*i/n - nx*4, py = ay + uy*L*i/n - ny*4; d += `M${f1(px)},${f1(py)}l${f1(nx*8 + ux*3)},${f1(ny*8 + uy*3)}`; }
+  let o = `<line class="edge" x1="${f1(ax)}" y1="${f1(ay)}" x2="${f1(bx)}" y2="${f1(by)}"/><path class="weld" d="${d}"/>`;
+  // Bezugszeichen: Pfeillinie, Bezugslinie, Symbol, Maße
+  const mx = (ax + bx)/2, my = (ay + by)/2, kx = mx + 26, ky = my - 26, cx = kx + 34;
+  o += `<path class="wsym" d="M${f1(mx)},${f1(my)}L${f1(kx)},${f1(ky)}H${f1(kx + 86)}"/>`;
+  o += `<polygon class="warrow" points="${f1(mx)},${f1(my)} ${f1(mx + 9)},${f1(my - 4)} ${f1(mx + 4)},${f1(my - 9)}"/>`;
+  const sym = {
+    kehl:`M${f1(cx - 5)},${f1(ky)}V${f1(ky + 9)}L${f1(cx + 4)},${f1(ky)}`,
+    v:`M${f1(cx - 6)},${f1(ky)}L${f1(cx)},${f1(ky + 10)}L${f1(cx + 6)},${f1(ky)}`,
+    hv:`M${f1(cx - 4)},${f1(ky)}V${f1(ky + 10)}L${f1(cx + 5)},${f1(ky)}`,
+    i:`M${f1(cx - 2)},${f1(ky)}V${f1(ky + 9)}M${f1(cx + 2)},${f1(ky)}V${f1(ky + 9)}`,
+  }[s.kind];
+  o += `<path class="wsym" d="${sym}"/>`;
+  if (s.around) o += `<circle class="wsym" cx="${f1(kx)}" cy="${f1(ky)}" r="4"/>`;
+  o += `<text class="lbl" x="${f1(cx - 9)}" y="${f1(ky + 12)}" text-anchor="end">${WELDS[s.kind].pre}${dec(s.a)}</text>`;
+  o += `<text class="lbl" x="${f1(cx + 10)}" y="${f1(ky + 12)}">${num(Math.hypot(s.x2 - s.x1, s.y2 - s.y1))}</text>`;
+  return o;
+}
 function screwLabel(s){
   const k = KINDS[s.kind];
   return k.len ? `${s.size}×${s.len}` : (s.kind === 'washer' ? `Scheibe ${NORM[s.size].d}` : s.size);
@@ -550,6 +714,10 @@ function shapeMarkup(s, T, showDims){
       const b = screwLocalBox(s), w = localToWorld(s, b.x1, b.y1);
       o += `<text class="lbl" x="${f1(T.x(w.x) + 4)}" y="${f1(T.y(w.y) - 4)}">${screwLabel(s)}</text>`;
     }
+  } else if (s.type === 'profile'){
+    o += profileMarkup(s, T, showDims);
+  } else if (s.type === 'weld'){
+    o += weldMarkup(s, T);
   } else if (s.type === 'line'){
     o += `<line class="${s.style === 'center' ? 'center' : 'edge'}" x1="${f1(T.x(s.x1))}" y1="${f1(T.y(s.y1))}" x2="${f1(T.x(s.x2))}" y2="${f1(T.y(s.y2))}"/>`;
   } else if (s.type === 'dim'){
@@ -579,18 +747,19 @@ function gridMarkup(T){
     `<path class="axis" d="M${f1(T.x(0))},0V${H}M0,${f1(T.y(0))}H${W}"/>`;
 }
 let gridInfo = {step:10, major:100};
+const HATCH = '<defs><pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" class="hatchbg"/><line x1="0" y1="0" x2="0" y2="7" class="hatchl"/></pattern></defs>';
 let preview = '';
 function render(){
   const r = svg.getBoundingClientRect();
   W = Math.max(50, r.width); H = Math.max(50, r.height);
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   const T = mkT(view, W, H);
-  let o = gridMarkup(T);
+  let o = HATCH + gridMarkup(T);
   ordered().forEach(s => { o += `<g class="${s.id === selId ? 'sel' : ''}">${shapeMarkup(s, T, state.showDims)}</g>`; });
   const sel = byId(selId);
   if (sel && tool === 'select'){
     const b = bbox(sel);
-    if (sel.type !== 'rect') o += `<rect class="ghost" x="${f1(T.x(b.x0) - 4)}" y="${f1(T.y(b.y1) - 4)}" width="${f1((b.x1 - b.x0)*T.z + 8)}" height="${f1((b.y1 - b.y0)*T.z + 8)}"/>`;
+    if (sel.type !== 'rect' && !(sel.type === 'profile' && sel.view === 'side')) o += `<rect class="ghost" x="${f1(T.x(b.x0) - 4)}" y="${f1(T.y(b.y1) - 4)}" width="${f1((b.x1 - b.x0)*T.z + 8)}" height="${f1((b.y1 - b.y0)*T.z + 8)}"/>`;
     handles(sel).forEach(h => { o += `<rect class="handle" x="${f1(T.x(h.x) - 5)}" y="${f1(T.y(h.y) - 5)}" width="10" height="10"/>`; });
   }
   o += preview;
@@ -613,6 +782,8 @@ const ICONS = {
   hole:'<circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1" stroke-dasharray="3 1.5"/>',
   screw:'<path d="M7.5 3h9l2 4h-13z" fill="currentColor"/><rect x="9.5" y="7" width="5" height="14" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 11l5 2M9.5 15l5 2" stroke="currentColor" stroke-width="1.2"/>',
   line:'<path d="M4 19L20 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  profile:'<path d="M5 4v15h15" fill="none" stroke="currentColor" stroke-width="3"/>',
+  weld:'<path d="M3 17h18" stroke="currentColor" stroke-width="2"/><path d="M5 16l3-5M9 16l3-5M13 16l3-5M17 16l3-5" stroke="currentColor" stroke-width="1.6"/>',
   dim:'<path d="M3 7v10M21 7v10M4 12h16" stroke="currentColor" stroke-width="1.6"/><path d="M4 12l4-2.5v5zM20 12l-4-2.5v5z" fill="currentColor"/>',
 };
 const TOOLS = [
@@ -620,6 +791,8 @@ const TOOLS = [
   {k:'rect', n:'Rechteck', key:'R', hint:'Rechteck aufziehen – oder einmal tippen für 100 × 50 mm.'},
   {k:'hole', n:'Bohrung', key:'B', hint:'Tippen, wo die Bohrung sitzen soll (Mittelpunkt).'},
   {k:'screw', n:'Schraube', key:'S', hint:'Tippen zum Setzen. Auf einer Bohrung rastet die Schraube mittig ein.'},
+  {k:'profile', n:'Profil', key:'P', hint:'Längsansicht: in Richtung der Länge ziehen (oder tippen). Querschnitt: tippen.'},
+  {k:'weld', n:'Naht', key:'N', hint:'Schweißnaht entlang der Kante ziehen. Das Nahtsymbol erscheint automatisch.'},
   {k:'line', n:'Linie', key:'L', hint:'Linie von Punkt zu Punkt ziehen.'},
   {k:'dim', n:'Maß', key:'M', hint:'Von Punkt zu Punkt ziehen. Der Abstand wird automatisch angezeigt.'},
 ];
@@ -635,7 +808,7 @@ function optSelect(id, entries, val){ return `<select id="${id}">${entries.map((
 function renderToolOpts(){
   const el = $('#toolopts'); let h = '';
   if (typeof mode !== 'undefined' && mode === '3d'){
-    h = `<span class="unitlbl">3D-Ansicht zum Anschauen: Bleche bekommen ihre Dicke, Schrauben ihre Länge. Teil antippen = auswählen und rechts ändern. Gezeichnet wird in <b>2D</b>.</span>`;
+    h = `<span class="unitlbl">3D-Ansicht zum Anschauen: Bleche bekommen ihre Dicke, Profile und Schrauben ihre Länge. Teil antippen = auswählen und rechts ändern. Gezeichnet wird in <b>2D</b>.</span>`;
   } else if (tool === 'select'){
     h = `<label>Raster ${optSelect('o-snap', [1,2,5,10,25,50,100].map(v => [v, fmt(v)]), state.snap)}</label>
       <label class="chk"><input type="checkbox" id="o-snapOn"${state.snapOn ? ' checked' : ''}> einrasten</label>
@@ -653,6 +826,18 @@ function renderToolOpts(){
       <label>Größe ${optSelect('o-size', SIZES.map(v => [v, v]), opts.screw.size)}</label>
       ${KINDS[k].len ? `<label>Länge ${optSelect('o-len', LENGTHS.map(v => [v, v + ' mm']), opts.screw.len)}</label>` : ''}
       <label>Ansicht ${optSelect('o-view', [['top','von oben'],['side','von der Seite']], opts.screw.view)}</label>`;
+  } else if (tool === 'profile'){
+    const o = opts.profile;
+    h = `<label>Art ${optSelect('o-pkind', Object.entries(PROFILES).map(([k, p]) => [k, p.name]), o.kind)}</label>
+      <label>Größe ${optSelect('o-psize', Object.keys(PROFILES[o.kind].sizes).map(k => [k, k]), o.size)}</label>
+      <label>Länge <input id="o-plen" value="${num(o.len)}" inputmode="decimal"> ${state.unit}</label>
+      <label>Ansicht ${optSelect('o-pview', [['side','Längsansicht'],['section','Querschnitt']], o.view)}</label>
+      <label>Werkstoff ${optSelect('o-pmat', Object.entries(MATS).map(([k, m]) => [k, m.name]), o.mat)}</label>`;
+  } else if (tool === 'weld'){
+    const o = opts.weld;
+    h = `<label>Art ${optSelect('o-wkind', Object.entries(WELDS).map(([k, w]) => [k, w.name]), o.kind)}</label>
+      <label>Nahtdicke ${optSelect('o-wa', WELD_A.map(v => [v, WELDS[o.kind].pre + ' ' + v + ' mm']), o.a)}</label>
+      <label class="chk"><input type="checkbox" id="o-wround"${o.around ? ' checked' : ''}> ringsum</label>`;
   } else if (tool === 'line'){
     h = `<label>Linienart ${optSelect('o-style', [['solid','Körperkante (breit)'],['center','Mittellinie']], opts.line.style)}</label>`;
   } else {
@@ -675,6 +860,14 @@ $('#toolopts').addEventListener('change', e => {
   if (id === 'o-len') opts.screw.len = +v;
   if (id === 'o-view') opts.screw.view = v;
   if (id === 'o-style') opts.line.style = v;
+  if (id === 'o-pkind'){ opts.profile.kind = v; opts.profile.size = Object.keys(PROFILES[v].sizes)[0]; }
+  if (id === 'o-psize') opts.profile.size = v;
+  if (id === 'o-plen'){ const l = parseLen(v); if (l > 0) opts.profile.len = l; }
+  if (id === 'o-pview') opts.profile.view = v;
+  if (id === 'o-pmat') opts.profile.mat = v;
+  if (id === 'o-wkind') opts.weld.kind = v;
+  if (id === 'o-wa') opts.weld.a = +v;
+  if (id === 'o-wround') opts.weld.around = e.target.checked;
   renderToolOpts(); save(); render();
 });
 
@@ -721,6 +914,12 @@ svg.addEventListener('pointerdown', e => {
   if (tool === 'rect'){ s = {type:'rect', name:opts.rect.name, x:sp.x, y:sp.y, w:0, h:0, t:opts.rect.t, mat:opts.rect.mat}; drag = {mode:'create', shape:s, start:sp, created:true}; }
   else if (tool === 'line'){ s = {type:'line', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, style:opts.line.style}; drag = {mode:'create', shape:s, start:sp, created:true}; }
   else if (tool === 'dim'){ s = {type:'dim', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, off:Math.round(20 / view.z)}; drag = {mode:'create', shape:s, start:sp, created:true}; }
+  else if (tool === 'weld'){ const o = opts.weld; s = {type:'weld', kind:o.kind, a:o.a, around:o.around, x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y}; drag = {mode:'create', shape:s, start:sp, created:true}; }
+  else if (tool === 'profile'){
+    const o = opts.profile;
+    s = {type:'profile', kind:o.kind, size:o.size, len:o.len, view:o.view, mat:o.mat, rot:0, x:sp.x, y:sp.y};
+    if (o.view === 'side') drag = {mode:'create', shape:s, start:sp, created:true};
+  }
   else if (tool === 'hole'){ s = {type:'hole', x:sp.x, y:sp.y, d:opts.hole.d, fit:opts.hole.fit}; }
   else if (tool === 'screw'){
     const hole = state.shapes.find(h => h.type === 'hole' && Math.hypot(h.x - p.x, h.y - p.y) <= Math.max(h.d/2, 6 / view.z));
@@ -752,6 +951,13 @@ svg.addEventListener('pointermove', e => {
   } else if (drag.mode === 'create'){
     const a = drag.start;
     if (s.type === 'rect'){ s.x = Math.min(a.x, sp.x); s.y = Math.min(a.y, sp.y); s.w = Math.abs(sp.x - a.x); s.h = Math.abs(sp.y - a.y); }
+    else if (s.type === 'profile'){
+      const dx = sp.x - a.x, dy = sp.y - a.y;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) >= 1){
+        if (Math.abs(dx) >= Math.abs(dy)){ s.rot = dx >= 0 ? 0 : 180; s.len = Math.abs(dx); }
+        else { s.rot = dy >= 0 ? 90 : 270; s.len = Math.abs(dy); }
+      }
+    }
     else { s.x2 = sp.x; s.y2 = sp.y; }
     drag.moved = true;
   } else if (drag.mode === 'move'){
@@ -772,6 +978,7 @@ svg.addEventListener('pointermove', e => {
     } else if (drag.h === 'p1'){ s.x1 = sp.x; s.y1 = sp.y; }
     else if (drag.h === 'p2'){ s.x2 = sp.x; s.y2 = sp.y; }
     else if (drag.h === 'off'){ const n = dimNormal(s); s.off = Math.round(((p.x - s.x1)*n.x + (p.y - s.y1)*n.y) * 2) / 2; }
+    else if (drag.h === 'len'){ s.len = Math.max(1, snapV(worldToLocal(s, p).x, free)); }
     else if (drag.h === 'r'){ s.d = Math.max(.5, Math.round(Math.hypot(p.x - s.x, p.y - s.y) * 4) / 2); s.fit = 'frei'; }
   }
   render();
@@ -787,7 +994,7 @@ function endPointer(e){
   if (d.mode === 'create'){
     const s = d.shape;
     if (s.type === 'rect' && (s.w < .5 || s.h < .5)){ s.w = 100; s.h = 50; }
-    if ((s.type === 'line' || s.type === 'dim') && Math.hypot(s.x2 - s.x1, s.y2 - s.y1) < .5){
+    if ((s.type === 'line' || s.type === 'dim' || s.type === 'weld') && Math.hypot(s.x2 - s.x1, s.y2 - s.y1) < .5){
       state.shapes = state.shapes.filter(x => x !== s); undoStack.pop(); selId = null; changed(); return;
     }
   }
@@ -842,6 +1049,20 @@ function fieldsFor(s){
     {k:'view', l:'Ansicht', kind:'select', o:[['top','von oben'],['side','von der Seite']]},
     {k:'rot', l:'Drehung', kind:'select', o:[[0,'0°'],[90,'90°'],[180,'180°'],[270,'270°']]},
     len('x', 'X'), len('y', 'Y')];
+  if (s.type === 'profile') return [
+    {k:'kind', l:'Art', kind:'select', o:Object.entries(PROFILES).map(([k, p]) => [k, p.name])},
+    {k:'size', l:'Größe', kind:'select', o:Object.keys(PROFILES[s.kind].sizes).map(k => [k, k])},
+    len('len', 'Länge'),
+    {k:'view', l:'Ansicht', kind:'select', o:[['side','Längsansicht'],['section','Querschnitt']]},
+    {k:'rot', l:'Drehung', kind:'select', o:[[0,'0°'],[90,'90°'],[180,'180°'],[270,'270°']]},
+    {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
+    len('x', 'X'), len('y', 'Y')];
+  if (s.type === 'weld') return [
+    {k:'kind', l:'Art', kind:'select', o:Object.entries(WELDS).map(([k, w]) => [k, w.name])},
+    {k:'a', l:'Nahtdicke', kind:'select', o:WELD_A.map(v => [v, WELDS[s.kind].pre + ' ' + v + ' mm'])},
+    {k:'around', l:'Ringsum', kind:'select', o:[['0','nein'],['1','ja']]},
+    {k:'_len', l:'Nahtlänge', kind:'len'},
+    len('x1', 'X Start'), len('y1', 'Y Start'), len('x2', 'X Ende'), len('y2', 'Y Ende')];
   if (s.type === 'line') return [
     {k:'style', l:'Linienart', kind:'select', o:[['solid','Körperkante (breit)'],['center','Mittellinie']]},
     {k:'_len', l:'Länge', kind:'len'}, {k:'_ang', l:'Winkel', kind:'deg'},
@@ -853,10 +1074,11 @@ function fieldsFor(s){
 }
 function getVal(s, k){
   if (k === '_len') return Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
+  if (k === 'around') return s.around ? '1' : '0';
   if (k === '_ang') return Math.round(Math.atan2(s.y2 - s.y1, s.x2 - s.x1) * 1800 / Math.PI) / 10;
   return s[k];
 }
-const TYPENAMES = {rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß'};
+const TYPENAMES = {rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht'};
 function renderProps(){
   const s = byId(selId), el = $('#props');
   if (!s){
@@ -877,6 +1099,15 @@ function renderProps(){
   if (s.type === 'rect'){
     const m = rectMass(s);
     h += `<p class="note">Fläche ${num(s.w*s.h/100, 'mm')} cm² · Masse ca. <b>${dec(m.toFixed(2))} kg</b> (${MATS[s.mat].name}, ρ = ${dec(MATS[s.mat].rho)} g/cm³, Bohrungen abgezogen)</p>`;
+  }
+  if (s.type === 'profile'){
+    const q = section(s), pr = PROFILES[s.kind], kgm = q.area / 1e6 * 1000 * MATS[s.mat].rho;
+    h += `<p class="note">${pr.name} ${esc(s.size)} · ${pr.norm} · Querschnitt ${dec(q.area.toFixed(0))} mm² · ${dec(kgm.toFixed(2))} kg/m · Masse ca. <b>${dec(profileMass(s).toFixed(2))} kg</b></p>`;
+  }
+  if (s.type === 'weld'){
+    h += s.kind === 'kehl'
+      ? `<p class="note"><b>a${dec(s.a)}</b> = Kehlnahtdicke (Höhe im Nahtdreieck). Faustregel: a ≤ 0,7 × dünnstes Blech, und mindestens 3 mm.</p>`
+      : `<p class="note"><b>s${dec(s.a)}</b> = Nahtdicke der Stumpfnaht. Bei voller Durchschweißung so dick wie das Blech.</p>`;
   }
   if (s.type === 'screw'){
     const g = NORM[s.size];
@@ -900,9 +1131,10 @@ $('#props').addEventListener('change', e => {
   const k = e.target.id.slice(2), f = fieldsFor(s).find(f => f.k === k), v = e.target.value;
   snapshot();
   if (f.kind === 'select'){
-    s[k] = (k === 'len' || k === 'rot') ? +v : v;
+    s[k] = (k === 'len' || k === 'rot' || k === 'a') ? +v : (k === 'around' ? v === '1' : v);
+    if (k === 'kind' && s.type === 'profile') s.size = Object.keys(PROFILES[v].sizes)[0];
     if (k === 'fit' && v !== 'frei'){ const g = NORM[v.slice(2)]; s.d = v[0] === 'G' ? g.kl : g.dh; }
-    if (k === 'kind' && !GRADES[v].includes(s.grade)) s.grade = GRADES[v][0];
+    if (k === 'kind' && s.type === 'screw' && !GRADES[v].includes(s.grade)) s.grade = GRADES[v][0];
   } else if (f.kind === 'text'){ s[k] = v; }
   else if (f.kind === 'deg' || k === '_len'){
     const L = k === '_len' ? parseLen(v) : getVal(s, '_len');
@@ -911,7 +1143,7 @@ $('#props').addEventListener('change', e => {
     s.x2 = Math.round((s.x1 + L*Math.cos(a)) * 100) / 100; s.y2 = Math.round((s.y1 + L*Math.sin(a)) * 100) / 100;
   } else {
     const n = parseLen(v);
-    const positive = ['w','h','t','d'].includes(k);
+    const positive = ['w','h','t','d','len'].includes(k);
     if (isNaN(n) || (positive && n <= 0)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
     s[k] = Math.round(n * 1000) / 1000;
     if (k === 'd') s.fit = 'frei';
@@ -945,6 +1177,10 @@ function bomRows(){
     const m = rectMass(s);
     add(`r|${s.name}|${s.w}|${s.h}|${s.t}|${s.mat}|${m.toFixed(3)}`, {name:s.name || 'Blech', dim:`${num(s.w)} × ${num(s.h)} × ${num(s.t)} ${state.unit}`, mat:MATS[s.mat].name, mass:m});
   });
+  state.shapes.filter(s => s.type === 'profile').forEach(s => {
+    const pr = PROFILES[s.kind], m = profileMass(s);
+    add(`p|${s.kind}|${s.size}|${s.len}|${s.mat}`, {name:`${pr.name} ${s.size}`, dim:`${pr.norm} – Länge ${num(s.len)} ${state.unit}`, mat:MATS[s.mat].name, mass:m});
+  });
   state.shapes.filter(s => s.type === 'screw').forEach(s => {
     const k = KINDS[s.kind];
     const dim = k.len ? `${k.norm} – ${s.size} × ${s.len}` : (s.kind === 'washer' ? `${k.norm} – ${NORM[s.size].d}` : `${k.norm} – ${s.size}`);
@@ -960,16 +1196,29 @@ function holeRows(){
   });
   return [...map];
 }
+function weldRows(){
+  const map = new Map();
+  state.shapes.filter(s => s.type === 'weld').forEach(s => {
+    const key = `${WELDS[s.kind].name} ${WELDS[s.kind].pre}${dec(s.a)}${s.around ? ' ringsum' : ''}`;
+    const r = map.get(key) || {n:0, len:0}; r.n++; r.len += Math.hypot(s.x2 - s.x1, s.y2 - s.y1); map.set(key, r);
+  });
+  return [...map];
+}
 function renderBom(){
-  const rows = bomRows(), holes = holeRows();
-  if (!rows.length && !holes.length){ $('#bom').innerHTML = '<p class="empty">Noch keine Teile. Zeichne ein Rechteck oder setze eine Schraube.</p>'; return; }
+  const rows = bomRows(), holes = holeRows(), welds = weldRows();
+  if (!rows.length && !holes.length && !welds.length){ $('#bom').innerHTML = '<p class="empty">Noch keine Teile. Zeichne ein Rechteck oder setze eine Schraube.</p>'; return; }
   const total = rows.reduce((a, r) => a + (r.mass ? r.mass * r.qty : 0), 0);
   let h = `<div class="tbl-wrap"><table><thead><tr><th class="num">Pos</th><th class="num">Stk</th><th>Benennung / Abmessung</th><th>Werkstoff</th><th class="num">kg</th></tr></thead><tbody>`;
   rows.forEach((r, i) => { h += `<tr><td class="num">${i + 1}</td><td class="num">${r.qty}</td><td>${esc(r.name)}<span class="sub">${esc(r.dim)}</span></td><td>${esc(r.mat)}</td><td class="num">${r.mass == null ? '–' : dec(r.mass.toFixed(2))}</td></tr>`; });
-  h += `</tbody><tfoot><tr><td></td><td></td><td colspan="2">Gesamtmasse Bleche</td><td class="num">${dec(total.toFixed(2))}</td></tr></tfoot></table></div>`;
+  h += `</tbody><tfoot><tr><td></td><td></td><td colspan="2">Gesamtmasse</td><td class="num">${dec(total.toFixed(2))}</td></tr></tfoot></table></div>`;
   if (holes.length){
     h += `<div class="tbl-wrap"><table><thead><tr><th class="num">Stk</th><th>Bohrungen</th></tr></thead><tbody>`;
     holes.forEach(([k, n]) => { h += `<tr><td class="num">${n}</td><td>${esc(k)}</td></tr>`; });
+    h += `</tbody></table></div>`;
+  }
+  if (welds.length){
+    h += `<div class="tbl-wrap"><table><thead><tr><th class="num">Stk</th><th>Schweißnähte</th><th class="num">Länge</th></tr></thead><tbody>`;
+    welds.forEach(([k, r]) => { h += `<tr><td class="num">${r.n}</td><td>${esc(k)}</td><td class="num">${fmt(r.len)}</td></tr>`; });
     h += `</tbody></table></div>`;
   }
   $('#bom').innerHTML = h;
@@ -979,6 +1228,7 @@ $('#bCopyBom').onclick = async () => {
   let t = `Stückliste – ${state.title.name}\nPos\tStk\tBenennung\tAbmessung\tWerkstoff\tkg/Stk\n`;
   rows.forEach((r, i) => { t += `${i + 1}\t${r.qty}\t${r.name}\t${r.dim}\t${r.mat}\t${r.mass == null ? '' : dec(r.mass.toFixed(2))}\n`; });
   holeRows().forEach(([k, n]) => { t += `\t${n}\t${k}\n`; });
+  weldRows().forEach(([k, r]) => { t += `\t${r.n}\t${k}\t${fmt(r.len)}\n`; });
   const b = $('#bCopyBom');
   try { await navigator.clipboard.writeText(t); b.textContent = 'Kopiert'; }
   catch(e){ b.textContent = 'Nicht möglich'; }
@@ -988,7 +1238,7 @@ $('#bCopyBom').onclick = async () => {
 /* ---------- Schriftfeld ---------- */
 function renderTitle(){
   const t = state.title;
-  const mats = [...new Set(state.shapes.filter(s => s.type === 'rect').map(s => MATS[s.mat].name))].join(', ') || '–';
+  const mats = [...new Set(state.shapes.filter(s => s.type === 'rect' || s.type === 'profile').map(s => MATS[s.mat].name))].join(', ') || '–';
   $('#tblock').innerHTML = `<div class="big">${esc(t.name || 'Ohne Namen')}</div>
     <div>Gezeichnet</div><div>${esc(t.by || '–')}</div>
     <div>Datum</div><div>${esc(t.date)}</div>
@@ -1024,24 +1274,19 @@ $('#fileIn').onchange = async e => {
   try {
     const d = JSON.parse(await f.text());
     if (!Array.isArray(d.shapes)) throw 0;
-    snapshot(); state = Object.assign(freshState(false), d);
+    snapshot(); const keepTitle = state.title; state = Object.assign(freshState(false), d, {title:keepTitle});
     nextId = state.shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
     selId = null; renderUnits(); renderToolOpts(); fit(); changed();
   } catch(err){ $('#hint').textContent = 'Die Datei konnte nicht gelesen werden. Bitte eine mit „Speichern“ erzeugte .json-Datei wählen.'; }
   e.target.value = '';
 };
-let newArmed = null;
-$('#bNew').onclick = () => {
-  const b = $('#bNew');
-  if (!newArmed){ b.textContent = 'Wirklich alles löschen? Nochmal klicken'; b.classList.add('warn'); newArmed = setTimeout(() => { newArmed = null; b.textContent = 'Neue Zeichnung'; b.classList.remove('warn'); }, 3000); return; }
-  clearTimeout(newArmed); newArmed = null; b.textContent = 'Neue Zeichnung'; b.classList.remove('warn');
-  snapshot(); const keepUnit = state.unit; state.shapes = []; state.title = {name:'Neue Zeichnung', by:state.title.by, date:today}; state.unit = keepUnit;
-  selId = null; view = {cx:100, cy:60, z:2.5}; changed();
-};
+$('#bNew').onclick = () => showStart(true);
+$('#bProjects').onclick = () => showStart();
 const EXPORT_CSS = `.part{fill:#e4e9ee;stroke:#111;stroke-width:1.8}.metal{fill:#cfd8e0;stroke:#111;stroke-width:1.6}.hole{fill:#fff;stroke:#111;stroke-width:1.6}
 .edge{fill:none;stroke:#111;stroke-width:1.8;stroke-linecap:round}.thin{fill:none;stroke:#111;stroke-width:.8}.center{fill:none;stroke:#111;stroke-width:.7;stroke-dasharray:14 3 2 3}
 .hidden{fill:none;stroke:#111;stroke-width:.8;stroke-dasharray:5 3}.dim{fill:none;stroke:#444;stroke-width:.9}.arrow{fill:#444}
 .dimtext{fill:#444;font:500 12px Consolas,monospace;paint-order:stroke;stroke:#fff;stroke-width:3.5px}.lbl{fill:#111;font:500 11px Consolas,monospace;paint-order:stroke;stroke:#fff;stroke-width:3px}
+.cut{fill:url(#hatch);stroke:#111;stroke-width:1.6}.hatchbg{fill:#f2f2f2}.hatchl{stroke:#111;stroke-width:.7}.weld{fill:none;stroke:#111;stroke-width:1.1}.wsym{fill:none;stroke:#111;stroke-width:1}.warrow{fill:#111}
 .tb{fill:#111;font:12px Arial,sans-serif}.tbh{fill:#111;font:bold 15px Arial,sans-serif}`;
 function exportSVG(){
   const b = allBox(), pad = 60, bw = Math.max(20, b.x1 - b.x0), bh = Math.max(20, b.y1 - b.y0);
@@ -1049,7 +1294,7 @@ function exportSVG(){
   const w = Math.round(bw*z + pad*2), hh = Math.round(bh*z + pad*2) + 70;
   const v = {cx:(b.x0 + b.x1)/2, cy:(b.y0 + b.y1)/2, z};
   const T = mkT(v, w, hh - 70);
-  let o = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hh}" viewBox="0 0 ${w} ${hh}"><style>${EXPORT_CSS}</style><rect width="100%" height="100%" fill="#fff"/>`;
+  let o = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hh}" viewBox="0 0 ${w} ${hh}"><style>${EXPORT_CSS}</style>${HATCH}<rect width="100%" height="100%" fill="#fff"/>`;
   ordered().forEach(s => { o += shapeMarkup(s, T, state.showDims); });
   const y = hh - 60, x = Math.max(10, w - 330);
   o += `<rect x="${x}" y="${y}" width="320" height="50" fill="#fff" stroke="#111" stroke-width="1.5"/><text class="tbh" x="${x + 8}" y="${y + 19}">${esc(state.title.name)}</text>`;
@@ -1072,6 +1317,7 @@ let spaceDown = false;
 document.addEventListener('keydown', e => {
   const tag = (e.target.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+  if (!$('#start').hidden) return;
   const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   if (ctrl && k === 'z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
   if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))){ e.preventDefault(); redo(); return; }
@@ -1175,6 +1421,7 @@ function build3d(){
     plate:new THREE.MeshStandardMaterial({color:col('--part'), metalness:.2, roughness:.65}),
     metal:new THREE.MeshStandardMaterial({color:col('--metal'), metalness:.45, roughness:.45}),
     sel:new THREE.MeshStandardMaterial({color:col('--sel-soft'), metalness:.1, roughness:.6}),
+    weld:new THREE.MeshStandardMaterial({color:col('--metal').lerp(col('--ink'), .3), metalness:.3, roughness:.8}),
   };
   const edgeMat = new THREE.LineBasicMaterial({color:ink}), edgeSel = new THREE.LineBasicMaterial({color:selC});
   const mesh = (geo, s, kind) => {
@@ -1246,6 +1493,27 @@ function build3d(){
       grp.rotation.z = rot; grp.position.set(s.x, s.y, topAt(s.x, s.y) + R);
       root.add(grp);
     }
+  });
+  // Profile: Querschnitt entlang der Länge extrudiert
+  state.shapes.filter(s => s.type === 'profile').forEach(s => {
+    const q = section(s);
+    const sh = new THREE.Shape(q.outer.map(([x, y]) => new THREE.Vector2(x, y)));
+    if (q.hole) sh.holes.push(new THREE.Path(q.hole.map(([x, y]) => new THREE.Vector2(x, y))));
+    const g = extrude(sh, s.len);
+    if (s.view === 'side') g.applyMatrix4(new THREE.Matrix4().set(0,0,1,0, 1,0,0,0, 0,1,0,0, 0,0,0,1));
+    const c = s.view === 'side' ? localToWorld(s, s.len/2, q.w/2) : localToWorld(s, q.w/2, q.h/2);
+    g.rotateZ((s.rot || 0) * Math.PI / 180); g.translate(s.x, s.y, topAt(c.x, c.y));
+    root.add(mesh(g, s, 'plate'));
+  });
+  // Schweißnähte als Raupe auf der Kante
+  const topNear = (x, y) => rects.reduce((m, r) => (x >= r.x - 1 && x <= r.x + r.w + 1 && y >= r.y - 1 && y <= r.y + r.h + 1) ? Math.max(m, base.get(r.id) + r.t) : m, 0);
+  state.shapes.filter(s => s.type === 'weld').forEach(s => {
+    const L = Math.hypot(s.x2 - s.x1, s.y2 - s.y1); if (L < .5) return;
+    const r = Math.max(1, s.a * .8), g = new THREE.CylinderGeometry(r, r, L, 16);
+    g.rotateZ(-Math.PI/2); g.rotateZ(Math.atan2(s.y2 - s.y1, s.x2 - s.x1));
+    const mx = (s.x1 + s.x2)/2, my = (s.y1 + s.y2)/2;
+    g.translate(mx, my, topNear(mx, my));
+    root.add(mesh(g, s, 'weld'));
   });
   // Linien
   state.shapes.filter(s => s.type === 'line').forEach(s => {
@@ -1331,13 +1599,193 @@ $('#bTheme').onclick = () => { const t = isDark() ? 'light' : 'dark'; applyTheme
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(null));
 
 /* Datei-Menü schließen */
-$('#fileMenu').addEventListener('click', e => { const b = e.target.closest('.menu-list button'); if (b && !(b.id === 'bNew' && newArmed)) $('#fileMenu').open = false; });
+$('#fileMenu').addEventListener('click', e => { if (e.target.closest('.menu-list button')) $('#fileMenu').open = false; });
 document.addEventListener('pointerdown', e => { if (!e.target.closest('#fileMenu')) $('#fileMenu').open = false; });
+
+/* ---------- Projekte & Speicher ---------- */
+// Auf Netlify: /api/projects (Netlify Blobs). Sonst: nur in diesem Browser.
+const API = '/api/projects';
+const LS_INDEX = 'wz-projekte', LS_P = 'wz-projekt-', LS_CODE = 'wz-code', LS_LAST = 'wz-zuletzt', LS_BY = 'wz-name';
+const lsGet = k => { try { return localStorage.getItem(k); } catch(e){ return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch(e){} };
+const lsDel = k => { try { localStorage.removeItem(k); } catch(e){} };
+let cloud = false, code = lsGet(LS_CODE) || '', projectList = [];
+async function api(method, id, body){
+  const r = await fetch(API + (id ? '?id=' + encodeURIComponent(id) : ''), {
+    method, headers:{'content-type':'application/json', 'x-werkstatt-code':code}, body:body ? JSON.stringify(body) : undefined});
+  if (r.status === 401){ const e = new Error('code'); e.code = 401; throw e; }
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+const Local = {
+  list(){ try { return JSON.parse(lsGet(LS_INDEX) || '[]'); } catch(e){ return []; } },
+  get(id){ try { return JSON.parse(lsGet(LS_P + id)); } catch(e){ return null; } },
+  put(rec){
+    lsSet(LS_P + rec.id, JSON.stringify(rec));
+    const l = Local.list().filter(p => p.id !== rec.id); l.unshift({id:rec.id, name:rec.name, by:rec.by, updated:rec.updated});
+    lsSet(LS_INDEX, JSON.stringify(l));
+  },
+  del(id){ lsDel(LS_P + id); lsSet(LS_INDEX, JSON.stringify(Local.list().filter(p => p.id !== id))); },
+};
+async function detectStore(){
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 5000);
+    const r = await fetch(API, {headers:{'x-werkstatt-code':code}, signal:ctl.signal, cache:'no-store'});
+    clearTimeout(t);
+    if (r.status === 401){ cloud = true; return 'code'; }
+    if (r.ok && (r.headers.get('content-type') || '').includes('json')){ cloud = true; return 'ok'; }
+  } catch(e){}
+  cloud = false; return 'local';
+}
+const listProjects = () => cloud ? api('GET') : Promise.resolve(Local.list());
+const getProject = id => cloud ? api('GET', id) : Promise.resolve(Local.get(id));
+async function putProject(rec){ if (cloud) await api('PUT', rec.id, rec); else Local.put(rec); }
+async function delProject(id){ if (cloud) await api('DELETE', id); else Local.del(id); }
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+// alte Einzel-Zeichnung (vor den Projekten) einmalig übernehmen
+(function migrate(){
+  const raw = lsGet(STORE); if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    if (d && Array.isArray(d.shapes) && !Local.list().length){
+      Local.put({id:newId(), name:(d.title && d.title.name) || 'Meine Zeichnung', by:(d.title && d.title.by) || '', updated:Date.now(), data:d});
+    }
+  } catch(e){}
+  lsDel(STORE);
+})();
+
+let saveTimer = null;
+function setSaveState(st){
+  const el = $('#saveState'); el.dataset.state = st;
+  el.textContent = {pending:'· nicht gespeichert', saving:'· speichert …', saved:cloud ? '· online gespeichert' : '· in diesem Browser gespeichert',
+    error:'· Speichern fehlgeschlagen', code:'· Werkstatt-Code fehlt', none:''}[st];
+}
+function save(){
+  if (!project) return;
+  setSaveState('pending');
+  clearTimeout(saveTimer); saveTimer = setTimeout(persist, 800);
+}
+async function persist(){
+  clearTimeout(saveTimer); saveTimer = null;
+  if (!project) return;
+  project.name = state.title.name || project.name; project.by = state.title.by || '';
+  renderProjectName();
+  const rec = {id:project.id, name:project.name, by:project.by, updated:Date.now(), data:state};
+  setSaveState('saving');
+  try { await putProject(rec); setSaveState('saved'); }
+  catch(e){
+    Local.put(rec); // Notfall-Kopie im Browser
+    setSaveState(e.code === 401 ? 'code' : 'error');
+  }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && saveTimer) persist(); });
+function renderProjectName(){ $('#projName').textContent = project ? project.name : 'Kein Projekt'; }
+
+function loadProject(rec){
+  project = {id:rec.id, name:rec.name, by:rec.by || ''};
+  state = Object.assign(freshState(false), rec.data);
+  state.title = Object.assign({name:rec.name, by:rec.by || '', date:today}, state.title);
+  nextId = state.shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
+  state.shapes.forEach(s => { if (!s.id) s.id = nextId++; });
+  selId = null; undoStack = []; redoStack = [];
+  lsSet(LS_LAST, rec.id);
+  $('#start').hidden = true; document.documentElement.classList.remove('locked');
+  renderProjectName(); renderUnits(); renderTools(); setSaveState('saved');
+  requestAnimationFrame(() => {
+    fit(); render(); renderProps(); renderBom(); renderTitle();
+    if (mode === '3d' && three){ build3d(); fit3d(); draw3d(); }
+  });
+}
+async function openProject(id){
+  try {
+    const rec = await getProject(id);
+    if (!rec || !rec.data || !Array.isArray(rec.data.shapes)) throw new Error('leer');
+    loadProject(rec);
+  } catch(e){ renderList(e.code === 401 ? 'Bitte zuerst den Werkstatt-Code eingeben.' : 'Das Projekt konnte nicht geladen werden. Bitte nochmal versuchen.'); }
+}
+
+async function showStart(focusNew){
+  if (saveTimer) persist();
+  $('#start').hidden = false; document.documentElement.classList.add('locked');
+  $('#startClose').hidden = !project;
+  $('#fileMenu').open = false;
+  if (!$('#npBy').value) $('#npBy').value = lsGet(LS_BY) || '';
+  if (focusNew) setTimeout(() => $('#npName').focus(), 30);
+  await refreshList();
+}
+async function refreshList(){
+  const res = await detectStore();
+  const info = $('#storeInfo');
+  info.dataset.mode = cloud ? 'cloud' : 'local';
+  info.lastElementChild.textContent = cloud
+    ? 'Online gespeichert: Alle Azubis sehen diese Projekte, auf jedem Gerät.'
+    : 'Gespeichert nur in diesem Browser. Auf Netlify werden die Projekte online gespeichert.';
+  $('#codeForm').hidden = res !== 'code';
+  if (res === 'code'){ projectList = []; renderList('Gib den Werkstatt-Code ein, um die Projekte zu sehen.'); return; }
+  try { projectList = await listProjects(); renderList(); }
+  catch(e){ projectList = []; renderList('Die Projekte konnten nicht geladen werden. Bitte die Seite neu laden.'); }
+}
+const fmtDate = t => t ? new Date(t).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
+function renderList(msg){
+  const el = $('#plist');
+  if (msg){ el.innerHTML = `<p class="empty">${esc(msg)}</p>`; return; }
+  const q = $('#pSearch').value.trim().toLowerCase();
+  const list = projectList.filter(p => !q || (p.name || '').toLowerCase().includes(q) || (p.by || '').toLowerCase().includes(q));
+  if (!projectList.length){ el.innerHTML = '<p class="empty">Noch keine Projekte. Lege links dein erstes Projekt an.</p>'; return; }
+  if (!list.length){ el.innerHTML = '<p class="empty">Kein Projekt passt zur Suche.</p>'; return; }
+  el.innerHTML = list.map(p => `<div class="prow${project && project.id === p.id ? ' current' : ''}" role="button" tabindex="0" data-id="${esc(p.id)}">
+      <span class="pi">${esc((p.name || '?').trim().slice(0, 2).toUpperCase())}</span>
+      <span class="pt"><span class="pn">${esc(p.name || 'Ohne Namen')}</span><span class="pm">${esc(p.by || 'ohne Namen')} · ${fmtDate(p.updated)}</span></span>
+      <button class="btn danger" type="button" data-del="${esc(p.id)}">Löschen</button>
+    </div>`).join('');
+}
+$('#pSearch').addEventListener('input', () => renderList());
+let delArmed = null;
+$('#plist').addEventListener('click', async e => {
+  const d = e.target.closest('[data-del]');
+  if (d){
+    e.stopPropagation();
+    if (delArmed !== d.dataset.del){ delArmed = d.dataset.del; d.textContent = 'Wirklich löschen?'; d.classList.add('warn'); return; }
+    delArmed = null;
+    try {
+      await delProject(d.dataset.del);
+      if (project && project.id === d.dataset.del){ project = null; state = freshState(false); renderProjectName(); setSaveState('none'); $('#startClose').hidden = true; }
+      await refreshList();
+    } catch(err){ renderList('Löschen hat nicht geklappt. Bitte nochmal versuchen.'); }
+    return;
+  }
+  const row = e.target.closest('.prow'); if (row) openProject(row.dataset.id);
+});
+$('#plist').addEventListener('keydown', e => { const row = e.target.closest('.prow'); if (row && (e.key === 'Enter' || e.key === ' ') && e.target === row){ e.preventDefault(); openProject(row.dataset.id); } });
+$('#startClose').onclick = () => { if (project){ $('#start').hidden = true; document.documentElement.classList.remove('locked'); } };
+$('#newForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = $('#npName').value.trim(), by = $('#npBy').value.trim(), err = $('#npErr');
+  if (!name){ err.textContent = 'Bitte gib dem Projekt einen Namen.'; $('#npName').focus(); return; }
+  if (!by){ err.textContent = 'Bitte trag deinen Namen ein.'; $('#npBy').focus(); return; }
+  err.textContent = '';
+  lsSet(LS_BY, by);
+  const data = freshState($('#npTpl').value === 'beispiel');
+  data.title = {name, by, date:today};
+  const rec = {id:newId(), name, by, updated:Date.now(), data};
+  try { await putProject(rec); }
+  catch(ex){ err.textContent = ex.code === 401 ? 'Der Werkstatt-Code fehlt oder ist falsch.' : 'Speichern hat nicht geklappt. Bitte nochmal versuchen.'; return; }
+  $('#npName').value = '';
+  loadProject(rec);
+});
+$('#codeForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  code = $('#codeIn').value.trim(); lsSet(LS_CODE, code);
+  await refreshList();
+  $('#codeErr').textContent = $('#codeForm').hidden ? '' : 'Der Code stimmt nicht. Frag deinen Ausbilder.';
+});
 
 /* ---------- Start ---------- */
 new ResizeObserver(() => render()).observe($('#stage'));
 renderUnits(); renderTools();
 requestAnimationFrame(() => { fit(); render(); renderProps(); renderBom(); renderTitle(); });
+renderProjectName(); setSaveState('none'); showStart();
 })();
 </script>
 </body>
