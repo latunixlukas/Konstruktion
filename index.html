@@ -152,6 +152,8 @@ html.locked,html.locked body{overflow:hidden}
 .libcard .lt{padding:10px 12px;display:grid;gap:2px;min-width:0}
 .libcard .lt b{font-weight:600;overflow-wrap:anywhere}
 .libcard .lt span{font-size:.78rem;color:var(--muted)}
+.libcard .lt .std{display:inline-block;margin-left:6px;font:500 .62rem var(--f-mono);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:0 6px;color:var(--muted)}
+.libmore{grid-column:1/-1;color:var(--muted);font-size:.84rem;margin:0}
 .libcard .lt .cat{font:500 .68rem var(--f-mono);text-transform:uppercase;letter-spacing:.06em}
 .libcard .la{display:flex;gap:6px;padding:0 12px 12px}
 .libcard .la .btn{padding:5px 10px;font-size:.8rem}
@@ -384,11 +386,12 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
     <div class="panel libpanel" role="dialog" aria-labelledby="libTitle">
       <div class="cuthead"><h3 id="libTitle">Bibliothek</h3><button class="btn icon" type="button" id="libClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       <div class="libbar">
-        <input id="libSearch" class="txt" placeholder="Suchen …" autocomplete="off">
+        <input id="libSearch" class="txt" type="search" placeholder="Suchen, z. B. M8 30, Flachstahl 40, 6205 …" autocomplete="off">
         <select id="libCat"></select>
+        <select id="libSrc" aria-label="Herkunft"><option value="">Alle Teile</option><option value="std">Nur Standardteile</option><option value="own">Nur eigene Teile</option></select>
         <button class="btn" type="button" id="libSaveProj">Ganzes Projekt als Baugruppe speichern</button>
       </div>
-      <p class="note" id="libInfo"></p>
+      <p class="note"><span id="libCount"></span> · <span id="libInfo"></span></p>
       <div class="libgrid" id="libGrid"></div>
     </div>
   </div>
@@ -3425,21 +3428,70 @@ $('#libSaveForm').addEventListener('submit', async e => {
 async function refreshLib(){
   $('#libInfo').textContent = 'Wird geladen …';
   await detectStore();
-  try { libItems = await libList(); } catch(e){ libItems = []; $('#libInfo').textContent = 'Die Bibliothek konnte nicht geladen werden.'; renderLib(); return; }
-  $('#libInfo').textContent = cloud ? 'Online: Alle sehen diese Teile und können sie einfügen.' : 'Nur in diesem Browser. Auf Netlify ist die Bibliothek für alle sichtbar.';
+  try { libItems = [...await libList(), ...stdLib()]; } catch(e){ libItems = stdLib(); $('#libInfo').textContent = 'Eigene Teile konnten nicht geladen werden, Standardteile sind da.'; renderLib(); return; }
+  $('#libInfo').textContent = cloud ? 'Eigene Teile online, alle sehen sie. Standardteile sind immer da.' : 'Eigene Teile nur in diesem Browser (auf Netlify für alle). Standardteile sind immer da.';
   renderLib();
 }
 let libDelArmed = null;
+/* Standard-Bibliothek: fest eingebaut, für alle da, nicht löschbar */
+let STD_LIB = null;
+function stdLib(){
+  if (STD_LIB) return STD_LIB;
+  const out = [], add = (cat, name, shapes, desc = '') => out.push({id:'std-' + out.length, std:true, cat, name, desc, by:'Standard', shapes});
+  const scr = (kind, size, len, grade, extra = {}) => ({type:'screw', kind, size, len, grade, view:'top', rot:0, x:0, y:0, ...extra});
+  // Schrauben
+  ['M6','M8','M10','M12','M16','M20'].forEach(m => [16,20,25,30,40,50,60,80,100].forEach(l => add('Verbindungselemente', `Sechskantschraube ISO 4017 ${m}×${l} 8.8`, [scr('hex', m, l, '8.8')], 'Gewinde bis Kopf')));
+  ['M4','M5','M6','M8','M10','M12'].forEach(m => [10,12,16,20,25,30,40,50].forEach(l => add('Verbindungselemente', `Zylinderschraube ISO 4762 ${m}×${l} 8.8`, [scr('cyl', m, l, '8.8')], 'Innensechskant')));
+  ['M4','M5','M6','M8','M10','M12'].forEach(m => [12,16,20,25,30,40].forEach(l => add('Verbindungselemente', `Senkschraube ISO 10642 ${m}×${l} 10.9`, [scr('csk', m, l, '10.9')], 'Innensechskant, Senkung 90°')));
+  ['M5','M6','M8','M10','M12'].forEach(m => [6,8,10,16].forEach(l => add('Verbindungselemente', `Gewindestift ISO 4026 ${m}×${l}`, [scr('set', m, l, '45H')], 'mit Kegelkuppe/Flachpunkt')));
+  // Muttern, Scheiben
+  SIZES.forEach(m => add('Verbindungselemente', `Sechskantmutter ISO 4032 ${m}`, [scr('nut', m, 0, '8')]));
+  ['M5','M6','M8','M10','M12','M16','M20'].forEach(m => add('Verbindungselemente', `Sicherungsmutter ISO 7040 ${m}`, [scr('lock', m, 0, '8')], 'mit Klemmteil'));
+  SIZES.forEach(m => add('Verbindungselemente', `Scheibe ISO 7089 ${NORM[m].d} (${m})`, [scr('washer', m, 0, '200 HV')]));
+  // Baugruppe Schraube + Scheibe + Mutter (Seitenansicht)
+  ['M8','M10','M12','M16'].forEach(m => { const g = NORM[m], L = m === 'M16' ? 60 : 40;
+    add('Baugruppen', `Schraubverbindung ${m}×${L} mit Scheibe und Mutter`, [scr('hex', m, L, '8.8', {view:'side'}), scr('washer', m, 0, '200 HV', {view:'side', rot:180, y:-L + 12}), scr('nut', m, 0, '8', {view:'side', rot:180, y:-L + 12 - g.h})], 'Seitenansicht'); });
+  // Stifte, Sicherungsringe, Lager
+  PINS.forEach(d => [20,30,40].forEach(l => add('Verbindungselemente', `Zylinderstift ISO 2338 Ø${d} m6 × ${l}`, [scr('pin', d, l, 'm6 Stahl')])));
+  Object.keys(CLIPS).forEach(d => add('Verbindungselemente', `Sicherungsring DIN 471 für Welle Ø${d}`, [scr('circlip', d, 0, 'Federstahl')]));
+  Object.keys(BEARINGS).forEach(b => { const [d, D, B] = BEARINGS[b]; add('Verbindungselemente', `Rillenkugellager ${b}-2RS (${d}×${D}×${B})`, [scr('bearing', b, 0, '2RS')], 'DIN 625'); });
+  // Flacheisen (Länge 1 m), Bleche
+  [[20,3],[20,5],[25,5],[30,5],[30,8],[30,10],[40,5],[40,8],[40,10],[50,5],[50,8],[50,10],[60,6],[60,8],[60,10],[80,8],[80,10],[100,8],[100,10],[120,10]].forEach(([b, t]) =>
+    add('Bleche & Biegeteile', `Flachstahl ${b}×${t} (Flacheisen)`, [{type:'rect', name:`Flachstahl ${b}×${t}`, x:0, y:0, w:1000, h:b, t, mat:'S235JR'}], 'EN 10058, Länge 1000 mm (anpassbar)'));
+  [1,1.5,2,3,4,5,6,8,10,12,15,20].forEach(t => add('Bleche & Biegeteile', `Blech ${dec(t)} mm 1000×500`, [{type:'rect', name:`Blech ${dec(t)}`, x:0, y:0, w:1000, h:500, t, mat:'S235JR'}], 'S235JR, Größe anpassbar'));
+  [[2,'1.4301'],[3,'1.4301'],[2,'AlMg3'],[3,'AlMg3'],[5,'AlMg3']].forEach(([t, m]) => add('Bleche & Biegeteile', `${MATS[m].name} Blech ${dec(t)} mm`, [{type:'rect', name:`Blech ${dec(t)}`, x:0, y:0, w:1000, h:500, t, mat:m}]));
+  add('Bleche & Biegeteile', 'Winkelblech 40×40, t=3', [{type:'bend', name:'Winkelblech', x:0, y:0, rot:0, legs:[40,40], angles:[90], t:3, r:4, w:100, mat:'S235JR'}]);
+  add('Bleche & Biegeteile', 'U-Blech 30×50×30, t=2', [{type:'bend', name:'U-Blech', x:0, y:0, rot:0, legs:[30,50,30], angles:[90,90], t:2, r:3, w:100, mat:'S235JR'}]);
+  add('Bleche & Biegeteile', 'Z-Blech 30×40×30, t=2', [{type:'bend', name:'Z-Blech', x:0, y:0, rot:0, legs:[30,40,30], angles:[90,-90], t:2, r:3, w:100, mat:'S235JR'}]);
+  // Profile (Länge 1 m)
+  Object.entries(PROFILES).forEach(([k, pr]) => Object.keys(pr.sizes).forEach(sz =>
+    add('Profile', `${pr.name} ${sz}`, [{type:'profile', kind:k, size:sz, len:1000, view:'side', mat:'S235JR', rot:0, x:0, y:0}], `${pr.norm}, Länge 1000 mm (anpassbar)`)));
+  // Ronden, Flansche
+  [[100,0,10],[150,0,10],[200,0,10],[200,0,15],[300,0,20]].forEach(([d, di, t]) => add('Bleche & Biegeteile', `Ronde Ø${d} × ${t}`, [{type:'disc', name:'Ronde', x:0, y:0, d, di, t, mat:'S235JR'}]));
+  [[140,61,16,100,4,'M12'],[165,77,18,125,4,'M16'],[200,90,18,160,8,'M16']].forEach(([d, di, t, k, n, m]) => {
+    const shapes = [{type:'disc', name:'Flansch', x:0, y:0, d, di, t, mat:'S235JR'}, {type:'circle', x:0, y:0, d:k, a0:0, a1:360, style:'center'}];
+    for (let i = 0; i < n; i++){ const a = (45 + 360 / n * i) * Math.PI / 180; shapes.push({type:'hole', x:r2(k/2*Math.cos(a)), y:r2(k/2*Math.sin(a)), d:NORM[m].dh, fit:'D-' + m}); }
+    add('Baugruppen', `Flansch Ø${d} mit Lochkreis Ø${k}, ${n}×${m}`, shapes, 'vereinfacht, ähnlich EN 1092');
+  });
+  // Wellen
+  [[20,200],[25,250],[30,300],[40,400]].forEach(([d, l]) => add('Wellen', `Welle Ø${d} h6 × ${l}`, [{type:'shaft', x:0, y:0, rot:0, mat:'C45', chamfer:1, keyStep:-1, keyLen:0, steps:[{d, tol:'h6', l}]}], 'glatt, C45'));
+  add('Wellen', 'Abgesetzte Welle Ø25/30/35 mit Lagersitzen k6', [{type:'shaft', x:0, y:0, rot:0, mat:'C45', chamfer:1, keyStep:0, keyLen:32,
+    steps:[{d:25,l:40},{d:30,tol:'k6',l:25},{d:35,l:100},{d:30,tol:'k6',l:25},{d:25,l:40}]}], 'mit Passfedernut');
+  return STD_LIB = out;
+}
+const norm = t => String(t).toLowerCase().replace(/×/g, 'x').replace(/ø/g, '').replace(/,/g, '.');
 function renderLib(){
-  const q = $('#libSearch').value.trim().toLowerCase(), cat = $('#libCat').value;
-  const list = libItems.filter(it => (!cat || it.cat === cat) && (!q || `${it.name} ${it.desc} ${it.by} ${it.cat}`.toLowerCase().includes(q)));
-  if (!libItems.length){ $('#libGrid').innerHTML = '<p class="empty">Noch leer. Wähle in der Zeichnung ein Teil aus und klicke rechts auf „In Bibliothek“.</p>'; return; }
-  if (!list.length){ $('#libGrid').innerHTML = '<p class="empty">Nichts gefunden.</p>'; return; }
-  $('#libGrid').innerHTML = list.map(it => {
+  const terms = norm($('#libSearch').value).split(/\s+/).filter(Boolean), cat = $('#libCat').value, src = $('#libSrc').value;
+  const list = libItems.filter(it => (!cat || it.cat === cat) && (!src || (src === 'std') === !!it.std) &&
+    (!terms.length || (h => terms.every(t => h.includes(t)))(norm(`${it.name} ${it.desc} ${it.by} ${it.cat}`))));
+  if (!list.length){ $('#libGrid').innerHTML = '<p class="empty">Nichts gefunden. Tipp: weniger Wörter eingeben, z. B. nur „M8“.</p>'; $('#libCount').textContent = '0 Treffer'; return; }
+  const MAX = 120;
+  $('#libCount').textContent = list.length === libItems.length ? `${list.length} Teile` : `${list.length} Treffer`;
+  $('#libGrid').innerHTML = list.slice(0, MAX).map(it => {
     let thumb = ''; try { thumb = thumbSvg(it.shapes); } catch(e){}
-    return `<div class="libcard">${thumb}<div class="lt"><span class="cat">${esc(it.cat)}</span><b>${esc(it.name)}</b>${it.desc ? `<span>${esc(it.desc)}</span>` : ''}<span>${it.shapes.length} Teil${it.shapes.length === 1 ? '' : 'e'} · ${esc(it.by || 'ohne Namen')} · ${fmtDate(it.updated)}</span></div>
-      <div class="la"><button class="btn primary" type="button" data-ins="${esc(it.id)}">Einfügen</button><button class="btn danger" type="button" data-ldel="${esc(it.id)}">Löschen</button></div></div>`;
-  }).join('');
+    return `<div class="libcard">${thumb}<div class="lt"><span class="cat">${esc(it.cat)}${it.std ? '<span class="std">Standard</span>' : ''}</span><b>${esc(it.name)}</b>${it.desc ? `<span>${esc(it.desc)}</span>` : ''}<span>${it.std ? 'immer vorhanden' : `${it.shapes.length} Teil${it.shapes.length === 1 ? '' : 'e'} · ${esc(it.by || 'ohne Namen')} · ${fmtDate(it.updated)}`}</span></div>
+      <div class="la"><button class="btn primary" type="button" data-ins="${esc(it.id)}">Einfügen</button>${it.std ? '' : `<button class="btn danger" type="button" data-ldel="${esc(it.id)}">Löschen</button>`}</div></div>`;
+  }).join('') + (list.length > MAX ? `<p class="libmore">… und ${list.length - MAX} weitere. Suche genauer eingeben, z. B. „Zylinderschraube M6“.</p>` : '');
 }
 function insertLib(it){
   if (!project){ return; }
@@ -3465,7 +3517,8 @@ $('#libGrid').addEventListener('click', async e => {
 $('#libCat').innerHTML = '<option value="">Alle Kategorien</option>' + LIB_CATS.map(c => `<option>${c}</option>`).join('');
 $('#libSearch').addEventListener('input', renderLib);
 $('#libCat').addEventListener('change', renderLib);
-$('#bLib').onclick = () => { $('#libDlg').hidden = false; refreshLib(); };
+$('#libSrc').addEventListener('change', renderLib);
+$('#bLib').onclick = () => { $('#libDlg').hidden = false; libItems = stdLib(); renderLib(); refreshLib(); setTimeout(() => $('#libSearch').focus(), 30); };
 $('#libClose').onclick = () => { $('#libDlg').hidden = true; };
 $('#libDlg').addEventListener('click', e => { if (e.target.id === 'libDlg') $('#libDlg').hidden = true; });
 $('#libSaveProj').onclick = () => {

@@ -11,7 +11,7 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 - **Wellen**: abgesetzte Wellen (Ø×Länge je Absatz), Fasen, Passfedernut nach DIN 6885, Werkstoffe C45 / 42CrMo4 / 11SMnPb30
 - **Biegeteile**: Schenkel (Außenmaße), Biegewinkel, Dicke, Innenradius, Breite; gestreckte Länge (Zuschnitt) nach DIN 6935
 - **Zuschnitt**: Profile/Wellen auf Stangen (z. B. 6 m) und Bleche/Biegeteile auf Tafeln verteilen, mit Schnittbreite, Reststücken und Belegungsskizze
-- **Bibliothek**: einzelne Teile (z. B. eine Welle) oder ganze Projekte als Baugruppe speichern, mit Kategorie, Suche und Vorschau; auf Netlify für alle sichtbar und mit einem Klick einfügbar
+- **Bibliothek** mit über 300 eingebauten Standardteilen (Schrauben, Muttern, Scheiben, Stifte, Sicherungsringe, Kugellager, Flacheisen, Bleche, alle Profile, Ronden, Flansche, Wellen) und Suche mit mehreren Wörtern (z. B. „M8 30“); dazu eigene Teile (z. B. eine Welle) oder ganze Projekte als Baugruppe speichern, mit Kategorie, Suche und Vorschau; auf Netlify für alle sichtbar und mit einem Klick einfügbar
 - **Beispiel-Projekte**: Wandkonsole, Antriebswelle mit Lagerböcken, Tischgestell aus Quadratrohr
 - Bohrungen: Durchgangsbohrungen nach ISO 273 oder Gewinde mit Kernloch
 - Normteile: Sechskant-, Zylinder-, Senkschraube, Gewindestift, Mutter, Sicherungsmutter, Scheibe, Zylinderstift, Sicherungsring DIN 471, Rillenkugellager 62xx – von oben oder von der Seite
