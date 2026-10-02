@@ -9,6 +9,7 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 - **Wellen**: abgesetzte Wellen (Ø×Länge je Absatz), Fasen, Passfedernut nach DIN 6885, Werkstoffe C45 / 42CrMo4 / 11SMnPb30
 - **Biegeteile**: Schenkel (Außenmaße), Biegewinkel, Dicke, Innenradius, Breite; gestreckte Länge (Zuschnitt) nach DIN 6935
 - **Zuschnitt**: Profile/Wellen auf Stangen (z. B. 6 m) und Bleche/Biegeteile auf Tafeln verteilen, mit Schnittbreite, Reststücken und Belegungsskizze
+- **Bibliothek**: einzelne Teile (z. B. eine Welle) oder ganze Projekte als Baugruppe speichern, mit Kategorie, Suche und Vorschau; auf Netlify für alle sichtbar und mit einem Klick einfügbar
 - **Beispiel-Projekte**: Wandkonsole, Antriebswelle mit Lagerböcken, Tischgestell aus Quadratrohr
 - Bohrungen: Durchgangsbohrungen nach ISO 273 oder Gewinde mit Kernloch
 - Schrauben, Muttern und Scheiben (ISO 4017, ISO 4762, ISO 4032, ISO 7089), von oben oder von der Seite
@@ -44,4 +45,5 @@ In Netlify unter **Site configuration → Environment variables** die Variable `
 
 - `index.html` – die ganze Seite
 - `netlify/functions/projects.mjs` – Speichern, Laden, Löschen der Projekte
+- `netlify/functions/library.mjs` – gemeinsame Teile-Bibliothek
 - `netlify.toml`, `package.json` – Einstellungen für Netlify
