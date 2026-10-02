@@ -269,7 +269,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <button id="bNew" type="button">Neues Projekt …</button>
           <hr>
           <button id="bSave" type="button">Als Datei sichern (.json)</button>
-          <button id="bOpen" type="button">Datei importieren …</button>
+          <button id="bOpen" type="button">Datei öffnen (.json, .stp) …</button>
           <hr>
           <button id="bPng" type="button">Als Bild (PNG)</button>
           <button id="bSvg" type="button">Als Vektorgrafik (SVG)</button>
@@ -277,7 +277,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <button id="bCad" type="button">CAD-Modell ansehen (.stp / .step) …</button>
         </div>
       </details>
-      <input type="file" id="fileIn" accept=".json,application/json" hidden>
+      <input type="file" id="fileIn" accept=".json,application/json,.stp,.step,.STP,.STEP" hidden>
       <input type="file" id="cadIn" accept=".stp,.step,.STP,.STEP" hidden>
     </div>
   </header>
@@ -1444,13 +1444,14 @@ $('#bSave').onclick = () => download(fileBase() + '.json', new Blob([JSON.string
 $('#bOpen').onclick = () => $('#fileIn').click();
 $('#fileIn').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
+  if (/\.(stp|step)$/i.test(f.name)){ e.target.value = ''; openCad(f); return; }
   try {
     const d = JSON.parse(await f.text());
     if (!Array.isArray(d.shapes)) throw 0;
     snapshot(); const keepTitle = state.title; state = Object.assign(freshState(false), d, {title:keepTitle});
     nextId = state.shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
     selId = null; renderUnits(); renderToolOpts(); fit(); changed();
-  } catch(err){ $('#hint').textContent = 'Die Datei konnte nicht gelesen werden. Bitte eine mit „Speichern“ erzeugte .json-Datei wählen.'; }
+  } catch(err){ $('#hint').textContent = 'Die Datei konnte nicht gelesen werden. Möglich sind gesicherte Projekte (.json) und CAD-Modelle (.stp, .step).'; }
   e.target.value = '';
 };
 $('#bNew').onclick = () => showStart(true);
