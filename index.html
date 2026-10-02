@@ -284,6 +284,9 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
 .sel .arrow{fill:var(--sel)} .sel .dimtext,.sel .lbl{fill:var(--sel)}
 .handle{fill:var(--paper);stroke:var(--sel);stroke-width:1.5}
 .ghost{fill:none;stroke:var(--sel);stroke-width:1;stroke-dasharray:4 3}
+.boxsel{fill:color-mix(in srgb,var(--sel) 10%,transparent);stroke:var(--sel);stroke-width:1}
+.boxsel.cross{stroke-dasharray:5 3}
+.snapmk{fill:none;stroke:#16a34a;stroke-width:2}
 
 @media (max-width: 1560px){ .tool span{display:none} .tool{padding:7px 10px} }
 @media (max-width: 900px){
@@ -476,7 +479,8 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Naht</b>: entlang der Kante ziehen, an die geschweißt wird. Art und a-Maß oben wählen.</li>
             <li><b>Maß</b>: von Punkt zu Punkt ziehen. Der Abstand wird automatisch beschriftet.</li>
             <li><b>Auswahl</b>: Teil anklicken, verschieben, an den Ecken ziehen. Werte rechts genau eintippen, z.&nbsp;B. <kbd>25cm</kbd> oder <kbd>0,3m</kbd>.</li>
-            <li>Verschieben der Ansicht: leere Fläche ziehen. Zoomen: Mausrad oder zwei Finger.</li>
+            <li>Mehrere Teile: Rahmen aufziehen (nach rechts = ganz drin, nach links = berührt) oder Shift + Klick. <kbd>Strg+C</kbd> <kbd>Strg+V</kbd> <kbd>Strg+X</kbd> <kbd>Strg+A</kbd>.</li>
+            <li>Ansicht verschieben: rechte Maustaste ziehen (am Handy: leere Fläche ziehen). Zoomen: Mausrad oder zwei Finger.</li>
             <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>G</kbd> <kbd>W</kbd> <kbd>P</kbd> <kbd>N</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
           </ul>
         </details>
@@ -660,17 +664,23 @@ function undo(){
   if (!undoStack.length) return;
   redoStack.push(JSON.stringify(state.shapes));
   state.shapes = JSON.parse(undoStack.pop());
-  if (!byId(selId)) selId = null;
+  if (!byId(selId)) selId = null; multi = new Set([...multi].filter(id => byId(id)));
   changed();
 }
 function redo(){
   if (!redoStack.length) return;
   undoStack.push(JSON.stringify(state.shapes));
   state.shapes = JSON.parse(redoStack.pop());
-  if (!byId(selId)) selId = null;
+  if (!byId(selId)) selId = null; multi = new Set([...multi].filter(id => byId(id)));
   changed();
 }
 const byId = id => state.shapes.find(s => s.id === id);
+// Mehrfachauswahl: selId = Hauptteil (Eigenschaften), multi = weitere ausgewählte Teile
+let multi = new Set();
+const isSel = id => id != null && (id === selId || multi.has(id));
+const selShapes = () => state.shapes.filter(s => isSel(s.id));
+function setSel(ids){ ids = [...ids]; selId = ids.length ? ids[0] : null; multi = new Set(ids.slice(1)); }
+function clearSel(){ selId = null; multi.clear(); }
 function changed(full = true){ save(); render(); if (full){ renderProps(); renderBom(); renderTitle(); } if (mode === '3d' && three){ build3d(); draw3d(); } }
 
 /* ---------- Ansicht ---------- */
@@ -682,7 +692,14 @@ function toWorld(cx, cy){
 }
 const snapStep = () => state.snap;
 function snapV(v, free){ if (free || !state.snapOn) return Math.round(v * 10) / 10; const s = snapStep(); return Math.round(v / s) * s; }
-function snapP(p, free){ if (!free){ const c = typeof cadSnapPoint === 'function' && cadSnapPoint(p); if (c) return c; } return {x:snapV(p.x, free), y:snapV(p.y, free)}; }
+function snapP(p, free, exclude){
+  snapMark = null;
+  if (!free){
+    const o = state.objSnap !== false && objSnap(p, exclude); if (o){ snapMark = o; return o; }
+    const c = typeof cadSnapPoint === 'function' && cadSnapPoint(p); if (c){ snapMark = c; return c; }
+  }
+  return {x:snapV(p.x, free), y:snapV(p.y, free)};
+}
 
 /* ---------- Geometrie ---------- */
 function screwPrims(s){
@@ -814,7 +831,7 @@ function bbox(s){
   if (s.type === 'profile') return rotBox(s, profileLocalBox(s));
   if (s.type === 'bend') return rotBox(s, bendLocalBox(s));
   if (s.type === 'shaft'){ const r = shaftDmax(s)/2; return rotBox(s, {x0:0, y0:-r, x1:shaftLen(s), y1:r}); }
-  if (s.type === 'rect') return {x0:s.x, y0:s.y, x1:s.x + s.w, y1:s.y + s.h};
+  if (s.type === 'rect') return s.rot ? rotBox(s, {x0:0, y0:0, x1:s.w, y1:s.h}) : {x0:s.x, y0:s.y, x1:s.x + s.w, y1:s.y + s.h};
   if (s.type === 'hole') return {x0:s.x - s.d/2, y0:s.y - s.d/2, x1:s.x + s.d/2, y1:s.y + s.d/2};
   if (s.type === 'screw'){
     const b = screwLocalBox(s);
@@ -830,7 +847,7 @@ function distSeg(p, a, b){
 }
 function dimNormal(s){ const L = Math.hypot(s.x2 - s.x1, s.y2 - s.y1) || 1; return {x:-(s.y2 - s.y1)/L, y:(s.x2 - s.x1)/L}; }
 function hit(s, p, tol){
-  if (s.type === 'rect') return p.x >= s.x - tol && p.x <= s.x + s.w + tol && p.y >= s.y - tol && p.y <= s.y + s.h + tol;
+  if (s.type === 'rect'){ const l = s.rot ? worldToLocal(s, p) : {x:p.x - s.x, y:p.y - s.y}; return l.x >= -tol && l.x <= s.w + tol && l.y >= -tol && l.y <= s.h + tol; }
   if (s.type === 'hole') return Math.hypot(p.x - s.x, p.y - s.y) <= s.d/2 + tol;
   if (s.type === 'screw'){ const l = worldToLocal(s, p), b = screwLocalBox(s); return l.x >= b.x0 - tol && l.x <= b.x1 + tol && l.y >= b.y0 - tol && l.y <= b.y1 + tol; }
   if (s.type === 'bend'){ const l = worldToLocal(s, p), o = bendOutline(s); return inPoly(l, o) || o.some((q, i) => distSeg(l, {x:q[0], y:q[1]}, {x:o[(i+1) % o.length][0], y:o[(i+1) % o.length][1]}) <= tol); }
@@ -853,6 +870,7 @@ function pick(p){
 }
 function handles(s){
   if (!s) return [];
+  if (s.type === 'rect' && s.rot) return [];
   if (s.type === 'rect') return [{k:'ll', x:s.x, y:s.y}, {k:'lr', x:s.x + s.w, y:s.y}, {k:'ur', x:s.x + s.w, y:s.y + s.h}, {k:'ul', x:s.x, y:s.y + s.h}];
   if (s.type === 'line' || s.type === 'weld') return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}];
   if (s.type === 'profile' && s.view === 'side'){ const w = localToWorld(s, s.len, section(s).w / 2); return [{k:'len', x:w.x, y:w.y}]; }
@@ -989,12 +1007,13 @@ function holeLabel(s){ return s.fit && s.fit.startsWith('G-') ? s.fit.slice(2) :
 function shapeMarkup(s, T, showDims){
   let o = '';
   if (s.type === 'rect'){
-    o += `<rect class="part" x="${f1(T.x(s.x))}" y="${f1(T.y(s.y + s.h))}" width="${f1(s.w*T.z)}" height="${f1(s.h*T.z)}"/>`;
+    const c = [[0,0],[s.w,0],[s.w,s.h],[0,s.h]].map(([x, y]) => localToWorld(s, x, y));
+    o += `<polygon class="part" points="${c.map(q => f1(T.x(q.x)) + ',' + f1(T.y(q.y))).join(' ')}"/>`;
     if (showDims){
-      o += dimMarkup(T, s.x, s.y, s.x + s.w, s.y, -22, num(s.w));
-      o += dimMarkup(T, s.x, s.y, s.x, s.y + s.h, 22, num(s.h));
+      o += dimMarkup(T, c[0].x, c[0].y, c[1].x, c[1].y, -22, num(s.w));
+      o += dimMarkup(T, c[0].x, c[0].y, c[3].x, c[3].y, 22, num(s.h));
     }
-    if (s.w*T.z > 70 && s.h*T.z > 26){
+    if (!s.rot && s.w*T.z > 70 && s.h*T.z > 26){
       o += `<text class="lbl" x="${f1(T.x(s.x) + 6)}" y="${f1(T.y(s.y + s.h) + 15)}">${esc(s.name)} · t=${num(s.t)}</text>`;
     }
   } else if (s.type === 'hole'){
@@ -1070,14 +1089,22 @@ function render(){
   const T = mkT(view, W, H);
   let o = HATCH + gridMarkup(T);
   drawCadBg();
-  ordered().forEach(s => { o += `<g class="${s.id === selId ? 'sel' : ''}">${shapeMarkup(s, T, state.showDims)}</g>`; });
+  ordered().forEach(s => { o += `<g class="${isSel(s.id) ? 'sel' : ''}">${shapeMarkup(s, T, state.showDims)}</g>`; });
   const sel = byId(selId);
-  if (sel && tool === 'select'){
+  if (multi.size && tool === 'select'){
+    const b = selShapes().map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
+    o += `<rect class="ghost" x="${f1(T.x(b.x0) - 6)}" y="${f1(T.y(b.y1) - 6)}" width="${f1((b.x1 - b.x0)*T.z + 12)}" height="${f1((b.y1 - b.y0)*T.z + 12)}"/>`;
+  } else if (sel && tool === 'select'){
     const b = bbox(sel);
     if (sel.type !== 'rect' && !(sel.type === 'profile' && sel.view === 'side')) o += `<rect class="ghost" x="${f1(T.x(b.x0) - 4)}" y="${f1(T.y(b.y1) - 4)}" width="${f1((b.x1 - b.x0)*T.z + 8)}" height="${f1((b.y1 - b.y0)*T.z + 8)}"/>`;
     handles(sel).forEach(h => { o += `<rect class="handle" x="${f1(T.x(h.x) - 5)}" y="${f1(T.y(h.y) - 5)}" width="10" height="10"/>`; });
   }
   o += preview;
+  if (drag && drag.mode === 'box' && drag.cur){
+    const a = drag.start, c = drag.cur, cross = c.x < a.x;
+    o += `<rect class="${cross ? 'boxsel cross' : 'boxsel'}" x="${f1(Math.min(T.x(a.x), T.x(c.x)))}" y="${f1(Math.min(T.y(a.y), T.y(c.y)))}" width="${f1(Math.abs(c.x - a.x)*T.z)}" height="${f1(Math.abs(c.y - a.y)*T.z)}"/>`;
+  }
+  if (snapMark && drag && drag.mode !== 'pan' && drag.mode !== 'box') o += `<rect class="snapmk" x="${f1(T.x(snapMark.x) - 6)}" y="${f1(T.y(snapMark.y) - 6)}" width="12" height="12"/>`;
   svg.innerHTML = o;
   renderStatus();
 }
@@ -1104,7 +1131,7 @@ const ICONS = {
   dim:'<path d="M3 7v10M21 7v10M4 12h16" stroke="currentColor" stroke-width="1.6"/><path d="M4 12l4-2.5v5zM20 12l-4-2.5v5z" fill="currentColor"/>',
 };
 const TOOLS = [
-  {k:'select', n:'Auswahl', key:'V', hint:'Teil anklicken zum Bearbeiten. Leere Fläche ziehen = Ansicht verschieben.'},
+  {k:'select', n:'Auswahl', key:'V', hint:'Teil anklicken · Rahmen aufziehen = mehrere wählen · Shift + Klick = dazu · rechte Maustaste = Ansicht verschieben'},
   {k:'rect', n:'Rechteck', key:'R', hint:'Rechteck aufziehen – oder einmal tippen für 100 × 50 mm.'},
   {k:'hole', n:'Bohrung', key:'B', hint:'Tippen, wo die Bohrung sitzen soll (Mittelpunkt).'},
   {k:'screw', n:'Schraube', key:'S', hint:'Tippen zum Setzen. Auf einer Bohrung rastet die Schraube mittig ein.'},
@@ -1131,6 +1158,7 @@ function renderToolOpts(){
   } else if (tool === 'select'){
     h = `<label>Raster ${optSelect('o-snap', [1,2,5,10,25,50,100].map(v => [v, fmt(v)]), state.snap)}</label>
       <label class="chk"><input type="checkbox" id="o-snapOn"${state.snapOn ? ' checked' : ''}> einrasten</label>
+      <label class="chk" title="An Ecken, Mitten und Bohrungen anderer Teile einrasten"><input type="checkbox" id="o-objSnap"${state.objSnap !== false ? ' checked' : ''}> an Teilen fangen</label>
       <label class="chk"><input type="checkbox" id="o-dims"${state.showDims ? ' checked' : ''}> Maße anzeigen</label>`;
   } else if (tool === 'rect'){
     h = `<label>Benennung <input id="o-name" value="${esc(opts.rect.name)}" class="txt" style="width:9em"></label>
@@ -1178,6 +1206,7 @@ $('#toolopts').addEventListener('change', e => {
   const id = e.target.id, v = e.target.value;
   if (id === 'o-snap') state.snap = +v;
   if (id === 'o-snapOn') state.snapOn = e.target.checked;
+  if (id === 'o-objSnap') state.objSnap = e.target.checked;
   if (id === 'o-dims') state.showDims = e.target.checked;
   if (id === 'o-name') opts.rect.name = v;
   if (id === 'o-t'){ const t = parseLen(v); if (t > 0) opts.rect.t = t; }
@@ -1222,26 +1251,40 @@ svg.addEventListener('pointerdown', e => {
     pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), mx:(a.x + b.x)/2, my:(a.y + b.y)/2};
     return;
   }
-  const p = evtPoint(e), free = e.shiftKey, sp = snapP(p, free);
-  if (e.button === 1 || spaceDown){ drag = {mode:'pan', sx:e.clientX, sy:e.clientY, cx:view.cx, cy:view.cy}; return; }
+  const p = evtPoint(e), free = e.shiftKey, sp = tool === 'select' ? p : snapP(p, free);
+  if (e.button === 1 || e.button === 2 || spaceDown){ drag = {mode:'pan', sx:e.clientX, sy:e.clientY, cx:view.cx, cy:view.cy}; return; }
 
   if (tool === 'select'){
     const sel = byId(selId);
     const hz = 8 / view.z;
-    const h = handles(sel).find(h => Math.abs(h.x - p.x) <= hz && Math.abs(h.y - p.y) <= hz);
+    const h = !multi.size && handles(sel).find(h => Math.abs(h.x - p.x) <= hz && Math.abs(h.y - p.y) <= hz);
     if (h){
       snapshot();
       drag = {mode:'handle', h:h.k, shape:sel, orig:{...sel}, moved:false};
       return;
     }
     const s = pick(p);
+    if (s && (e.shiftKey || e.ctrlKey || e.metaKey)){
+      // Teil zur Auswahl hinzufügen oder wieder herausnehmen
+      const ids = selShapes().map(x => x.id);
+      setSel(isSel(s.id) ? ids.filter(i => i !== s.id) : [...ids, s.id]);
+      renderProps(); render(); return;
+    }
     if (s){
-      selId = s.id; snapshot();
-      drag = {mode:'move', shape:s, orig:{...s}, start:p, moved:false};
+      if (!isSel(s.id)) setSel([s.id]);
+      snapshot();
+      const shapes = selShapes();
+      drag = {mode:'move', shape:s, shapes, origs:shapes.map(x => JSON.parse(JSON.stringify(x))), start:p, moved:false, excl:new Set(shapes.map(x => x.id))};
       renderProps(); render();
       return;
     }
-    if (selId){ selId = null; renderProps(); render(); }
+    if (e.pointerType === 'mouse'){
+      // Rahmen aufziehen: nach rechts = ganz drin, nach links = berührt
+      if (!e.shiftKey && (selId || multi.size)) clearSel();
+      drag = {mode:'box', start:p, cur:null, add:e.shiftKey};
+      renderProps(); render(); return;
+    }
+    if (selId || multi.size){ clearSel(); renderProps(); render(); }
     drag = {mode:'pan', sx:e.clientX, sy:e.clientY, cx:view.cx, cy:view.cy};
     return;
   }
@@ -1265,7 +1308,7 @@ svg.addEventListener('pointerdown', e => {
     s = {type:'screw', kind:opts.screw.kind, size:opts.screw.size, len:opts.screw.len, grade:opts.screw.grade, view:opts.screw.view, rot:0, x:c.x, y:c.y};
   }
   s.id = nextId++;
-  state.shapes.push(s); selId = s.id;
+  state.shapes.push(s); setSel([s.id]);
   if (!drag) changed();
   else render();
 });
@@ -1279,7 +1322,8 @@ svg.addEventListener('pointermove', e => {
     view.cx -= (mx - pinch.mx) / view.z; view.cy += (my - pinch.my) / view.z;
     pinch = {d, mx, my}; render(); return;
   }
-  const p = evtPoint(e), free = e.shiftKey, sp = snapP(p, free);
+  const p = evtPoint(e), free = e.shiftKey;
+  const sp = drag && (drag.mode === 'move' || drag.mode === 'box' || drag.mode === 'pan') ? p : snapP(p, free, drag && drag.shape ? new Set([drag.shape.id]) : null);
   cursor = sp;
   if (!drag){ renderStatus(); updateCursor(p); return; }
   const s = drag.shape;
@@ -1298,15 +1342,27 @@ svg.addEventListener('pointermove', e => {
     }
     else { s.x2 = sp.x; s.y2 = sp.y; }
     drag.moved = true;
+  } else if (drag.mode === 'box'){
+    drag.cur = p;
   } else if (drag.mode === 'move'){
-    const o = drag.orig;
-    const dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+    let dx = p.x - drag.start.x, dy = p.y - drag.start.y;
     if (!drag.moved && Math.hypot(dx, dy) * view.z < 3) return;
     drag.moved = true;
-    if ('x1' in o){
-      const nx = snapV(o.x1 + dx, free), ny = snapV(o.y1 + dy, free);
-      s.x1 = nx; s.y1 = ny; s.x2 = o.x2 + (nx - o.x1); s.y2 = o.y2 + (ny - o.y1);
-    } else { s.x = snapV(o.x + dx, free); s.y = snapV(o.y + dy, free); }
+    snapMark = null;
+    if (!free){
+      // Fangen: ein Eckpunkt der bewegten Teile springt auf einen Punkt eines anderen Teils
+      let best = null, bd = (8 / view.z) ** 2;
+      drag.origs.forEach(o => snapPts(o).forEach(q => {
+        const t = {x:q.x + dx, y:q.y + dy};
+        state.shapes.forEach(z => { if (drag.excl.has(z.id)) return; snapPts(z).forEach(w => { const d = (w.x - t.x)**2 + (w.y - t.y)**2; if (d < bd){ bd = d; best = {dx:w.x - q.x, dy:w.y - q.y, w}; } }); });
+      }));
+      if (best){ dx = best.dx; dy = best.dy; snapMark = best.w; }
+      else {
+        const ref = drag.origs[drag.shapes.indexOf(s)] || drag.origs[0], rx = 'x1' in ref ? ref.x1 : ref.x, ry = 'x1' in ref ? ref.y1 : ref.y;
+        dx = snapV(rx + dx, false) - rx; dy = snapV(ry + dy, false) - ry;
+      }
+    }
+    drag.shapes.forEach((x, i) => { Object.assign(x, JSON.parse(JSON.stringify(drag.origs[i]))); moveBy(x, r2(dx), r2(dy)); });
   } else if (drag.mode === 'handle'){
     const o = drag.orig; drag.moved = true;
     if (s.type === 'rect'){
@@ -1327,8 +1383,16 @@ function endPointer(e){
   pointers.delete(e.pointerId);
   if (pinch){ if (pointers.size < 2) pinch = null; return; }
   if (!drag) return;
-  const d = drag; drag = null;
+  const d = drag; drag = null; snapMark = null;
   if (d.mode === 'pan') return;
+  if (d.mode === 'box'){
+    if (d.cur && Math.hypot(d.cur.x - d.start.x, d.cur.y - d.start.y) * view.z > 4){
+      const x0 = Math.min(d.start.x, d.cur.x), x1 = Math.max(d.start.x, d.cur.x), y0 = Math.min(d.start.y, d.cur.y), y1 = Math.max(d.start.y, d.cur.y), cross = d.cur.x < d.start.x;
+      const hits = state.shapes.filter(s => { const b = bbox(s); return cross ? (b.x0 <= x1 && b.x1 >= x0 && b.y0 <= y1 && b.y1 >= y0) : (b.x0 >= x0 && b.x1 <= x1 && b.y0 >= y0 && b.y1 <= y1); }).map(s => s.id);
+      setSel(d.add ? [...new Set([...selShapes().map(s => s.id), ...hits])] : hits);
+    }
+    renderProps(); render(); return;
+  }
   if (d.mode === 'create'){
     const s = d.shape;
     if (s.type === 'rect' && (s.w < .5 || s.h < .5)){ s.w = 100; s.h = 50; }
@@ -1342,9 +1406,10 @@ function endPointer(e){
 svg.addEventListener('pointerup', endPointer);
 svg.addEventListener('pointercancel', endPointer);
 svg.addEventListener('pointerleave', () => { cursor = null; renderStatus(); });
+svg.addEventListener('contextmenu', e => e.preventDefault());
 function updateCursor(p){
   let c = tool === 'select' ? (pick(p) ? 'move' : 'grab') : 'crosshair';
-  if (tool === 'select'){ const hz = 8 / view.z; if (handles(byId(selId)).some(h => Math.abs(h.x - p.x) <= hz && Math.abs(h.y - p.y) <= hz)) c = 'pointer'; }
+  if (tool === 'select'){ const hz = 8 / view.z; if (!multi.size && handles(byId(selId)).some(h => Math.abs(h.x - p.x) <= hz && Math.abs(h.y - p.y) <= hz)) c = 'pointer'; }
   svg.style.cursor = c;
 }
 
@@ -1378,7 +1443,8 @@ function fieldsFor(s){
   if (s.type === 'rect') return [
     {k:'name', l:'Benennung', kind:'text'}, len('w', 'Breite'), len('h', 'Höhe'), len('t', 'Dicke'),
     {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
-    len('x', 'X links'), len('y', 'Y unten')];
+    {k:'rot', l:'Drehung', kind:'deg'},
+    len('x', 'X Ecke'), len('y', 'Y Ecke')];
   if (s.type === 'hole') return [
     {k:'fit', l:'Art', kind:'select', o:Object.entries(FITS)}, len('d', 'Durchmesser'), len('x', 'X Mitte'), len('y', 'Y Mitte')];
   if (s.type === 'screw') return [
@@ -1387,7 +1453,7 @@ function fieldsFor(s){
     ...(KINDS[s.kind].len ? [{k:'len', l:'Länge', kind:'select', o:LENGTHS.map(v => [v, v + ' mm'])}] : []),
     {k:'grade', l:'Festigkeit', kind:'select', o:GRADES[s.kind].map(v => [v, v])},
     {k:'view', l:'Ansicht', kind:'select', o:[['top','von oben'],['side','von der Seite']]},
-    {k:'rot', l:'Drehung', kind:'select', o:[[0,'0°'],[90,'90°'],[180,'180°'],[270,'270°']]},
+    {k:'rot', l:'Drehung', kind:'deg'},
     len('x', 'X'), len('y', 'Y')];
   if (s.type === 'bend') return [
     {k:'name', l:'Benennung', kind:'text'},
@@ -1395,7 +1461,7 @@ function fieldsFor(s){
     {k:'anglesTxt', l:'Biegewinkel °', kind:'text'},
     len('t', 'Dicke'), len('r', 'Radius innen'), len('w', 'Breite'),
     {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
-    {k:'rot', l:'Drehung', kind:'select', o:[[0,'0°'],[90,'90°'],[180,'180°'],[270,'270°']]},
+    {k:'rot', l:'Drehung', kind:'deg'},
     len('x', 'X'), len('y', 'Y')];
   if (s.type === 'shaft') return [
     {k:'stepsTxt', l:'Absätze Ø×L', kind:'text'},
@@ -1403,14 +1469,14 @@ function fieldsFor(s){
     len('chamfer', 'Fase'),
     {k:'keyStep', l:'Passfedernut', kind:'select', o:[[-1,'keine'], ...s.steps.map((t, i) => [i, `in Absatz ${i + 1} (Ø${dec(t.d)})`])]},
     ...(s.keyStep >= 0 ? [len('keyLen', 'Nutlänge')] : []),
-    {k:'rot', l:'Drehung', kind:'select', o:[[0,'0°'],[90,'90°'],[180,'180°'],[270,'270°']]},
+    {k:'rot', l:'Drehung', kind:'deg'},
     len('x', 'X Anfang'), len('y', 'Y Achse')];
   if (s.type === 'profile') return [
     {k:'kind', l:'Art', kind:'select', o:Object.entries(PROFILES).map(([k, p]) => [k, p.name])},
     {k:'size', l:'Größe', kind:'select', o:Object.keys(PROFILES[s.kind].sizes).map(k => [k, k])},
     len('len', 'Länge'),
     {k:'view', l:'Ansicht', kind:'select', o:[['side','Längsansicht'],['section','Querschnitt']]},
-    {k:'rot', l:'Drehung', kind:'select', o:[[0,'0°'],[90,'90°'],[180,'180°'],[270,'270°']]},
+    {k:'rot', l:'Drehung', kind:'deg'},
     {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
     len('x', 'X'), len('y', 'Y')];
   if (s.type === 'weld') return [
@@ -1431,6 +1497,7 @@ function fieldsFor(s){
 function getVal(s, k){
   if (k === '_len') return Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
   if (k === 'around') return s.around ? '1' : '0';
+  if (k === 'rot') return s.rot || 0;
   if (k === 'stepsTxt') return stepsText(s);
   if (k === 'legsTxt') return s.legs.map(dec).join('; ');
   if (k === 'anglesTxt') return s.angles.map(dec).join('; ');
@@ -1440,6 +1507,7 @@ function getVal(s, k){
 const TYPENAMES = {bend:'Biegeteil', rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht', shaft:'Welle'};
 function renderProps(){
   const s = byId(selId), el = $('#props');
+  if (s && multi.size){ renderMultiProps(); return; }
   if (!s){
     $('#selInfo').textContent = '';
     el.innerHTML = `<p class="empty">Nichts ausgewählt. Wähle oben ein Werkzeug oder klicke mit <b>Auswahl</b> ein Teil an.</p>`;
@@ -1502,6 +1570,11 @@ $('#props').addEventListener('change', e => {
   const s = byId(selId); if (!s || !e.target.id.startsWith('p-')) return;
   const k = e.target.id.slice(2), f = fieldsFor(s).find(f => f.k === k), v = e.target.value;
   snapshot();
+  if (k === 'rot'){
+    const a = parseFloat(v.replace(',', '.'));
+    if (isNaN(a)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
+    s.rot = ((Math.round(a * 100) / 100) % 360 + 360) % 360; changed(); return;
+  }
   if (f.kind === 'select'){
     s[k] = (k === 'len' || k === 'rot' || k === 'a' || k === 'keyStep') ? +v : (k === 'around' ? v === '1' : v);
     if (k === 'keyStep' && +v >= 0) s.keyLen = Math.max(8, s.steps[+v].l - 8);
@@ -1533,23 +1606,113 @@ $('#props').addEventListener('change', e => {
   changed();
 });
 function flash(id){ const i = document.getElementById(id); if (!i) return; i.style.borderColor = '#dc2626'; i.title = 'Bitte eine Zahl eingeben, z. B. 120 oder 12cm'; }
+function renderMultiProps(){
+  const list = selShapes(), counts = {};
+  list.forEach(s => counts[TYPENAMES[s.type]] = (counts[TYPENAMES[s.type]] || 0) + 1);
+  $('#selInfo').innerHTML = `<span class="badge">${list.length} Teile</span>`;
+  $('#props').innerHTML = `<p class="note" style="margin:0 0 12px">${Object.entries(counts).map(([k, n]) => `${n} × ${esc(k)}`).join(' · ')}</p>
+    <div class="props">
+      <label for="m-dx">Verschieben X <em>${state.unit}</em></label><input id="m-dx" value="0" inputmode="decimal">
+      <label for="m-dy">Verschieben Y <em>${state.unit}</em></label><input id="m-dy" value="0" inputmode="decimal">
+      <label for="m-rot">Drehen um <em>°</em></label><input id="m-rot" value="90" inputmode="decimal">
+    </div>
+    <div class="btnrow">
+      <button class="btn" type="button" id="mMove">Verschieben</button>
+      <button class="btn" type="button" id="mRot">Drehen</button>
+      <button class="btn" type="button" id="mRotL" title="90° gegen den Uhrzeigersinn">↺ 90°</button>
+      <button class="btn" type="button" id="mRotR" title="90° im Uhrzeigersinn">↻ 90°</button>
+    </div>
+    <div class="btnrow">
+      <button class="btn" type="button" id="mCopy" title="Strg + C">Kopieren</button>
+      <button class="btn" type="button" id="aDup" title="Strg + D">Duplizieren</button>
+      <button class="btn" type="button" id="aLib">In Bibliothek</button>
+      <button class="btn danger" type="button" id="aDel" title="Entf">Löschen</button>
+    </div>
+    <p class="note">Tipp: Shift + Klick nimmt Teile dazu oder heraus. Strg + C / Strg + V kopiert und fügt an der Mausposition ein.</p>`;
+  const rot = d => { snapshot(); rotateShapes(selShapes(), d); changed(); };
+  $('#mRot').onclick = () => { const a = parseFloat($('#m-rot').value.replace(',', '.')); if (!isNaN(a) && a) rot(a); else flash('m-rot'); };
+  $('#mRotL').onclick = () => rot(90);
+  $('#mRotR').onclick = () => rot(-90);
+  $('#mMove').onclick = () => {
+    const dx = parseLen($('#m-dx').value), dy = parseLen($('#m-dy').value);
+    if (isNaN(dx) || isNaN(dy)){ flash(isNaN(dx) ? 'm-dx' : 'm-dy'); return; }
+    snapshot(); selShapes().forEach(o => moveBy(o, dx, dy)); changed();
+  };
+  $('#mCopy').onclick = copySel;
+  $('#aDup').onclick = duplicate;
+  $('#aDel').onclick = del;
+  $('#aLib').onclick = () => openLibSave(selShapes());
+}
 function duplicate(){
-  const s = byId(selId); if (!s) return;
+  const list = selShapes(); if (!list.length) return;
   snapshot();
-  const c = JSON.parse(JSON.stringify(s)); c.id = nextId++;
-  const d = Math.max(state.snap, 10);
-  if ('x1' in c){ c.x1 += d; c.x2 += d; c.y1 -= d; c.y2 -= d; } else { c.x += d; c.y -= d; }
-  state.shapes.push(c); selId = c.id; changed();
+  const d = Math.max(state.snap, 10), ids = [];
+  list.forEach(s => { const c = JSON.parse(JSON.stringify(s)); c.id = nextId++; moveBy(c, d, -d); state.shapes.push(c); ids.push(c.id); });
+  setSel(ids); changed();
 }
 function del(){
-  if (!selId) return;
-  snapshot(); state.shapes = state.shapes.filter(s => s.id !== selId); selId = null; changed();
+  if (!selId && !multi.size) return;
+  snapshot(); state.shapes = state.shapes.filter(s => !isSel(s.id)); clearSel(); changed();
+}
+/* Zwischenablage: Strg + C / Strg + X / Strg + V (auch zwischen Projekten) */
+const LS_CLIP = 'wz-zwischenablage';
+let clip = null;
+function copySel(){
+  const list = selShapes(); if (!list.length) return false;
+  const b = list.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
+  clip = list.map(s => { const c = JSON.parse(JSON.stringify(s)); delete c.id; moveBy(c, -b.x0, -b.y0); return c; });
+  lsSet(LS_CLIP, JSON.stringify(clip));
+  $('#hint').textContent = `${list.length} Teil${list.length === 1 ? '' : 'e'} kopiert. Mit Strg + V an der Mausposition einfügen.`;
+  return true;
+}
+function pasteClip(){
+  let c = clip; if (!c){ try { c = JSON.parse(lsGet(LS_CLIP) || 'null'); } catch(e){} }
+  if (!c || !c.length) return;
+  snapshot();
+  const at = cursor || {x:view.cx, y:view.cy}, ids = [];
+  c.forEach(o => { const n = JSON.parse(JSON.stringify(o)); moveBy(n, snapV(at.x, false), snapV(at.y, false)); n.id = nextId++; state.shapes.push(n); ids.push(n.id); });
+  setSel(ids); setTool('select'); changed();
+  $('#hint').textContent = `${ids.length} Teil${ids.length === 1 ? '' : 'e'} eingefügt.`;
 }
 
 /* ---------- Stückliste ---------- */
+function inRect(r, x, y){ const l = r.rot ? worldToLocal(r, {x, y}) : {x:x - r.x, y:y - r.y}; return l.x > 0 && l.x < r.w && l.y > 0 && l.y < r.h; }
+function moveBy(o, dx, dy){ if ('x1' in o){ o.x1 += dx; o.x2 += dx; o.y1 += dy; o.y2 += dy; } else { o.x += dx; o.y += dy; } }
+function rotPt(px, py, cx, cy, a){ const c = Math.cos(a), n = Math.sin(a), dx = px - cx, dy = py - cy; return {x:cx + dx*c - dy*n, y:cy + dx*n + dy*c}; }
+const r2 = v => Math.round(v * 100) / 100;
+function rotateShapes(list, deg){
+  if (!list.length) return;
+  const b = list.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
+  const cx = (b.x0 + b.x1)/2, cy = (b.y0 + b.y1)/2, a = deg * Math.PI / 180;
+  list.forEach(o => {
+    if ('x1' in o){ const p = rotPt(o.x1, o.y1, cx, cy, a), q = rotPt(o.x2, o.y2, cx, cy, a); o.x1 = r2(p.x); o.y1 = r2(p.y); o.x2 = r2(q.x); o.y2 = r2(q.y); return; }
+    const p = rotPt(o.x, o.y, cx, cy, a); o.x = r2(p.x); o.y = r2(p.y);
+    if (o.type !== 'hole' && o.type !== 'disc' && o.type !== 'circle') o.rot = (((o.rot || 0) + deg) % 360 + 360) % 360;
+    else if (o.type === 'circle'){ o.a0 = (o.a0 || 0) + deg; o.a1 = (o.a1 ?? 360) + deg; }
+  });
+}
+// Fangpunkte eines Teils (Ecken, Mitten, Bohrungsmitten, Endpunkte)
+function snapPts(s){
+  const L = (x, y) => localToWorld(s, x, y);
+  if (s.type === 'rect'){ const {w, h} = s; return [[0,0],[w,0],[w,h],[0,h],[w/2,0],[w,h/2],[w/2,h],[0,h/2],[w/2,h/2]].map(([x, y]) => L(x, y)); }
+  if (s.type === 'hole' || s.type === 'screw') return [{x:s.x, y:s.y}];
+  if (s.type === 'disc') return [{x:s.x, y:s.y}, {x:s.x + s.d/2, y:s.y}, {x:s.x - s.d/2, y:s.y}, {x:s.x, y:s.y + s.d/2}, {x:s.x, y:s.y - s.d/2}];
+  if (s.type === 'circle') return [{x:s.x, y:s.y}];
+  if ('x1' in s) return [{x:s.x1, y:s.y1}, {x:s.x2, y:s.y2}, {x:(s.x1 + s.x2)/2, y:(s.y1 + s.y2)/2}];
+  if (s.type === 'profile'){ const b = profileLocalBox(s); return [[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1],[(b.x0+b.x1)/2,(b.y0+b.y1)/2]].map(([x, y]) => L(x, y)); }
+  if (s.type === 'shaft'){ const l = shaftLen(s); return [L(0, 0), L(l, 0), L(l/2, 0)]; }
+  if (s.type === 'bend') return bendOutline(s).map(([x, y]) => L(x, y));
+  return [];
+}
+let snapMark = null;
+function objSnap(p, exclude){
+  const r = 8 / view.z; let best = null, bd = r * r;
+  state.shapes.forEach(s => { if (exclude && exclude.has(s.id)) return; snapPts(s).forEach(q => { const d = (q.x - p.x)**2 + (q.y - p.y)**2; if (d < bd){ bd = d; best = q; } }); });
+  return best ? {x:r2(best.x), y:r2(best.y)} : null;
+}
 function rectMass(s){
   let area = s.w * s.h;
-  state.shapes.forEach(h => { if (h.type === 'hole' && h.x > s.x && h.x < s.x + s.w && h.y > s.y && h.y < s.y + s.h) area -= Math.PI * (h.d/2) ** 2; });
+  state.shapes.forEach(h => { if (h.type === 'hole' && inRect(s, h.x, h.y)) area -= Math.PI * (h.d/2) ** 2; });
   return area * s.t / 1e6 * MATS[s.mat].rho;
 }
 function bomRows(){
@@ -1956,19 +2119,21 @@ document.addEventListener('keydown', e => {
   if (ctrl && k === 'z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
   if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))){ e.preventDefault(); redo(); return; }
   if (ctrl && k === 'd'){ e.preventDefault(); duplicate(); return; }
+  if (ctrl && k === 'c'){ if (copySel()) e.preventDefault(); return; }
+  if (ctrl && k === 'x'){ if (copySel()){ e.preventDefault(); del(); } return; }
+  if (ctrl && k === 'v'){ e.preventDefault(); if (mode === '2d') pasteClip(); return; }
+  if (ctrl && k === 'a'){ e.preventDefault(); if (mode === '2d'){ setTool('select'); setSel(state.shapes.map(s => s.id)); renderProps(); render(); } return; }
   if (ctrl) return;
   if (e.key === ' '){ spaceDown = true; svg.style.cursor = 'grab'; e.preventDefault(); return; }
   if (e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); del(); return; }
-  if (e.key === 'Escape'){ selId = null; setTool('select'); renderProps(); return; }
+  if (e.key === 'Escape'){ clearSel(); setTool('select'); renderProps(); return; }
   const t = TOOLS.find(t => t.key.toLowerCase() === k);
   if (t){ setTool(t.k); return; }
   const arrows = {ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,1], ArrowDown:[0,-1]};
-  if (arrows[e.key] && selId){
+  if (arrows[e.key] && (selId || multi.size)){
     e.preventDefault();
-    const s = byId(selId), st = e.shiftKey ? 1 : state.snap, [dx, dy] = arrows[e.key];
-    snapshot();
-    if ('x1' in s){ s.x1 += dx*st; s.x2 += dx*st; s.y1 += dy*st; s.y2 += dy*st; } else { s.x += dx*st; s.y += dy*st; }
-    changed();
+    const st = e.shiftKey ? 1 : state.snap, [dx, dy] = arrows[e.key];
+    snapshot(); selShapes().forEach(o => moveBy(o, dx*st, dy*st)); changed();
   }
 });
 document.addEventListener('keyup', e => { if (e.key === ' ') spaceDown = false; });
@@ -2090,10 +2255,10 @@ function build3d(){
   };
   const edgeMat = new THREE.LineBasicMaterial({color:ink}), edgeSel = new THREE.LineBasicMaterial({color:selC});
   const mesh = (geo, s, kind) => {
-    const isSel = s.id === selId;
-    const m = new THREE.Mesh(geo, isSel ? mats.sel : mats[kind]);
+    const on = isSel(s.id);
+    const m = new THREE.Mesh(geo, on ? mats.sel : mats[kind]);
     m.userData.id = s.id;
-    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), isSel ? edgeSel : edgeMat));
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), on ? edgeSel : edgeMat));
     return m;
   };
   if (cad){
@@ -2111,21 +2276,23 @@ function build3d(){
   const dg = new THREE.Group(); three.dg = dg;
   // Bleche: überlappende Teile werden aufeinander gestapelt
   const rects = state.shapes.filter(s => s.type === 'rect'), base = new Map();
-  const over = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  const over = (a, b) => { const p = bbox(a), q = bbox(b); return p.x0 < q.x1 && q.x0 < p.x1 && p.y0 < q.y1 && q.y0 < p.y1; };
   const holes = state.shapes.filter(s => s.type === 'hole');
   rects.forEach((r, i) => {
     let z = 0; rects.slice(0, i).forEach(q => { if (over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });
     base.set(r.id, z);
-    const sh = new THREE.Shape(); sh.moveTo(r.x, r.y); sh.lineTo(r.x + r.w, r.y); sh.lineTo(r.x + r.w, r.y + r.h); sh.lineTo(r.x, r.y + r.h); sh.lineTo(r.x, r.y);
+    // im lokalen System des Blechs bauen, dann drehen und verschieben
+    const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(r.w, 0); sh.lineTo(r.w, r.h); sh.lineTo(0, r.h); sh.lineTo(0, 0);
     holes.forEach(h => {
-      if (h.x - h.d/2 > r.x && h.x + h.d/2 < r.x + r.w && h.y - h.d/2 > r.y && h.y + h.d/2 < r.y + r.h){
-        const p = new THREE.Path(); p.absarc(h.x, h.y, h.d/2, 0, Math.PI*2, true); sh.holes.push(p);
+      const l = worldToLocal(r, h);
+      if (l.x - h.d/2 > 0 && l.x + h.d/2 < r.w && l.y - h.d/2 > 0 && l.y + h.d/2 < r.h){
+        const p = new THREE.Path(); p.absarc(l.x, l.y, h.d/2, 0, Math.PI*2, true); sh.holes.push(p);
       }
     });
-    const g = extrude(sh, r.t); g.translate(0, 0, z);
+    const g = extrude(sh, r.t); g.rotateZ((r.rot || 0) * Math.PI / 180); g.translate(r.x, r.y, z);
     dg.add(mesh(g, r, 'plate'));
   });
-  const inR = (r, x, y) => x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h;
+  const inR = (r, x, y) => inRect(r, x, y);
   const topAt = (x, y) => rects.reduce((m, r) => inR(r, x, y) ? Math.max(m, base.get(r.id) + r.t) : m, 0);
   const botAt = (x, y) => rects.reduce((m, r) => inR(r, x, y) ? Math.min(m, base.get(r.id)) : m, Infinity);
   // ausgewählte Bohrung als Ring markieren
@@ -2339,7 +2506,7 @@ function pick3d(e){
     let o = h.object; while (o && o.userData.id == null && o.userData.cad == null) o = o.parent;
     if (o){ if (o.userData.cad != null) ci = o.userData.cad; else id = o.userData.id; break; }
   }
-  cadSel = ci; selId = ci >= 0 ? null : id;
+  cadSel = ci; multi.clear(); selId = ci >= 0 ? null : id;
   if (cad && selId == null) renderCadInfo(); else renderProps();
   build3d(); draw3d();
 }
@@ -2593,7 +2760,7 @@ function loadProject(rec){
   state.title = Object.assign({name:rec.name, by:rec.by || '', date:today}, state.title);
   nextId = state.shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
   state.shapes.forEach(s => { if (!s.id) s.id = nextId++; });
-  selId = null; undoStack = []; redoStack = [];
+  clearSel(); undoStack = []; redoStack = [];
   lsSet(LS_LAST, rec.id);
   $('#start').hidden = true; document.documentElement.classList.remove('locked');
   renderProjectName(); renderUnits(); renderTools(); setSaveState('saved');
