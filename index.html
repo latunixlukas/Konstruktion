@@ -13,7 +13,7 @@
   --bg:#ffffff; --surface:#fafafa; --raised:#ffffff; --line:#ebebeb; --line-strong:#d4d4d4;
   --fg:#0a0a0a; --muted:#737373; --invert:#ffffff;
   --paper:#ffffff; --grid:#f3f3f3; --grid-major:#e3e3e3; --axis:#c4c4c4;
-  --ink:#0a0a0a; --part:#f4f4f5; --metal:#e4e4e7; --dimc:#525252; --sel:#2563eb; --sel-soft:#dbe6fd;
+  --ink:#0a0a0a; --part:#f4f4f5; --metal:#e4e4e7; --dimc:#525252; --sel:#2563eb; --sel-soft:#dbe6fd; --cadline:rgba(30,30,30,.32);
   --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.06);
   --f-body:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"Geist Mono",ui-monospace,"SF Mono",Consolas,monospace;
@@ -24,7 +24,7 @@
     --bg:#0a0a0a; --surface:#111111; --raised:#161616; --line:#222222; --line-strong:#333333;
     --fg:#fafafa; --muted:#8f8f8f; --invert:#0a0a0a;
     --paper:#0d0d0d; --grid:#161616; --grid-major:#222222; --axis:#3a3a3a;
-    --ink:#f5f5f5; --part:#1a1a1a; --metal:#2b2b2b; --dimc:#b5b5b5; --sel:#60a5fa; --sel-soft:#14243b;
+    --ink:#f5f5f5; --part:#1a1a1a; --metal:#2b2b2b; --dimc:#b5b5b5; --sel:#60a5fa; --sel-soft:#14243b; --cadline:rgba(235,235,235,.3);
     --shadow:0 1px 2px rgba(0,0,0,.5),0 6px 20px rgba(0,0,0,.45);
     color-scheme:dark;
   }
@@ -33,7 +33,7 @@
   --bg:#0a0a0a; --surface:#111111; --raised:#161616; --line:#222222; --line-strong:#333333;
   --fg:#fafafa; --muted:#8f8f8f; --invert:#0a0a0a;
   --paper:#0d0d0d; --grid:#161616; --grid-major:#222222; --axis:#3a3a3a;
-  --ink:#f5f5f5; --part:#1a1a1a; --metal:#2b2b2b; --dimc:#b5b5b5; --sel:#60a5fa; --sel-soft:#14243b;
+  --ink:#f5f5f5; --part:#1a1a1a; --metal:#2b2b2b; --dimc:#b5b5b5; --sel:#60a5fa; --sel-soft:#14243b; --cadline:rgba(235,235,235,.3);
   --shadow:0 1px 2px rgba(0,0,0,.5),0 6px 20px rgba(0,0,0,.45);
   color-scheme:dark;
 }
@@ -153,7 +153,11 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
 .hint,.zoom,.status,.titleblock{z-index:2}
 #v3 canvas{width:100%;height:100%;display:block}
 .zoom button[aria-pressed="true"]{background:var(--fg);color:var(--invert)}
-.cadbar{position:absolute;left:14px;top:58px;z-index:3;display:flex;align-items:center;gap:10px;padding:5px 6px 5px 6px;font-size:.82rem;max-width:calc(100% - 90px)}
+#cadbg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.cadbar select{padding:2px 6px;font-size:.78rem;border-radius:99px}
+.cadbar label.chk{font-size:.78rem;white-space:nowrap}
+.cadbar{flex-wrap:wrap;position:absolute;left:14px;top:58px;z-index:4;display:flex;align-items:center;gap:10px;padding:5px 6px 5px 6px;font-size:.82rem;max-width:calc(100% - 90px)}
 .cadbar #cadName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .cadtag{font:600 .7rem var(--f-mono);background:var(--fg);color:var(--invert);border-radius:99px;padding:2px 8px}
 .cadbar button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 10px;cursor:pointer;font-size:.78rem}
@@ -325,6 +329,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
 
   <main>
     <div class="stage" id="stage">
+      <canvas id="cadbg" aria-hidden="true"></canvas>
       <svg id="cv" xmlns="http://www.w3.org/2000/svg" aria-label="Zeichenfläche"></svg>
       <div class="hint pill" id="hint"></div>
       <div class="zoom pill">
@@ -335,8 +340,14 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       </div>
       <div class="status pill" id="status"></div>
       <div id="v3" hidden>
-        <div class="cadbar pill" id="cadBar" hidden><span class="cadtag">CAD</span><span id="cadName"></span><button type="button" id="cadClose">Schließen</button></div>
         <div class="m3" id="m3x" hidden></div><div class="m3" id="m3y" hidden></div><div class="m3" id="m3z" hidden></div>
+      </div>
+      <div class="cadbar pill" id="cadBar" hidden>
+        <span class="cadtag">CAD</span><span id="cadName"></span>
+        <label for="cadView" class="sr">Ansicht</label>
+        <select id="cadView" title="Ansicht für 2D und Lage der Zeichenebene"><option value="top">Draufsicht</option><option value="front">Vorderansicht</option><option value="side">Seitenansicht</option></select>
+        <label class="chk" title="Beim Zeichnen an Eckpunkten des Modells einrasten"><input type="checkbox" id="cadSnap" checked> Kanten fangen</label>
+        <button type="button" id="cadClose">Schließen</button>
       </div>
       <div class="titleblock" id="tblock"></div>
     </div>
@@ -559,7 +570,7 @@ function toWorld(cx, cy){
 }
 const snapStep = () => state.snap;
 function snapV(v, free){ if (free || !state.snapOn) return Math.round(v * 10) / 10; const s = snapStep(); return Math.round(v / s) * s; }
-function snapP(p, free){ return {x:snapV(p.x, free), y:snapV(p.y, free)}; }
+function snapP(p, free){ if (!free){ const c = typeof cadSnapPoint === 'function' && cadSnapPoint(p); if (c) return c; } return {x:snapV(p.x, free), y:snapV(p.y, free)}; }
 
 /* ---------- Geometrie ---------- */
 function screwPrims(s){
@@ -896,6 +907,7 @@ function render(){
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   const T = mkT(view, W, H);
   let o = HATCH + gridMarkup(T);
+  drawCadBg();
   ordered().forEach(s => { o += `<g class="${s.id === selId ? 'sel' : ''}">${shapeMarkup(s, T, state.showDims)}</g>`; });
   const sel = byId(selId);
   if (sel && tool === 'select'){
@@ -951,7 +963,7 @@ function optSelect(id, entries, val){ return `<select id="${id}">${entries.map((
 function renderToolOpts(){
   const el = $('#toolopts'); let h = '';
   if (typeof mode !== 'undefined' && mode === '3d'){
-    h = cad ? `<span class="unitlbl">CAD-Modell nur zum Ansehen. Es wird nicht gespeichert und nirgends hochgeladen. Teil antippen = Name und Maße.</span>` : `<span class="unitlbl">3D-Ansicht zum Anschauen: Bleche bekommen ihre Dicke, Profile und Schrauben ihre Länge. Teil antippen = auswählen und rechts ändern. Gezeichnet wird in <b>2D</b>.</span>`;
+    h = cad ? `<span class="unitlbl">CAD-Modell + deine Teile. Das Modell wird nicht gespeichert und nirgends hochgeladen. Teil antippen = Name und Maße. Gezeichnet wird in <b>2D</b>.</span>` : `<span class="unitlbl">3D-Ansicht zum Anschauen: Bleche bekommen ihre Dicke, Profile und Schrauben ihre Länge. Teil antippen = auswählen und rechts ändern. Gezeichnet wird in <b>2D</b>.</span>`;
   } else if (tool === 'select'){
     h = `<label>Raster ${optSelect('o-snap', [1,2,5,10,25,50,100].map(v => [v, fmt(v)]), state.snap)}</label>
       <label class="chk"><input type="checkbox" id="o-snapOn"${state.snapOn ? ' checked' : ''}> einrasten</label>
@@ -1171,8 +1183,10 @@ $('#zIn').onclick = () => { if (mode === '3d' && three){ zoom3d(1/1.4); draw3d()
 $('#zOut').onclick = () => { if (mode === '3d' && three){ zoom3d(1.4); draw3d(); } else zoomCenter(1/1.4); };
 $('#zFit').onclick = () => { if (mode === '3d' && three){ fit3d(); draw3d(); } else { fit(); render(); } };
 function allBox(){
-  if (!state.shapes.length) return {x0:0, y0:0, x1:200, y1:120};
-  return state.shapes.map(bbox).reduce((a, b) => ({x0:Math.min(a.x0, b.x0), y0:Math.min(a.y0, b.y0), x1:Math.max(a.x1, b.x1), y1:Math.max(a.y1, b.y1)}));
+  const boxes = state.shapes.map(bbox);
+  if (cad && cad.box2d && mode === '2d') boxes.push(cad.box2d);
+  if (!boxes.length) return {x0:0, y0:0, x1:200, y1:120};
+  return boxes.reduce((a, b) => ({x0:Math.min(a.x0, b.x0), y0:Math.min(a.y0, b.y0), x1:Math.max(a.x1, b.x1), y1:Math.max(a.y1, b.y1)}));
 }
 function fit(){
   const r = svg.getBoundingClientRect(); W = r.width || W; H = r.height || H;
@@ -1529,6 +1543,7 @@ $('#viewmode').addEventListener('click', e => { const b = e.target.closest('[dat
 async function setMode(m){
   mode = m; renderModeSeg();
   $('#v3').hidden = m !== '3d'; svg.style.visibility = m === '3d' ? 'hidden' : '';
+  if (m === '2d' && cad){ requestAnimationFrame(() => { fit(); render(); }); }
   $('#zDims').hidden = m !== '3d';
   renderToolOpts();
   if (m === '3d'){
@@ -1538,7 +1553,7 @@ async function setMode(m){
     const first = !three;
     init3d(); build3d(); if (first || refit3d){ fit3d(); refit3d = false; } draw3d();
     $('#hint').textContent = 'Ziehen = drehen · Rechte Maustaste oder Shift = verschieben · Mausrad = zoomen';
-    if (cad) renderCadInfo();
+    if (cad && selId == null) renderCadInfo();
   } else {
     if (cad) renderProps();
     $('#hint').textContent = TOOLS.find(t => t.k === tool).hint; render();
@@ -1633,7 +1648,10 @@ function build3d(){
       const e = new THREE.LineSegments(p.edges, isSel ? edgeSel : edgeMat); e.userData.keep = true; m.add(e);
       root.add(m);
     });
-  } else {
+  }
+  {
+  // eigene Teile in einer Gruppe; mit CAD-Modell liegt die Zeichenebene in der gewählten Ansicht
+  const dg = new THREE.Group(); three.dg = dg;
   // Bleche: überlappende Teile werden aufeinander gestapelt
   const rects = state.shapes.filter(s => s.type === 'rect'), base = new Map();
   const over = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -1648,7 +1666,7 @@ function build3d(){
       }
     });
     const g = extrude(sh, r.t); g.translate(0, 0, z);
-    root.add(mesh(g, r, 'plate'));
+    dg.add(mesh(g, r, 'plate'));
   });
   const inR = (r, x, y) => x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h;
   const topAt = (x, y) => rects.reduce((m, r) => inR(r, x, y) ? Math.max(m, base.get(r.id) + r.t) : m, 0);
@@ -1657,7 +1675,7 @@ function build3d(){
   holes.forEach(h => {
     if (h.id !== selId) return;
     const pts = []; for (let i = 0; i <= 64; i++){ const a = i/64*Math.PI*2; pts.push(new THREE.Vector3(h.x + Math.cos(a)*h.d/2, h.y + Math.sin(a)*h.d/2, topAt(h.x, h.y) + .05)); }
-    root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), edgeSel));
+    dg.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), edgeSel));
   });
   // Verbindungselemente
   const screws = state.shapes.filter(s => s.type === 'screw');
@@ -1672,14 +1690,14 @@ function build3d(){
       if (s.kind === 'hex' || s.kind === 'cyl'){
         const head = s.kind === 'hex' ? extrude(hexShape(g.s), g.k) : extrude(ringShape(g.dk/2, 0), d);
         if (s.kind === 'cyl'){ const sock = extrude(hexShape(g.sw), g.sw*.6); place(sock, z0 + lift + d - g.sw*.6 + .02); }
-        root.add(mesh(place(head, z0 + lift), s, 'metal'));
+        dg.add(mesh(place(head, z0 + lift), s, 'metal'));
         const sh = new THREE.CylinderGeometry(d/2, d/2, s.len, 28); sh.rotateX(Math.PI/2);
-        root.add(mesh(place(sh, z0 + lift - s.len/2), s, 'metal'));
+        dg.add(mesh(place(sh, z0 + lift - s.len/2), s, 'metal'));
       } else if (s.kind === 'nut'){
-        root.add(mesh(place(extrude(hexShape(g.s, d/2), g.m), bottom - g.m), s, 'metal'));
+        dg.add(mesh(place(extrude(hexShape(g.s, d/2), g.m), bottom - g.m), s, 'metal'));
       } else {
         const idx = washers.filter(w => screws.indexOf(w) < screws.indexOf(s)).length;
-        root.add(mesh(place(extrude(ringShape(g.d2/2, g.d1/2), g.h), z0 + idx*g.h), s, 'metal'));
+        dg.add(mesh(place(extrude(ringShape(g.d2/2, g.d1/2), g.h), z0 + idx*g.h), s, 'metal'));
       }
     } else {
       // Seitenansicht: Schraube liegt flach, Achse in der Zeichenebene
@@ -1694,7 +1712,7 @@ function build3d(){
       } else if (s.kind === 'nut') grp.add(mesh(alongY(extrude(hexShape(g.s, d/2), g.m), 0), s, 'metal'));
       else { grp.add(mesh(alongY(extrude(ringShape(g.d2/2, g.d1/2), g.h), 0), s, 'metal')); R = g.d2/2; }
       grp.rotation.z = rot; grp.position.set(s.x, s.y, topAt(s.x, s.y) + R);
-      root.add(grp);
+      dg.add(grp);
     }
   });
   // höchste Auflage entlang einer Linie im lokalen System (für Profile und Wellen)
@@ -1714,7 +1732,7 @@ function build3d(){
     let z = r, x0 = 0;
     s.steps.forEach(t => { for (let i = 0; i <= 4; i++){ const w = localToWorld(s, x0 + t.l*i/4, 0); z = Math.max(z, topAt(w.x, w.y) + t.d/2); } x0 += t.l; });
     grp.position.set(s.x, s.y, z);
-    root.add(grp);
+    dg.add(grp);
   });
   // Profile: Querschnitt entlang der Länge extrudiert
   state.shapes.filter(s => s.type === 'profile').forEach(s => {
@@ -1725,7 +1743,7 @@ function build3d(){
     if (s.view === 'side') g.applyMatrix4(new THREE.Matrix4().set(0,0,1,0, 1,0,0,0, 0,1,0,0, 0,0,0,1));
     const c = localToWorld(s, q.w/2, q.h/2);
     g.rotateZ((s.rot || 0) * Math.PI / 180); g.translate(s.x, s.y, s.view === 'side' ? topAlong(s, q.w/2, s.len) : topAt(c.x, c.y));
-    root.add(mesh(g, s, 'plate'));
+    dg.add(mesh(g, s, 'plate'));
   });
   // Schweißnähte als Raupe auf der Kante
   const topNear = (x, y) => rects.reduce((m, r) => (x >= r.x - 1 && x <= r.x + r.w + 1 && y >= r.y - 1 && y <= r.y + r.h + 1) ? Math.max(m, base.get(r.id) + r.t) : m, 0);
@@ -1735,21 +1753,25 @@ function build3d(){
     g.rotateZ(-Math.PI/2); g.rotateZ(Math.atan2(s.y2 - s.y1, s.x2 - s.x1));
     const mx = (s.x1 + s.x2)/2, my = (s.y1 + s.y2)/2;
     g.translate(mx, my, topNear(mx, my));
-    root.add(mesh(g, s, 'weld'));
+    dg.add(mesh(g, s, 'weld'));
   });
   // Linien
   state.shapes.filter(s => s.type === 'line').forEach(s => {
     const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(s.x1, s.y1, .05), new THREE.Vector3(s.x2, s.y2, .05)]);
     const m = s.style === 'center' ? new THREE.LineDashedMaterial({color:s.id === selId ? selC : ink, dashSize:8, gapSize:3}) : (s.id === selId ? edgeSel : edgeMat);
-    const l = new THREE.Line(geo, m); if (s.style === 'center') l.computeLineDistances(); l.userData.id = s.id; root.add(l);
+    const l = new THREE.Line(geo, m); if (s.style === 'center') l.computeLineDistances(); l.userData.id = s.id; dg.add(l);
   });
+  if (cad && cad.view !== 'top'){ dg.matrixAutoUpdate = false; dg.matrix.copy(drawPlaneMatrix()); }
+  root.add(dg);
   }
   // Maßrahmen um das ausgewählte Teil
   three.mbox = null;
   if (dims3d){
+    root.updateMatrixWorld(true);
     const box = new THREE.Box3();
-    root.children.forEach(ch => {
-      const hitSel = cad ? ch.userData.cad === cadSel && cadSel >= 0 : (ch.userData.id === selId && selId != null) || (ch.children.some(c => c.userData.id === selId) && selId != null);
+    [...root.children, ...(three.dg ? three.dg.children : [])].forEach(ch => {
+      const hitSel = (cadSel >= 0 && ch.userData.cad === cadSel) ||
+        (cadSel < 0 && selId != null && (ch.userData.id === selId || ch.children.some(c => c.userData.id === selId)));
       if (hitSel) box.expandByObject(ch);
     });
     if (!box.isEmpty()){ three.mbox = box; root.add(new THREE.Box3Helper(box, selC)); }
@@ -1819,7 +1841,8 @@ function pick3d(e){
     let o = h.object; while (o && o.userData.id == null && o.userData.cad == null) o = o.parent;
     if (o){ if (o.userData.cad != null) ci = o.userData.cad; else id = o.userData.id; break; }
   }
-  if (cad){ cadSel = ci; renderCadInfo(); } else { selId = id; renderProps(); }
+  cadSel = ci; selId = ci >= 0 ? null : id;
+  if (cad && selId == null) renderCadInfo(); else renderProps();
   build3d(); draw3d();
 }
 
@@ -1872,21 +1895,73 @@ function setCad(name, meshes){
     if (m.nor) g.setAttribute('normal', new THREE.BufferAttribute(m.nor, 3));
     g.setIndex(new THREE.BufferAttribute(m.idx, 1));
     if (!m.nor) g.computeVertexNormals();
-    g.computeBoundingBox();
     const mat = m.color ? new THREE.MeshStandardMaterial({color:new THREE.Color(m.color[0], m.color[1], m.color[2]), metalness:.3, roughness:.6}) : null;
-    return {name:m.name || `Teil ${i + 1}`, geo:g, edges:new THREE.EdgesGeometry(g, 30), mat};
-  })};
+    return {name:m.name || `Teil ${i + 1}`, geo:g, mat};
+  }), view:'top', snap:true};
+  // Nullpunkt: linke, vordere, untere Ecke des Modells auf 0/0/0
+  const all = new THREE.Box3(); cad.parts.forEach(p => { p.geo.computeBoundingBox(); all.union(p.geo.boundingBox); });
+  cad.parts.forEach(p => { p.geo.translate(-all.min.x, -all.min.y, -all.min.z); p.geo.computeBoundingBox(); p.edges = new THREE.EdgesGeometry(p.geo, 30); });
+  cad.size = all.getSize(new THREE.Vector3());
+  cadProject();
+  $('#cadView').value = 'top'; $('#cadSnap').checked = true;
   cadSel = -1;
   $('#cadName').textContent = name; $('#cadBar').hidden = false;
   renderToolOpts(); build3d(); fit3d(); draw3d(); renderCadInfo();
 }
+// Kanten des Modells in die 2D-Ansicht projizieren (Draufsicht: x/y, Vorderansicht: x/z, Seitenansicht: y/z)
+function cadProject(){
+  let n = 0; cad.parts.forEach(p => n += p.edges.attributes.position.count);
+  const out = new Float32Array(n * 2), v = cad.view; let k = 0;
+  let u0 = Infinity, v0 = Infinity, u1 = -Infinity, v1 = -Infinity;
+  cad.parts.forEach(p => {
+    const a = p.edges.attributes.position.array;
+    for (let i = 0; i < a.length; i += 3){
+      const u = v === 'side' ? a[i+1] : a[i], w = v === 'top' ? a[i+1] : a[i+2];
+      out[k++] = u; out[k++] = w;
+      if (u < u0) u0 = u; if (u > u1) u1 = u; if (w < v0) v0 = w; if (w > v1) v1 = w;
+    }
+  });
+  cad.proj = out; cad.box2d = {x0:u0, y0:v0, x1:u1, y1:v1};
+}
+// Lage der Zeichenebene im Raum: Draufsicht = Boden, Vorderansicht = Vorderseite (y = 0), Seitenansicht = rechte Seite
+function drawPlaneMatrix(){
+  const m = new THREE.Matrix4();
+  if (cad.view === 'front') m.set(1,0,0,0, 0,0,-1,0, 0,1,0,0, 0,0,0,1);
+  else if (cad.view === 'side') m.set(0,0,1,cad.size.x, 1,0,0,0, 0,1,0,0, 0,0,0,1);
+  return m;
+}
+function drawCadBg(){
+  const c = $('#cadbg'), show = cad && cad.proj && mode === '2d';
+  if (!show){ if (c.width) c.width = 0; return; }
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.strokeStyle = cssVar('--cadline') || 'rgba(0,0,0,.3)'; g.lineWidth = 1; g.beginPath();
+  const a = cad.proj, z = view.z, ox = W/2 - view.cx * z, oy = H/2 + view.cy * z;
+  for (let i = 0; i < a.length; i += 4){ g.moveTo(a[i]*z + ox, oy - a[i+1]*z); g.lineTo(a[i+2]*z + ox, oy - a[i+3]*z); }
+  g.stroke();
+}
+// Fangen an Eckpunkten des Modells
+function cadSnapPoint(p){
+  if (!cad || !cad.snap || !cad.proj || mode !== '2d') return null;
+  const a = cad.proj, r = 8 / view.z; let best = null, bd = r * r;
+  for (let i = 0; i < a.length; i += 2){ const dx = a[i] - p.x, dy = a[i+1] - p.y, d = dx*dx + dy*dy; if (d < bd){ bd = d; best = {x:Math.round(a[i] * 10) / 10, y:Math.round(a[i+1] * 10) / 10}; } }
+  return best;
+}
+$('#cadView').onchange = e => {
+  if (!cad) return;
+  cad.view = e.target.value; cadProject();
+  if (mode === '2d'){ fit(); render(); } else if (three){ build3d(); fit3d(); draw3d(); }
+};
+$('#cadSnap').onchange = e => { if (cad) cad.snap = e.target.checked; };
 function closeCad(silent){
   if (!cad) return;
-  cad.parts.forEach(p => { p.geo.dispose(); p.edges.dispose(); if (p.mat) p.mat.dispose(); });
-  cad = null; cadSel = -1; $('#cadBar').hidden = true;
+  cad.parts.forEach(p => { p.geo.dispose(); if (p.edges) p.edges.dispose(); if (p.mat) p.mat.dispose(); });
+  cad = null; cadSel = -1; $('#cadBar').hidden = true; drawCadBg();
   if (silent) return;
   renderToolOpts(); renderProps();
   if (three){ build3d(); fit3d(); draw3d(); }
+  if (mode === '2d'){ fit(); render(); }
 }
 function renderCadInfo(){
   if (!cad) return;
@@ -1902,6 +1977,7 @@ function renderCadInfo(){
       <label>Höhe (Z)</label><div class="val">${fmt(z.z)}</div>
     </div>
     <p class="note">${cadSel >= 0 ? 'Maße des Bauteils entlang der Achsen (umschließender Quader).' : 'Teil antippen, um Name und Maße zu sehen.'} Mit dem Lineal-Knopf rechts oben erscheinen die Maße direkt im Bild.</p>
+    <p class="note">Die linke, vordere, untere Ecke des Modells liegt auf 0/0/0. In <b>2D</b> erscheint das Modell grau als Hintergrund. Oben in der CAD-Leiste wählst du die Ansicht, in der du deine Teile dazu zeichnest.</p>
     <p class="note">Das Modell wird nur angesehen. Es wird nicht gespeichert und nirgends hochgeladen.</p>
     <div class="btnrow"><button class="btn" type="button" id="cadClose2">CAD-Modell schließen</button></div>`;
   $('#cadClose2').onclick = () => closeCad();
