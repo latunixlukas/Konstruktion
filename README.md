@@ -12,7 +12,7 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 - Schrauben, Muttern und Scheiben (ISO 4017, ISO 4762, ISO 4032, ISO 7089), von oben oder von der Seite
 - Linien, Mittellinien und Maße
 - Umschaltbar zwischen 2D (Zeichnen) und 3D (Ansehen, Drehen, Zoomen), mit Maß-Knopf: Teil anklicken zeigt Länge × Breite × Höhe
-- **CAD-Modelle ansehen** (STEP, .stp/.step): werden nur im Browser gelesen, nicht hochgeladen und nicht gespeichert
+- **CAD-Modelle** (STEP, .stp/.step): werden nur im Browser gelesen, nicht hochgeladen und nicht gespeichert. In 2D als grauer Hintergrund (Draufsicht/Vorderansicht/Seitenansicht) mit Kantenfang, in 3D zusammen mit den eigenen Teilen
 - Einheiten mm / cm / m umschaltbar, Eingaben wie `25cm` oder `0,3m` möglich
 - Automatische Stückliste mit Masse (kg) und Nahtlängen, Schriftfeld, Export als PNG/SVG
 
