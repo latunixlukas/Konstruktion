@@ -152,6 +152,15 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
 #v3{position:absolute;inset:0;z-index:0}
 .hint,.zoom,.status,.titleblock{z-index:2}
 #v3 canvas{width:100%;height:100%;display:block}
+.zoom button[aria-pressed="true"]{background:var(--fg);color:var(--invert)}
+.cadbar{position:absolute;left:14px;top:58px;z-index:3;display:flex;align-items:center;gap:10px;padding:5px 6px 5px 6px;font-size:.82rem;max-width:calc(100% - 90px)}
+.cadbar #cadName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cadtag{font:600 .7rem var(--f-mono);background:var(--fg);color:var(--invert);border-radius:99px;padding:2px 8px}
+.cadbar button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 10px;cursor:pointer;font-size:.78rem}
+.m3{position:absolute;z-index:3;transform:translate(-50%,-50%);font:500 .74rem var(--f-mono);background:var(--sel);color:#fff;padding:2px 7px;border-radius:5px;pointer-events:none;white-space:nowrap}
+#m3y{transform:translate(-50%,6px)}
+#m3z{transform:translate(10px,-50%)}
+.val{font-family:var(--f-mono);font-size:.84rem;overflow-wrap:anywhere}
 [hidden]{display:none!important}
 .status{position:absolute;left:14px;bottom:14px;display:flex;flex-wrap:wrap;gap:4px 14px;font:500 .74rem var(--f-mono);color:var(--muted);padding:6px 12px;pointer-events:none;max-width:calc(100% - 28px)}
 .zoom{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;padding:3px;border-radius:12px}
@@ -264,9 +273,12 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <hr>
           <button id="bPng" type="button">Als Bild (PNG)</button>
           <button id="bSvg" type="button">Als Vektorgrafik (SVG)</button>
+          <hr>
+          <button id="bCad" type="button">CAD-Modell ansehen (.stp / .step) …</button>
         </div>
       </details>
       <input type="file" id="fileIn" accept=".json,application/json" hidden>
+      <input type="file" id="cadIn" accept=".stp,.step,.STP,.STEP" hidden>
     </div>
   </header>
 
@@ -319,9 +331,13 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <button type="button" id="zIn" title="Hineinzoomen" aria-label="Hineinzoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         <button type="button" id="zOut" title="Herauszoomen" aria-label="Herauszoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
         <button type="button" id="zFit" title="Alles anzeigen" aria-label="Alles anzeigen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+        <button type="button" id="zDims" title="Maße am angeklickten Teil anzeigen" aria-label="Maße anzeigen" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16L16 3l5 5L8 21z"/><path d="M7 12l2 2M10 9l2 2M13 6l2 2"/></svg></button>
       </div>
       <div class="status pill" id="status"></div>
-      <div id="v3" hidden></div>
+      <div id="v3" hidden>
+        <div class="cadbar pill" id="cadBar" hidden><span class="cadtag">CAD</span><span id="cadName"></span><button type="button" id="cadClose">Schließen</button></div>
+        <div class="m3" id="m3x" hidden></div><div class="m3" id="m3y" hidden></div><div class="m3" id="m3z" hidden></div>
+      </div>
       <div class="titleblock" id="tblock"></div>
     </div>
 
@@ -935,7 +951,7 @@ function optSelect(id, entries, val){ return `<select id="${id}">${entries.map((
 function renderToolOpts(){
   const el = $('#toolopts'); let h = '';
   if (typeof mode !== 'undefined' && mode === '3d'){
-    h = `<span class="unitlbl">3D-Ansicht zum Anschauen: Bleche bekommen ihre Dicke, Profile und Schrauben ihre Länge. Teil antippen = auswählen und rechts ändern. Gezeichnet wird in <b>2D</b>.</span>`;
+    h = cad ? `<span class="unitlbl">CAD-Modell nur zum Ansehen. Es wird nicht gespeichert und nirgends hochgeladen. Teil antippen = Name und Maße.</span>` : `<span class="unitlbl">3D-Ansicht zum Anschauen: Bleche bekommen ihre Dicke, Profile und Schrauben ihre Länge. Teil antippen = auswählen und rechts ändern. Gezeichnet wird in <b>2D</b>.</span>`;
   } else if (tool === 'select'){
     h = `<label>Raster ${optSelect('o-snap', [1,2,5,10,25,50,100].map(v => [v, fmt(v)]), state.snap)}</label>
       <label class="chk"><input type="checkbox" id="o-snapOn"${state.snapOn ? ' checked' : ''}> einrasten</label>
@@ -1499,7 +1515,7 @@ $('#bUndo').onclick = undo;
 $('#bRedo').onclick = redo;
 
 /* ---------- 3D-Ansicht ---------- */
-let mode = '2d', three = null, refit3d = false;
+let mode = '2d', three = null, refit3d = false, cad = null, cadSel = -1, dims3d = false;
 const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
 function loadThree(){
   return new Promise((res, rej) => {
@@ -1512,6 +1528,7 @@ $('#viewmode').addEventListener('click', e => { const b = e.target.closest('[dat
 async function setMode(m){
   mode = m; renderModeSeg();
   $('#v3').hidden = m !== '3d'; svg.style.visibility = m === '3d' ? 'hidden' : '';
+  $('#zDims').hidden = m !== '3d';
   renderToolOpts();
   if (m === '3d'){
     $('#hint').textContent = '3D wird geladen …';
@@ -1520,7 +1537,9 @@ async function setMode(m){
     const first = !three;
     init3d(); build3d(); if (first || refit3d){ fit3d(); refit3d = false; } draw3d();
     $('#hint').textContent = 'Ziehen = drehen · Rechte Maustaste oder Shift = verschieben · Mausrad = zoomen';
+    if (cad) renderCadInfo();
   } else {
+    if (cad) renderProps();
     $('#hint').textContent = TOOLS.find(t => t.k === tool).hint; render();
   }
 }
@@ -1554,6 +1573,22 @@ function draw3d(){
   c.position.set(o.t.x + o.r*ce*Math.cos(o.az), o.t.y + o.r*ce*Math.sin(o.az), o.t.z + o.r*Math.sin(o.el));
   c.lookAt(o.t); c.near = o.r / 200; c.far = o.r * 200; c.updateProjectionMatrix();
   three.renderer.render(three.scene, c);
+  placeDims3d();
+}
+function placeDims3d(){
+  const els = ['#m3x', '#m3y', '#m3z'].map(q => $(q)), b = three && three.mbox;
+  if (!b){ els.forEach(e => e.hidden = true); return; }
+  const el = three.renderer.domElement, w = el.clientWidth, h = el.clientHeight, sz = b.getSize(new THREE.Vector3());
+  const mid = [
+    new THREE.Vector3((b.min.x + b.max.x)/2, b.min.y, b.min.z),
+    new THREE.Vector3(b.max.x, (b.min.y + b.max.y)/2, b.min.z),
+    new THREE.Vector3(b.max.x, b.min.y, (b.min.z + b.max.z)/2),
+  ];
+  [sz.x, sz.y, sz.z].forEach((v, i) => {
+    const p = mid[i].clone().project(three.camera), e = els[i];
+    e.textContent = fmt(v); e.hidden = p.z > 1;
+    e.style.left = ((p.x + 1) / 2 * w) + 'px'; e.style.top = ((1 - p.y) / 2 * h) + 'px';
+  });
 }
 function hexShape(sw, holeR){
   const R = sw / Math.sqrt(3), sh = new THREE.Shape();
@@ -1569,7 +1604,7 @@ function ringShape(ro, ri){
 const extrude = (sh, h) => new THREE.ExtrudeGeometry(sh, {depth:h, bevelEnabled:false, curveSegments:32});
 function build3d(){
   const {root, scene} = three;
-  [...root.children].forEach(ch => { root.remove(ch); ch.traverse(o => { if (o.geometry) o.geometry.dispose(); }); });
+  [...root.children].forEach(ch => { root.remove(ch); ch.traverse(o => { if (o.geometry && !o.userData.keep) o.geometry.dispose(); }); });
   if (three.grid){ scene.remove(three.grid); three.grid.geometry.dispose(); three.grid = null; }
   const col = n => new THREE.Color(cssVar(n) || '#888');
   scene.background = col('--paper');
@@ -1588,6 +1623,16 @@ function build3d(){
     m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), isSel ? edgeSel : edgeMat));
     return m;
   };
+  if (cad){
+    // CAD-Modell: nur ansehen, Geometrie bleibt im Speicher (wird nicht weggeworfen)
+    cad.parts.forEach((p, i) => {
+      const isSel = i === cadSel;
+      const m = new THREE.Mesh(p.geo, isSel ? mats.sel : (p.mat || mats.metal));
+      m.userData.cad = i; m.userData.keep = true;
+      const e = new THREE.LineSegments(p.edges, isSel ? edgeSel : edgeMat); e.userData.keep = true; m.add(e);
+      root.add(m);
+    });
+  } else {
   // Bleche: überlappende Teile werden aufeinander gestapelt
   const rects = state.shapes.filter(s => s.type === 'rect'), base = new Map();
   const over = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -1697,6 +1742,17 @@ function build3d(){
     const m = s.style === 'center' ? new THREE.LineDashedMaterial({color:s.id === selId ? selC : ink, dashSize:8, gapSize:3}) : (s.id === selId ? edgeSel : edgeMat);
     const l = new THREE.Line(geo, m); if (s.style === 'center') l.computeLineDistances(); l.userData.id = s.id; root.add(l);
   });
+  }
+  // Maßrahmen um das ausgewählte Teil
+  three.mbox = null;
+  if (dims3d){
+    const box = new THREE.Box3();
+    root.children.forEach(ch => {
+      const hitSel = cad ? ch.userData.cad === cadSel && cadSel >= 0 : (ch.userData.id === selId && selId != null) || (ch.children.some(c => c.userData.id === selId) && selId != null);
+      if (hitSel) box.expandByObject(ch);
+    });
+    if (!box.isEmpty()){ three.mbox = box; root.add(new THREE.Box3Helper(box, selC)); }
+  }
   // Boden-Raster
   const box = new THREE.Box3().setFromObject(root);
   if (!box.isEmpty()){
@@ -1756,13 +1812,106 @@ function pick3d(e){
   const r = three.renderer.domElement.getBoundingClientRect();
   const ray = new THREE.Raycaster(); ray.params.Line.threshold = 2;
   ray.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), three.camera);
-  let id = null;
+  let id = null, ci = -1;
   for (const h of ray.intersectObjects(three.root.children, true)){
-    let o = h.object; while (o && o.userData.id == null) o = o.parent;
-    if (o){ id = o.userData.id; break; }
+    if (h.object.type === 'Box3Helper') continue;
+    let o = h.object; while (o && o.userData.id == null && o.userData.cad == null) o = o.parent;
+    if (o){ if (o.userData.cad != null) ci = o.userData.cad; else id = o.userData.id; break; }
   }
-  selId = id; renderProps(); build3d(); draw3d();
+  if (cad){ cadSel = ci; renderCadInfo(); } else { selId = id; renderProps(); }
+  build3d(); draw3d();
 }
+
+/* ---------- CAD-Modell ansehen (STEP) ---------- */
+// Gelesen wird komplett im Browser (OpenCascade als WebAssembly). Die Datei wird nicht hochgeladen und nicht gespeichert.
+const OCCT_BASE = 'https://cdn.jsdelivr.net/npm/occt-import-js@0.0.23/dist/';
+let cadWorker = null, cadJob = null;
+function readStep(buf){
+  if (!cadWorker){
+    const src = `importScripts('${OCCT_BASE}occt-import-js.js');
+      const ready = occtimportjs({locateFile: f => '${OCCT_BASE}' + f});
+      onmessage = async e => {
+        try {
+          const o = await ready, r = o.ReadStepFile(new Uint8Array(e.data), null);
+          if (!r.success){ postMessage({error:'read'}); return; }
+          const tr = [], meshes = r.meshes.map(m => {
+            const pos = new Float32Array(m.attributes.position.array), idx = new Uint32Array(m.index.array);
+            const nor = m.attributes.normal ? new Float32Array(m.attributes.normal.array) : null;
+            tr.push(pos.buffer, idx.buffer); if (nor) tr.push(nor.buffer);
+            return {name:m.name || '', color:m.color || null, pos, nor, idx};
+          });
+          postMessage({meshes}, tr);
+        } catch(err){ postMessage({error:String(err && err.message || err)}); }
+      };`;
+    cadWorker = new Worker(URL.createObjectURL(new Blob([src], {type:'text/javascript'})));
+    cadWorker.onmessage = e => { const j = cadJob; cadJob = null; if (!j) return; e.data.error ? j.rej(new Error(e.data.error)) : j.res(e.data.meshes); };
+    cadWorker.onerror = e => { const j = cadJob; cadJob = null; cadWorker = null; if (j) j.rej(new Error(e.message || 'worker')); };
+  }
+  return new Promise((res, rej) => { cadJob = {res, rej}; cadWorker.postMessage(buf, [buf]); });
+}
+async function openCad(file){
+  $('#fileMenu').open = false;
+  if (mode !== '3d') await setMode('3d');
+  if (!three) return;
+  $('#hint').textContent = `„${file.name}“ wird gelesen … Das kann 10 bis 30 Sekunden dauern.`;
+  try {
+    const meshes = await readStep(await file.arrayBuffer());
+    if (!meshes.length) throw new Error('leer');
+    setCad(file.name, meshes);
+    $('#hint').textContent = 'Ziehen = drehen · Rechte Maustaste oder Shift = verschieben · Mausrad = zoomen';
+  } catch(e){
+    $('#hint').textContent = 'Das CAD-Modell konnte nicht gelesen werden. Möglich sind STEP-Dateien (.stp, .step). Beim ersten Mal braucht die Seite Internet.';
+  }
+}
+function setCad(name, meshes){
+  closeCad(true);
+  cad = {name, parts:meshes.map((m, i) => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(m.pos, 3));
+    if (m.nor) g.setAttribute('normal', new THREE.BufferAttribute(m.nor, 3));
+    g.setIndex(new THREE.BufferAttribute(m.idx, 1));
+    if (!m.nor) g.computeVertexNormals();
+    g.computeBoundingBox();
+    const mat = m.color ? new THREE.MeshStandardMaterial({color:new THREE.Color(m.color[0], m.color[1], m.color[2]), metalness:.3, roughness:.6}) : null;
+    return {name:m.name || `Teil ${i + 1}`, geo:g, edges:new THREE.EdgesGeometry(g, 30), mat};
+  })};
+  cadSel = -1;
+  $('#cadName').textContent = name; $('#cadBar').hidden = false;
+  renderToolOpts(); build3d(); fit3d(); draw3d(); renderCadInfo();
+}
+function closeCad(silent){
+  if (!cad) return;
+  cad.parts.forEach(p => { p.geo.dispose(); p.edges.dispose(); if (p.mat) p.mat.dispose(); });
+  cad = null; cadSel = -1; $('#cadBar').hidden = true;
+  if (silent) return;
+  renderToolOpts(); renderProps();
+  if (three){ build3d(); fit3d(); draw3d(); }
+}
+function renderCadInfo(){
+  if (!cad) return;
+  const b = new THREE.Box3();
+  if (cadSel >= 0) b.copy(cad.parts[cadSel].geo.boundingBox); else cad.parts.forEach(p => b.union(p.geo.boundingBox));
+  const z = b.getSize(new THREE.Vector3());
+  $('#selInfo').innerHTML = `<span class="badge">${cadSel >= 0 ? 'CAD-Bauteil' : 'CAD-Modell'}</span>`;
+  $('#props').innerHTML = `<div class="props">
+      <label>Datei</label><div class="val">${esc(cad.name)}</div>
+      ${cadSel >= 0 ? `<label>Bauteil</label><div class="val">${esc(cad.parts[cadSel].name)}</div>` : `<label>Bauteile</label><div class="val">${cad.parts.length}</div>`}
+      <label>Länge (X)</label><div class="val">${fmt(z.x)}</div>
+      <label>Breite (Y)</label><div class="val">${fmt(z.y)}</div>
+      <label>Höhe (Z)</label><div class="val">${fmt(z.z)}</div>
+    </div>
+    <p class="note">${cadSel >= 0 ? 'Maße des Bauteils entlang der Achsen (umschließender Quader).' : 'Teil antippen, um Name und Maße zu sehen.'} Mit dem Lineal-Knopf rechts oben erscheinen die Maße direkt im Bild.</p>
+    <p class="note">Das Modell wird nur angesehen. Es wird nicht gespeichert und nirgends hochgeladen.</p>
+    <div class="btnrow"><button class="btn" type="button" id="cadClose2">CAD-Modell schließen</button></div>`;
+  $('#cadClose2').onclick = () => closeCad();
+}
+$('#bCad').onclick = () => $('#cadIn').click();
+$('#cadIn').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) openCad(f); };
+$('#cadClose').onclick = () => closeCad();
+$('#zDims').onclick = () => {
+  dims3d = !dims3d; $('#zDims').setAttribute('aria-pressed', dims3d);
+  if (three && mode === '3d'){ build3d(); draw3d(); }
+};
 
 /* ---------- Hell / Dunkel ---------- */
 const THEME_KEY = 'werkstatt-zeichenbrett-theme';
@@ -1859,6 +2008,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 function renderProjectName(){ $('#projName').textContent = project ? project.name : 'Kein Projekt'; }
 
 function loadProject(rec){
+  closeCad(true);
   project = {id:rec.id, name:rec.name, by:rec.by || ''};
   state = Object.assign(freshState(false), rec.data);
   state.title = Object.assign({name:rec.name, by:rec.by || '', date:today}, state.title);
