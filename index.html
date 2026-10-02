@@ -162,6 +162,25 @@ html.locked,html.locked body{overflow:hidden}
 .lsform label{font-size:.84rem;color:var(--muted)}
 .lsform input,.lsform select{width:100%}
 
+/* Spiegeln & Muster */
+.tblock{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.tblock summary{cursor:pointer;font:600 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.tblock .props{margin-top:10px}
+.tblock .btnrow{align-items:center}
+
+/* Ebenen */
+.layers{display:grid;gap:6px}
+.lrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto;gap:6px;align-items:center;padding:4px 6px;border:1px solid var(--line);border-radius:8px}
+.lrow.act{border-color:var(--fg)}
+.lrow input[type=radio]{accent-color:var(--fg)}
+.lrow input.lname{border:0;background:transparent;padding:3px 4px;font:500 .86rem var(--f-body);min-width:0}
+.lrow input.lname:focus{background:var(--raised);outline:1px solid var(--line-strong)}
+.lrow .lcnt{font:500 .72rem var(--f-mono);color:var(--muted)}
+.lrow button{border:0;background:transparent;width:28px;height:28px;border-radius:6px;cursor:pointer;display:grid;place-items:center;color:var(--fg)}
+.lrow button:hover{background:var(--surface)}
+.lrow button[aria-pressed="false"]{color:var(--muted);opacity:.55}
+.lrow button svg{width:16px;height:16px}
+
 /* Zuschnitt */
 .cutpanel{width:min(860px,100%);max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:14px}
 .cuthead{display:flex;align-items:center;justify-content:space-between}
@@ -293,6 +312,11 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
 .boxsel{fill:color-mix(in srgb,var(--sel) 10%,transparent);stroke:var(--sel);stroke-width:1}
 .boxsel.cross{stroke-dasharray:5 3}
 .snapmk{fill:none;stroke:#16a34a;stroke-width:2}
+.note2{fill:var(--ink);font-family:var(--f-body);font-weight:500}
+.lead{fill:none;stroke:var(--ink);stroke-width:.9}
+.leaddot,.leadarrow{fill:var(--ink)}
+.balloon{fill:var(--paper);stroke:var(--ink);stroke-width:1.2}
+.sel .note2{fill:var(--sel)} .sel .lead,.sel .balloon{stroke:var(--sel)} .sel .leaddot,.sel .leadarrow{fill:var(--sel)}
 
 @media (max-width: 1560px){ .tool span{display:none} .tool{padding:7px 10px} }
 @media (max-width: 900px){
@@ -492,7 +516,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <summary>So geht's</summary>
           <ul>
             <li><b>Rechteck</b>: auf dem Blatt ziehen (oder einmal tippen für 100 × 50 mm). Für Bleche, Flachstahl, Laschen.</li>
-            <li><b>Bohrung</b>: tippen, wo die Bohrung hin soll. Oben wählen: Durchgangsbohrung oder Gewinde.</li>
+            <li><b>Bohrung</b>: tippen, wo die Bohrung hin soll. Oben wählen: Durchgangsbohrung oder Gewinde – oder bei „Form“ ein <b>Langloch</b> oder einen <b>Rechteck-Ausschnitt</b>. Bleche bekommen bei den Eigenschaften unter „Ecken“ eine Fase oder einen Radius.</li>
             <li><b>Schraube</b> (Normteile): Sechskant-, Zylinder- und Senkschraube, Gewindestift, Mutter, Sicherungsmutter, Scheibe, Zylinderstift, Sicherungsring, Kugellager.</li>
             <li><b>Schraube</b>: tippen. Auf einer Bohrung rastet sie mittig ein. Art, Größe und Länge oben wählen.</li>
             <li><b>Ronde</b>: runde Bleche und Flansche mit Innenloch. <b>Kreis</b>: Kreis, Bogen oder Lochkreis mit gleichmäßig verteilten Bohrungen.</li>
@@ -502,17 +526,24 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Profil</b>: Winkel, U-Stahl, Rohre und Rundstahl. Längsansicht in Richtung der Länge ziehen, Querschnitt einfach antippen.</li>
             <li><b>Naht</b>: entlang der Kante ziehen, an die geschweißt wird. Art und a-Maß oben wählen.</li>
             <li><b>Maß</b>: von Punkt zu Punkt ziehen. Der Abstand wird automatisch beschriftet.</li>
+            <li><b>Text</b>: Text antippen und rechts eintippen. <b>Positionsnummer</b> und <b>Hinweispfeil</b> vom Teil nach außen ziehen – die Nummern zählen automatisch hoch.</li>
+            <li><b>Spiegeln &amp; Muster</b>: Teil(e) auswählen, rechts unter den Eigenschaften „Spiegeln &amp; Muster“ aufklappen. Muster = Anzahl × Abstand in X und Y.</li>
+            <li><b>Ebenen</b>: rechts „+ Neue Ebene“. Punkt = aktive Ebene (neue Teile landen dort), Auge = aus-/einblenden, Schloss = sperren. Teile über das Feld „Ebene“ verschieben.</li>
             <li><b>Auswahl</b>: Teil anklicken, verschieben, an den Ecken ziehen. Werte rechts genau eintippen, z.&nbsp;B. <kbd>25cm</kbd> oder <kbd>0,3m</kbd>.</li>
             <li>Mehrere Teile: Rahmen aufziehen (nach rechts = ganz drin, nach links = berührt) oder Shift + Klick. <kbd>Strg+C</kbd> <kbd>Strg+V</kbd> <kbd>Strg+X</kbd> <kbd>Strg+A</kbd>.</li>
             <li><b>3D</b>: ausgewähltes Teil ziehen = verschieben, mit Shift ziehen = anheben (oder Feld „Höhe Z“, Tasten Bild↑/Bild↓). Schnitt-Knopf rechts oben schneidet das Modell auf.</li>
             <li>Ansicht verschieben: rechte Maustaste ziehen (am Handy: leere Fläche ziehen). Zoomen: Mausrad oder zwei Finger.</li>
-            <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>O</kbd> <kbd>K</kbd> <kbd>G</kbd> <kbd>W</kbd> <kbd>P</kbd> <kbd>N</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
+            <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>O</kbd> <kbd>K</kbd> <kbd>G</kbd> <kbd>W</kbd> <kbd>P</kbd> <kbd>N</kbd> <kbd>T</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
           </ul>
         </details>
       </section>
       <section>
         <h2>Eigenschaften <small id="selInfo"></small></h2>
         <div id="props"></div>
+      </section>
+      <section>
+        <h2>Ebenen <button class="btn" type="button" id="bLayerAdd">+ Neue Ebene</button></h2>
+        <div class="layers" id="layers"></div>
       </section>
       <section>
         <h2>Stückliste <span class="row"><button class="btn" type="button" id="bCut">Zuschnitt</button><button class="btn" type="button" id="bCopyBom">Kopieren</button></span></h2>
@@ -625,9 +656,10 @@ let tool = 'select', selId = null;
 let undoStack = [], redoStack = [];
 const opts = {
   rect:{name:'Flachstahl', t:10, mat:'S235JR'},
-  hole:{fit:'D-M8', d:9},
+  hole:{fit:'D-M8', d:9, form:'round', l:30, b:11, w:60, h:40, r:0},
   screw:{kind:'hex', size:'M8', len:30, grade:'8.8', view:'top'},
   line:{style:'solid'},
+  text:{kind:'text', size:5},
   profile:{kind:'L', size:'L 50×5', len:500, view:'side', mat:'S235JR'},
   shaft:{steps:'25×40; 30×25; 35×100; 30×25; 25×40', mat:'C45'},
   bend:{legs:'40; 60; 40', angles:'90; 90', t:3, r:4, w:100, mat:'S235JR'},
@@ -694,7 +726,8 @@ const EXAMPLES = {
 function freshState(tpl){
   const ex = EXAMPLES[tpl];
   return {shapes: ex ? ex.build() : [], unit:'mm', snap:5, snapOn:true, showDims:true,
-    title:{name: ex ? ex.name : 'Neue Zeichnung', by:'', date:today}};
+    title:{name: ex ? ex.name : 'Neue Zeichnung', by:'', date:today},
+    layers:[{id:'L1', name:'Standard', on:true, lock:false}], activeLayer:'L1'};
 }
 let project = null;
 state = freshState(false);
@@ -725,7 +758,7 @@ const isSel = id => id != null && (id === selId || multi.has(id));
 const selShapes = () => state.shapes.filter(s => isSel(s.id));
 function setSel(ids){ ids = [...ids]; selId = ids.length ? ids[0] : null; multi = new Set(ids.slice(1)); }
 function clearSel(){ selId = null; multi.clear(); }
-function changed(full = true){ save(); render(); if (full){ renderProps(); renderBom(); renderTitle(); } if (mode === '3d' && three){ build3d(); draw3d(); } }
+function changed(full = true){ save(); render(); if (full){ renderProps(); renderBom(); renderTitle(); renderLayers(); } if (mode === '3d' && three){ build3d(); draw3d(); } }
 
 /* ---------- Ansicht ---------- */
 let W = 800, H = 500;
@@ -956,6 +989,8 @@ function rotBox(s, b){
 function bbox(s){
   if (s.type === 'profile') return rotBox(s, profileLocalBox(s));
   if (s.type === 'bend') return rotBox(s, bendLocalBox(s));
+  if (s.type === 'slot') return rotBox(s, {x0:-s.l/2, y0:-s.b/2, x1:s.l/2, y1:s.b/2});
+  if (s.type === 'cutout') return rotBox(s, {x0:-s.w/2, y0:-s.h/2, x1:s.w/2, y1:s.h/2});
   if (s.type === 'disc' || s.type === 'circle') return {x0:s.x - s.d/2, y0:s.y - s.d/2, x1:s.x + s.d/2, y1:s.y + s.d/2};
   if (s.type === 'shaft'){ const r = shaftDmax(s)/2; return rotBox(s, {x0:0, y0:-r, x1:shaftLen(s), y1:r}); }
   if (s.type === 'rect') return s.rot ? rotBox(s, {x0:0, y0:0, x1:s.w, y1:s.h}) : {x0:s.x, y0:s.y, x1:s.x + s.w, y1:s.y + s.h};
@@ -965,6 +1000,9 @@ function bbox(s){
     const ps = [[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]].map(([x, y]) => localToWorld(s, x, y));
     return {x0:Math.min(...ps.map(p => p.x)), y0:Math.min(...ps.map(p => p.y)), x1:Math.max(...ps.map(p => p.x)), y1:Math.max(...ps.map(p => p.y))};
   }
+  if (s.type === 'text'){ const w = Math.max(1, String(s.text).length) * s.size * .62; return rotBox(s, {x0:0, y0:-s.size*.25, x1:w, y1:s.size}); }
+  if (s.type === 'balloon'){ const R = s.size * 1.3; return {x0:Math.min(s.x1, s.x2 - R), y0:Math.min(s.y1, s.y2 - R), x1:Math.max(s.x1, s.x2 + R), y1:Math.max(s.y1, s.y2 + R)}; }
+  if (s.type === 'leader'){ const w = Math.max(1, String(s.text).length) * s.size * .62 + s.size; return {x0:Math.min(s.x1, s.x2), y0:Math.min(s.y1, s.y2), x1:Math.max(s.x1, s.x2 + w), y1:Math.max(s.y1, s.y2 + s.size * 1.2)}; }
   return {x0:Math.min(s.x1, s.x2), y0:Math.min(s.y1, s.y2), x1:Math.max(s.x1, s.x2), y1:Math.max(s.y1, s.y2)};
 }
 function distSeg(p, a, b){
@@ -977,6 +1015,7 @@ function hit(s, p, tol){
   if (s.type === 'rect'){ const l = s.rot ? worldToLocal(s, p) : {x:p.x - s.x, y:p.y - s.y}; return l.x >= -tol && l.x <= s.w + tol && l.y >= -tol && l.y <= s.h + tol; }
   if (s.type === 'hole') return Math.hypot(p.x - s.x, p.y - s.y) <= s.d/2 + tol;
   if (s.type === 'screw'){ const l = worldToLocal(s, p), b = screwLocalBox(s); return l.x >= b.x0 - tol && l.x <= b.x1 + tol && l.y >= b.y0 - tol && l.y <= b.y1 + tol; }
+  if (s.type === 'slot' || s.type === 'cutout'){ const l = worldToLocal(s, p), o = cutOutline(s); return inPoly(l, o) || o.some((q, i) => distSeg(l, {x:q[0], y:q[1]}, {x:o[(i+1) % o.length][0], y:o[(i+1) % o.length][1]}) <= tol); }
   if (s.type === 'disc') return Math.hypot(p.x - s.x, p.y - s.y) <= s.d/2 + tol;
   if (s.type === 'circle'){
     const r = Math.hypot(p.x - s.x, p.y - s.y); if (Math.abs(r - s.d/2) > tol * 1.5) return false;
@@ -988,6 +1027,9 @@ function hit(s, p, tol){
   if (s.type === 'shaft'){ const l = worldToLocal(s, p), r = shaftDmax(s)/2; return l.x >= -tol && l.x <= shaftLen(s) + tol && Math.abs(l.y) <= r + tol; }
   if (s.type === 'profile'){ const l = worldToLocal(s, p), b = profileLocalBox(s); return l.x >= b.x0 - tol && l.x <= b.x1 + tol && l.y >= b.y0 - tol && l.y <= b.y1 + tol; }
   if (s.type === 'line') return distSeg(p, {x:s.x1, y:s.y1}, {x:s.x2, y:s.y2}) <= tol;
+  if (s.type === 'text'){ const b = bbox(s); return p.x >= b.x0 - tol && p.x <= b.x1 + tol && p.y >= b.y0 - tol && p.y <= b.y1 + tol; }
+  if (s.type === 'balloon') return Math.hypot(p.x - s.x2, p.y - s.y2) <= s.size * 1.3 + tol || distSeg(p, {x:s.x1, y:s.y1}, {x:s.x2, y:s.y2}) <= tol;
+  if (s.type === 'leader'){ const b = bbox(s); return distSeg(p, {x:s.x1, y:s.y1}, {x:s.x2, y:s.y2}) <= tol || (p.x >= s.x2 - tol && p.x <= b.x1 + tol && p.y >= s.y2 - tol && p.y <= s.y2 + s.size*1.2 + tol); }
   if (s.type === 'weld') return distSeg(p, {x:s.x1, y:s.y1}, {x:s.x2, y:s.y2}) <= tol * 1.5;
   if (s.type === 'dim'){
     const n = dimNormal(s);
@@ -995,10 +1037,14 @@ function hit(s, p, tol){
   }
   return false;
 }
-const LAYER = {disc:0, circle:2, rect:0, profile:1, shaft:1, bend:1, line:2, hole:3, weld:4, screw:5, dim:6};
-const ordered = () => state.shapes.slice().sort((a, b) => LAYER[a.type] - LAYER[b.type]);
+const LAYER = {text:7, balloon:7, leader:7, slot:3, cutout:3, disc:0, circle:2, rect:0, profile:1, shaft:1, bend:1, line:2, hole:3, weld:4, screw:5, dim:6};
+// Ebenen: ausgeblendet = nicht gezeichnet, gesperrt = sichtbar, aber nicht anklickbar
+const layerOf = s => (state.layers || []).find(l => l.id === (s.layer || 'L1')) || {on:true, lock:false};
+const isVis = s => layerOf(s).on !== false;
+const isFree = s => isVis(s) && !layerOf(s).lock;
+const ordered = () => state.shapes.filter(isVis).sort((a, b) => LAYER[a.type] - LAYER[b.type]);
 function pick(p){
-  const tol = 6 / view.z, list = ordered().reverse();
+  const tol = 6 / view.z, list = ordered().filter(isFree).reverse();
   // zuerst nicht-flächige Objekte (Linien, Maße, Bohrungen, Schrauben), dann Rechtecke
   return list.find(s => s.type !== 'rect' && hit(s, p, tol)) || list.find(s => hit(s, p, tol)) || null;
 }
@@ -1006,7 +1052,7 @@ function handles(s){
   if (!s) return [];
   if (s.type === 'rect' && s.rot) return [];
   if (s.type === 'rect') return [{k:'ll', x:s.x, y:s.y}, {k:'lr', x:s.x + s.w, y:s.y}, {k:'ur', x:s.x + s.w, y:s.y + s.h}, {k:'ul', x:s.x, y:s.y + s.h}];
-  if (s.type === 'line' || s.type === 'weld') return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}];
+  if (s.type === 'line' || s.type === 'weld' || s.type === 'balloon' || s.type === 'leader') return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}];
   if (s.type === 'profile' && s.view === 'side'){ const w = localToWorld(s, s.len, section(s).w / 2); return [{k:'len', x:w.x, y:w.y}]; }
   if (s.type === 'dim'){ const n = dimNormal(s); return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}, {k:'off', x:(s.x1 + s.x2)/2 + n.x*s.off, y:(s.y1 + s.y2)/2 + n.y*s.off}]; }
   if (s.type === 'hole' || s.type === 'disc' || s.type === 'circle') return [{k:'r', x:s.x + s.d/2, y:s.y}];
@@ -1153,7 +1199,7 @@ function shapeMarkupInner(s, T, showDims){
   let o = '';
   if (s.type === 'rect'){
     const c = [[0,0],[s.w,0],[s.w,s.h],[0,s.h]].map(([x, y]) => localToWorld(s, x, y));
-    o += `<polygon class="part" points="${c.map(q => f1(T.x(q.x)) + ',' + f1(T.y(q.y))).join(' ')}"/>`;
+    o += `<polygon class="part" points="${rectOutline(s).map(([x, y]) => { const q = localToWorld(s, x, y); return f1(T.x(q.x)) + ',' + f1(T.y(q.y)); }).join(' ')}"/>`;
     if (showDims){
       o += dimMarkup(T, c[0].x, c[0].y, c[1].x, c[1].y, -22, num(s.w));
       o += dimMarkup(T, c[0].x, c[0].y, c[3].x, c[3].y, 22, num(s.h));
@@ -1181,6 +1227,13 @@ function shapeMarkupInner(s, T, showDims){
     o += profileMarkup(s, T, showDims);
   } else if (s.type === 'shaft'){
     o += shaftMarkup(s, T, showDims);
+  } else if (s.type === 'slot' || s.type === 'cutout'){
+    const P = ([x, y]) => { const q = localToWorld(s, x, y); return f1(T.x(q.x)) + ',' + f1(T.y(q.y)); };
+    o += `<polygon class="hole" points="${cutOutline(s).map(P).join(' ')}"/>`;
+    const ex = (s.type === 'slot' ? s.l : s.w)/2 + 6/T.z, ey = (s.type === 'slot' ? s.b : s.h)/2 + 6/T.z;
+    const a = P([-ex, 0]).split(','), b = P([ex, 0]).split(','), c = P([0, -ey]).split(','), d = P([0, ey]).split(',');
+    o += `<line class="center" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/><line class="center" x1="${c[0]}" y1="${c[1]}" x2="${d[0]}" y2="${d[1]}"/>`;
+    if (showDims){ const bb = bbox(s); o += `<text class="lbl" x="${f1(T.x(bb.x1) + 3)}" y="${f1(T.y(bb.y1) - 3)}">${s.type === 'slot' ? `LL ${num(s.l)}×${num(s.b)}` : `□ ${num(s.w)}×${num(s.h)}`}</text>`; }
   } else if (s.type === 'disc'){
     const cx = T.x(s.x), cy = T.y(s.y), R = s.d/2*T.z, ex = R + 8;
     o += `<circle class="part" cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(R)}"/>`;
@@ -1190,6 +1243,19 @@ function shapeMarkupInner(s, T, showDims){
       o += dimMarkup(T, s.x - s.d/2, s.y - s.d/2, s.x + s.d/2, s.y - s.d/2, -14, 'Ø' + num(s.d));
       o += `<text class="lbl" x="${f1(cx + R*.72 + 4)}" y="${f1(cy - R*.72 - 4)}">${esc(s.name || 'Ronde')} · t=${num(s.t)}${s.di > 0 ? ' · innen Ø' + num(s.di) : ''}</text>`;
     }
+  } else if (s.type === 'text'){
+    const x = T.x(s.x), y = T.y(s.y), fs = Math.max(4, s.size * T.z);
+    o += `<text class="note2" x="${f1(x)}" y="${f1(y)}" style="font-size:${f1(fs)}px"${s.rot ? ` transform="rotate(${f1(-s.rot)} ${f1(x)} ${f1(y)})"` : ''}>${esc(s.text)}</text>`;
+  } else if (s.type === 'balloon'){
+    const R = s.size * 1.3 * T.z, cx = T.x(s.x2), cy = T.y(s.y2), tx = T.x(s.x1), ty = T.y(s.y1), d = Math.hypot(tx - cx, ty - cy) || 1;
+    o += `<line class="lead" x1="${f1(cx + (tx - cx) / d * R)}" y1="${f1(cy + (ty - cy) / d * R)}" x2="${f1(tx)}" y2="${f1(ty)}"/><circle class="leaddot" cx="${f1(tx)}" cy="${f1(ty)}" r="2.2"/>`;
+    o += `<circle class="balloon" cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(R)}"/><text class="note2" x="${f1(cx)}" y="${f1(cy)}" text-anchor="middle" dominant-baseline="central" style="font-size:${f1(Math.max(4, s.size * T.z))}px">${esc(s.n)}</text>`;
+  } else if (s.type === 'leader'){
+    const tx = T.x(s.x1), ty = T.y(s.y1), kx = T.x(s.x2), ky = T.y(s.y2), fs = Math.max(4, s.size * T.z), w = String(s.text).length * fs * .62;
+    const dx = tx - kx, dy = ty - ky, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
+    o += `<path class="lead" d="M${f1(kx + w + fs*.4)},${f1(ky)}H${f1(kx)}L${f1(tx)},${f1(ty)}"/>`;
+    o += `<polygon class="leadarrow" points="${f1(tx)},${f1(ty)} ${f1(tx - ux*9 - uy*3)},${f1(ty - uy*9 + ux*3)} ${f1(tx - ux*9 + uy*3)},${f1(ty - uy*9 - ux*3)}"/>`;
+    o += `<text class="note2" x="${f1(kx + fs*.2)}" y="${f1(ky - fs*.25)}" style="font-size:${f1(fs)}px">${esc(s.text)}</text>`;
   } else if (s.type === 'circle'){
     const cx = T.x(s.x), cy = T.y(s.y), R = s.d/2*T.z, cls = s.style === 'center' ? 'center' : 'edge';
     if (circleFull(s)) o += `<circle class="${cls}" cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(R)}"/>`;
@@ -1285,6 +1351,7 @@ const ICONS = {
   rect:'<rect x="3.5" y="6.5" width="17" height="11" fill="none" stroke="currentColor" stroke-width="2"/>',
   hole:'<circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1" stroke-dasharray="3 1.5"/>',
   screw:'<path d="M7.5 3h9l2 4h-13z" fill="currentColor"/><rect x="9.5" y="7" width="5" height="14" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 11l5 2M9.5 15l5 2" stroke="currentColor" stroke-width="1.2"/>',
+  text:'<path d="M5 6h14M12 6v13M9 19h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   line:'<path d="M4 19L20 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
   profile:'<path d="M5 4v15h15" fill="none" stroke="currentColor" stroke-width="3"/>',
   shaft:'<path d="M2 10h4V8h5V6h4v2h4v2h3v4h-3v2h-4v2h-4v-2H6v-2H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
@@ -1297,7 +1364,7 @@ const ICONS = {
 const TOOLS = [
   {k:'select', n:'Auswahl', key:'V', hint:'Teil anklicken · Rahmen aufziehen = mehrere wählen · Shift + Klick = dazu · rechte Maustaste = Ansicht verschieben'},
   {k:'rect', n:'Rechteck', key:'R', hint:'Rechteck aufziehen – oder einmal tippen für 100 × 50 mm.'},
-  {k:'hole', n:'Bohrung', key:'B', hint:'Tippen, wo die Bohrung sitzen soll (Mittelpunkt).'},
+  {k:'hole', n:'Bohrung', key:'B', hint:'Tippen, wo die Bohrung, das Langloch oder der Ausschnitt sitzen soll (Mittelpunkt). Form oben wählen.'},
   {k:'screw', n:'Schraube', key:'S', hint:'Tippen zum Setzen. Auf einer Bohrung rastet die Schraube mittig ein.'},
   {k:'disc', n:'Ronde', key:'O', hint:'Tippen = Mitte der Ronde bzw. des Flansches. Durchmesser, Innenloch und Dicke oben einstellen.'},
   {k:'circle', n:'Kreis', key:'K', hint:'Kreis/Bogen: von der Mitte aus ziehen. Lochkreis: Mitte antippen, die Bohrungen werden verteilt.'},
@@ -1305,6 +1372,7 @@ const TOOLS = [
   {k:'shaft', n:'Welle', key:'W', hint:'Tippen, wo die Welle links beginnen soll. Absätze oben eintragen, z. B. 25×40; 35×100.'},
   {k:'profile', n:'Profil', key:'P', hint:'Längsansicht: in Richtung der Länge ziehen (oder tippen). Querschnitt: tippen.'},
   {k:'weld', n:'Naht', key:'N', hint:'Schweißnaht entlang der Kante ziehen. Das Nahtsymbol erscheint automatisch.'},
+  {k:'text', n:'Text', key:'T', hint:'Text: antippen und rechts den Text eingeben. Positionsnummer und Hinweispfeil: vom Teil aus nach außen ziehen.'},
   {k:'line', n:'Linie', key:'L', hint:'Linie von Punkt zu Punkt ziehen.'},
   {k:'dim', n:'Maß', key:'M', hint:'Von Punkt zu Punkt ziehen. Der Abstand wird automatisch angezeigt.'},
 ];
@@ -1331,8 +1399,11 @@ function renderToolOpts(){
       <label>Dicke <input id="o-t" value="${num(opts.rect.t)}" inputmode="decimal"> ${state.unit}</label>
       <label>Werkstoff ${optSelect('o-mat', Object.entries(MATS).map(([k, m]) => [k, m.name]), opts.rect.mat)}</label>`;
   } else if (tool === 'hole'){
-    h = `<label>Art ${optSelect('o-fit', Object.entries(FITS), opts.hole.fit)}</label>
-      <label>Ø <input id="o-d" value="${num(opts.hole.d)}" inputmode="decimal"> ${state.unit}</label>`;
+    const o = opts.hole;
+    h = `<label>Form ${optSelect('o-form', [['round','Bohrung (rund)'],['slot','Langloch'],['cutout','Rechteck-Ausschnitt']], o.form)}</label>` + (
+      o.form === 'slot' ? `<label>Länge <input id="o-sl" value="${num(o.l)}" inputmode="decimal"> ${state.unit}</label><label>Breite <input id="o-sb" value="${num(o.b)}" inputmode="decimal"> ${state.unit}</label>`
+      : o.form === 'cutout' ? `<label>Breite <input id="o-cw" value="${num(o.w)}" inputmode="decimal"> ${state.unit}</label><label>Höhe <input id="o-ch" value="${num(o.h)}" inputmode="decimal"> ${state.unit}</label><label>Eckradius <input id="o-cr" value="${num(o.r)}" inputmode="decimal"> ${state.unit}</label>`
+      : `<label>Art ${optSelect('o-fit', Object.entries(FITS), o.fit)}</label><label>Ø <input id="o-d" value="${num(o.d)}" inputmode="decimal"> ${state.unit}</label>`);
   } else if (tool === 'screw'){
     const k = opts.screw.kind;
     h = `<label>Art ${optSelect('o-kind', Object.entries(KINDS).map(([v, o]) => [v, o.name]), k)}</label>
@@ -1375,6 +1446,9 @@ function renderToolOpts(){
     h = `<label>Art ${optSelect('o-wkind', Object.entries(WELDS).map(([k, w]) => [k, w.name]), o.kind)}</label>
       <label>Nahtdicke ${optSelect('o-wa', WELD_A.map(v => [v, WELDS[o.kind].pre + ' ' + v + ' mm']), o.a)}</label>
       <label class="chk"><input type="checkbox" id="o-wround"${o.around ? ' checked' : ''}> ringsum</label>`;
+  } else if (tool === 'text'){
+    h = `<label>Art ${optSelect('o-tkind', [['text','Text'],['balloon','Positionsnummer'],['leader','Hinweispfeil mit Text']], opts.text.kind)}</label>
+      <label>Schrifthöhe <input id="o-tsize" value="${num(opts.text.size)}" inputmode="decimal"> ${state.unit}</label>`;
   } else if (tool === 'line'){
     h = `<label>Linienart ${optSelect('o-style', [['solid','Körperkante (breit)'],['center','Mittellinie']], opts.line.style)}</label>`;
   } else {
@@ -1391,6 +1465,8 @@ $('#toolopts').addEventListener('change', e => {
   if (id === 'o-name') opts.rect.name = v;
   if (id === 'o-t'){ const t = parseLen(v); if (t > 0) opts.rect.t = t; }
   if (id === 'o-mat') opts.rect.mat = v;
+  if (id === 'o-form') opts.hole.form = v;
+  if (['o-sl','o-sb','o-cw','o-ch','o-cr'].includes(id)){ const t = parseLen(v); if (t >= 0) opts.hole[{'o-sl':'l','o-sb':'b','o-cw':'w','o-ch':'h','o-cr':'r'}[id]] = t; }
   if (id === 'o-fit'){ opts.hole.fit = v; if (v !== 'frei'){ const g = NORM[v.slice(2)]; opts.hole.d = v[0] === 'G' ? g.kl : g.dh; } }
   if (id === 'o-d'){ const d = parseLen(v); if (d > 0){ opts.hole.d = d; opts.hole.fit = 'frei'; } }
   if (id === 'o-kind'){ opts.screw.kind = v; opts.screw.grade = GRADES[v][0]; if (!sizesFor(v).includes(opts.screw.size)) opts.screw.size = sizesFor(v)[Math.min(4, sizesFor(v).length - 1)]; }
@@ -1398,6 +1474,8 @@ $('#toolopts').addEventListener('change', e => {
   if (id === 'o-len') opts.screw.len = +v;
   if (id === 'o-view') opts.screw.view = v;
   if (id === 'o-style') opts.line.style = v;
+  if (id === 'o-tkind') opts.text.kind = v;
+  if (id === 'o-tsize'){ const t = parseLen(v); if (t > 0) opts.text.size = t; }
   if (id === 'o-dd'){ const t = parseLen(v); if (t > 0) opts.disc.d = t; }
   if (id === 'o-ddi'){ const t = parseLen(v); if (t >= 0) opts.disc.di = t; }
   if (id === 'o-dt'){ const t = parseLen(v); if (t > 0) opts.disc.t = t; }
@@ -1481,6 +1559,13 @@ svg.addEventListener('pointerdown', e => {
   snapshot();
   let s;
   if (tool === 'rect'){ s = {type:'rect', name:opts.rect.name, x:sp.x, y:sp.y, w:0, h:0, t:opts.rect.t, mat:opts.rect.mat}; drag = {mode:'create', shape:s, start:sp, created:true}; }
+  else if (tool === 'text' && opts.text.kind === 'text'){ s = {type:'text', x:sp.x, y:sp.y, text:'Text', size:opts.text.size, rot:0}; }
+  else if (tool === 'text'){
+    const nums = state.shapes.filter(b => b.type === 'balloon').map(b => parseInt(b.n, 10)).filter(n => !isNaN(n));
+    s = opts.text.kind === 'balloon' ? {type:'balloon', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, n:String((nums.length ? Math.max(...nums) : 0) + 1), size:opts.text.size}
+      : {type:'leader', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, text:'Hinweis', size:opts.text.size};
+    drag = {mode:'create', shape:s, start:sp, created:true};
+  }
   else if (tool === 'line'){ s = {type:'line', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, style:opts.line.style}; drag = {mode:'create', shape:s, start:sp, created:true}; }
   else if (tool === 'dim'){ s = {type:'dim', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, off:Math.round(20 / view.z)}; drag = {mode:'create', shape:s, start:sp, created:true}; }
   else if (tool === 'weld'){ const o = opts.weld; s = {type:'weld', kind:o.kind, a:o.a, around:o.around, x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y}; drag = {mode:'create', shape:s, start:sp, created:true}; }
@@ -1488,10 +1573,10 @@ svg.addEventListener('pointerdown', e => {
   else if (tool === 'circle' && opts.circle.kind === 'bolt'){
     // Lochkreis: Mittellinie + gleichmäßig verteilte Bohrungen, alles zusammen ausgewählt
     const o = opts.circle, g = NORM[o.fit.slice(2)], d = o.fit[0] === 'G' ? g.kl : g.dh, ids = [];
-    const c = {type:'circle', x:sp.x, y:sp.y, d:o.D, a0:0, a1:360, style:'center', id:nextId++}; state.shapes.push(c); ids.push(c.id);
+    const c = {type:'circle', x:sp.x, y:sp.y, d:o.D, a0:0, a1:360, style:'center', id:nextId++, layer:state.activeLayer || 'L1'}; state.shapes.push(c); ids.push(c.id);
     for (let i = 0; i < o.n; i++){
       const a = (o.a0 + 360 / o.n * i) * Math.PI / 180;
-      const hl = {type:'hole', x:r2(sp.x + o.D/2*Math.cos(a)), y:r2(sp.y + o.D/2*Math.sin(a)), d, fit:o.fit, id:nextId++};
+      const hl = {type:'hole', x:r2(sp.x + o.D/2*Math.cos(a)), y:r2(sp.y + o.D/2*Math.sin(a)), d, fit:o.fit, id:nextId++, layer:state.activeLayer || 'L1'};
       state.shapes.push(hl); ids.push(hl.id);
     }
     setSel(ids); changed();
@@ -1506,16 +1591,19 @@ svg.addEventListener('pointerdown', e => {
     s = {type:'profile', kind:o.kind, size:o.size, len:o.len, view:o.view, mat:o.mat, rot:0, x:sp.x, y:sp.y};
     if (o.view === 'side') drag = {mode:'create', shape:s, start:sp, created:true};
   }
+  else if (tool === 'hole' && opts.hole.form === 'slot'){ s = {type:'slot', x:sp.x, y:sp.y, l:Math.max(opts.hole.l, opts.hole.b), b:opts.hole.b, rot:0}; }
+  else if (tool === 'hole' && opts.hole.form === 'cutout'){ s = {type:'cutout', x:sp.x, y:sp.y, w:opts.hole.w, h:opts.hole.h, r:opts.hole.r, rot:0}; }
   else if (tool === 'hole'){ s = {type:'hole', x:sp.x, y:sp.y, d:opts.hole.d, fit:opts.hole.fit}; }
   else if (tool === 'screw'){
     const hole = state.shapes.find(h => h.type === 'hole' && Math.hypot(h.x - p.x, h.y - p.y) <= Math.max(h.d/2, 6 / view.z));
     const c = hole && opts.screw.view === 'top' ? {x:hole.x, y:hole.y} : sp;
     s = {type:'screw', kind:opts.screw.kind, size:opts.screw.size, len:opts.screw.len, grade:opts.screw.grade, view:opts.screw.view, rot:0, x:c.x, y:c.y};
   }
-  s.id = nextId++;
+  s.id = nextId++; s.layer = state.activeLayer || 'L1';
   state.shapes.push(s); setSel([s.id]);
   if (!drag) changed();
   else render();
+  if (s.type === 'text') setTimeout(() => { const i = $('#p-text'); if (i){ i.focus(); i.select(); } }, 30);
 });
 
 svg.addEventListener('pointermove', e => {
@@ -1563,7 +1651,7 @@ svg.addEventListener('pointermove', e => {
       let best = null, bd = (8 / view.z) ** 2;
       drag.origs.forEach(o => snapPts(o).forEach(q => {
         const t = {x:q.x + dx, y:q.y + dy};
-        state.shapes.forEach(z => { if (drag.excl.has(z.id)) return; snapPts(z).forEach(w => { const d = (w.x - t.x)**2 + (w.y - t.y)**2; if (d < bd){ bd = d; best = {dx:w.x - q.x, dy:w.y - q.y, w}; } }); });
+        state.shapes.forEach(z => { if (drag.excl.has(z.id) || !isVis(z)) return; snapPts(z).forEach(w => { const d = (w.x - t.x)**2 + (w.y - t.y)**2; if (d < bd){ bd = d; best = {dx:w.x - q.x, dy:w.y - q.y, w}; } }); });
       }));
       if (best){ dx = best.dx; dy = best.dy; snapMark = best.w; }
       else {
@@ -1597,7 +1685,7 @@ function endPointer(e){
   if (d.mode === 'box'){
     if (d.cur && Math.hypot(d.cur.x - d.start.x, d.cur.y - d.start.y) * view.z > 4){
       const x0 = Math.min(d.start.x, d.cur.x), x1 = Math.max(d.start.x, d.cur.x), y0 = Math.min(d.start.y, d.cur.y), y1 = Math.max(d.start.y, d.cur.y), cross = d.cur.x < d.start.x;
-      const hits = state.shapes.filter(s => { const b = bbox(s); return cross ? (b.x0 <= x1 && b.x1 >= x0 && b.y0 <= y1 && b.y1 >= y0) : (b.x0 >= x0 && b.x1 <= x1 && b.y0 >= y0 && b.y1 <= y1); }).map(s => s.id);
+      const hits = state.shapes.filter(isFree).filter(s => { const b = bbox(s); return cross ? (b.x0 <= x1 && b.x1 >= x0 && b.y0 <= y1 && b.y1 >= y0) : (b.x0 >= x0 && b.x1 <= x1 && b.y0 >= y0 && b.y1 <= y1); }).map(s => s.id);
       setSel(d.add ? [...new Set([...selShapes().map(s => s.id), ...hits])] : hits);
     }
     renderProps(); render(); return;
@@ -1605,6 +1693,8 @@ function endPointer(e){
   if (d.mode === 'create'){
     const s = d.shape;
     if (s.type === 'rect' && (s.w < .5 || s.h < .5)){ s.w = 100; s.h = 50; }
+    if ((s.type === 'balloon' || s.type === 'leader') && Math.hypot(s.x2 - s.x1, s.y2 - s.y1) < .5){ const o = s.size * 4; s.x2 = r2(s.x1 + o); s.y2 = r2(s.y1 + o); }
+    if (s.type === 'leader') setTimeout(() => { const i = $('#p-text'); if (i){ i.focus(); i.select(); } }, 30);
     if (s.type === 'circle' && s.d < 1){ state.shapes = state.shapes.filter(x => x !== s); undoStack.pop(); clearSel(); changed(); return; }
     if ((s.type === 'line' || s.type === 'dim' || s.type === 'weld') && Math.hypot(s.x2 - s.x1, s.y2 - s.y1) < .5){
       state.shapes = state.shapes.filter(x => x !== s); undoStack.pop(); selId = null; changed(); return;
@@ -1651,7 +1741,8 @@ function fit(){
 const Z_TYPES = ['rect','disc','profile','shaft','bend','screw'];
 function fieldsFor(s){
   const f = fieldsForBase(s);
-  return Z_TYPES.includes(s.type) ? [...f, {k:'z', l:'Höhe Z (3D)', kind:'len'}] : f;
+  const lay = {k:'layer', l:'Ebene', kind:'select', o:(state.layers || []).map(l => [l.id, l.name])};
+  return Z_TYPES.includes(s.type) ? [...f, {k:'z', l:'Höhe Z (3D)', kind:'len'}, lay] : [...f, lay];
 }
 function fieldsForBase(s){
   const len = (k, l) => ({k, l, kind:'len'});
@@ -1659,8 +1750,12 @@ function fieldsForBase(s){
     {k:'name', l:'Benennung', kind:'text'}, len('w', 'Breite'), len('h', 'Höhe'), len('t', 'Dicke'),
     {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
     {k:'ra', l:'Oberfläche', kind:'select', o:RA_OPTS},
+    {k:'cornerType', l:'Ecken', kind:'select', o:[['none','scharfkantig'],['fase','Fase 45°'],['radius','Radius']]},
+    ...(s.cornerType && s.cornerType !== 'none' ? [len('corner', s.cornerType === 'fase' ? 'Fase' : 'Radius')] : []),
     {k:'rot', l:'Drehung', kind:'deg'},
     len('x', 'X Ecke'), len('y', 'Y Ecke')];
+  if (s.type === 'slot') return [len('l', 'Länge über alles'), len('b', 'Breite'), {k:'rot', l:'Drehung', kind:'deg'}, len('x', 'X Mitte'), len('y', 'Y Mitte')];
+  if (s.type === 'cutout') return [len('w', 'Breite'), len('h', 'Höhe'), len('r', 'Eckradius'), {k:'rot', l:'Drehung', kind:'deg'}, len('x', 'X Mitte'), len('y', 'Y Mitte')];
   if (s.type === 'hole') return [
     {k:'fit', l:'Art', kind:'select', o:Object.entries(FITS)}, len('d', 'Durchmesser'),
     ...(s.fit && s.fit.startsWith('G-') ? [] : [{k:'tol', l:'Toleranz', kind:'select', o:[['','–'], ...HOLE_TOLS.map(t => [t, t])]}]),
@@ -1714,6 +1809,9 @@ function fieldsForBase(s){
     {k:'around', l:'Ringsum', kind:'select', o:[['0','nein'],['1','ja']]},
     {k:'_len', l:'Nahtlänge', kind:'len'},
     len('x1', 'X Start'), len('y1', 'Y Start'), len('x2', 'X Ende'), len('y2', 'Y Ende')];
+  if (s.type === 'text') return [{k:'text', l:'Text', kind:'text'}, len('size', 'Schrifthöhe'), {k:'rot', l:'Drehung', kind:'deg'}, len('x', 'X'), len('y', 'Y')];
+  if (s.type === 'balloon') return [{k:'n', l:'Positionsnummer', kind:'text'}, len('size', 'Größe')];
+  if (s.type === 'leader') return [{k:'text', l:'Text', kind:'text'}, len('size', 'Schrifthöhe')];
   if (s.type === 'line') return [
     {k:'style', l:'Linienart', kind:'select', o:[['solid','Körperkante (breit)'],['center','Mittellinie']]},
     {k:'_len', l:'Länge', kind:'len'}, {k:'_ang', l:'Winkel', kind:'deg'},
@@ -1727,6 +1825,7 @@ function getVal(s, k){
   if (k === '_len') return Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
   if (k === 'around') return s.around ? '1' : '0';
   if (k === 'rot') return s.rot || 0;
+  if (k === 'layer') return s.layer || 'L1';
   if (k === 'z') return s.z || 0;
   if (k === 'a0') return s.a0 ?? 0;
   if (k === 'a1') return s.a1 ?? 360;
@@ -1736,7 +1835,7 @@ function getVal(s, k){
   if (k === '_ang') return Math.round(Math.atan2(s.y2 - s.y1, s.x2 - s.x1) * 1800 / Math.PI) / 10;
   return s[k];
 }
-const TYPENAMES = {disc:'Ronde / Flansch', circle:'Kreis / Bogen', bend:'Biegeteil', rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht', shaft:'Welle'};
+const TYPENAMES = {text:'Text', balloon:'Positionsnummer', leader:'Hinweispfeil', slot:'Langloch', cutout:'Ausschnitt', disc:'Ronde / Flansch', circle:'Kreis / Bogen', bend:'Biegeteil', rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht', shaft:'Welle'};
 function renderProps(){
   const s = byId(selId), el = $('#props');
   if (s && multi.size){ renderMultiProps(); return; }
@@ -1815,7 +1914,8 @@ function renderProps(){
     <button class="btn" type="button" id="aLib">In Bibliothek</button>
     ${s.type === 'rect' ? '<button class="btn" type="button" id="aRot">Drehen 90°</button>' : ''}
     <button class="btn danger" type="button" id="aDel">Löschen</button></div>`;
-  el.innerHTML = h;
+  el.innerHTML = h + toolsBlock();
+  bindToolsBlock();
   $('#aDup').onclick = duplicate;
   $('#aLib').onclick = () => openLibSave([s]);
   $('#aDel').onclick = del;
@@ -1840,6 +1940,7 @@ $('#props').addEventListener('change', e => {
     if (k === 'keyStep' && +v >= 0) s.keyLen = Math.max(8, s.steps[+v].l - 8);
     if (k === 'kind' && s.type === 'profile') s.size = Object.keys(PROFILES[v].sizes)[0];
     if (k === 'tol' && !v) s.mate = '';
+    if (k === 'cornerType' && v !== 'none' && !s.corner) s.corner = 10;
     if (k === 'fit' && v.startsWith('G-')){ s.tol = ''; s.mate = ''; }
     if (k === 'fit' && v !== 'frei'){ const g = NORM[v.slice(2)]; s.d = v[0] === 'G' ? g.kl : g.dh; }
     if (k === 'kind' && s.type === 'screw' && !GRADES[v].includes(s.grade)) s.grade = GRADES[v][0];
@@ -1861,7 +1962,7 @@ $('#props').addEventListener('change', e => {
     s.x2 = Math.round((s.x1 + L*Math.cos(a)) * 100) / 100; s.y2 = Math.round((s.y1 + L*Math.sin(a)) * 100) / 100;
   } else {
     const n = parseLen(v);
-    const positive = ['w','h','t','d','len','keyLen'].includes(k);
+    const positive = ['w','h','t','d','len','keyLen','l','b','size'].includes(k);
     if (k === 'di' && !(n >= 0 && n < s.d)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
     if (isNaN(n) || (positive && n <= 0)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
     s[k] = Math.round(n * 1000) / 1000;
@@ -1892,7 +1993,9 @@ function renderMultiProps(){
       <button class="btn" type="button" id="aLib">In Bibliothek</button>
       <button class="btn danger" type="button" id="aDel" title="Entf">Löschen</button>
     </div>
-    <p class="note">Tipp: Shift + Klick nimmt Teile dazu oder heraus. Strg + C / Strg + V kopiert und fügt an der Mausposition ein.</p>`;
+    <div class="btnrow"><label class="chk">Auf Ebene ${optSelect('m-layer', (state.layers || []).map(l => [l.id, l.name]), state.activeLayer)}</label><button class="btn" type="button" id="mLayer">Verschieben</button></div>
+    <p class="note">Tipp: Shift + Klick nimmt Teile dazu oder heraus. Strg + C / Strg + V kopiert und fügt an der Mausposition ein.</p>` + toolsBlock();
+  bindToolsBlock();
   const rot = d => { snapshot(); rotateShapes(selShapes(), d); changed(); };
   $('#mRot').onclick = () => { const a = parseFloat($('#m-rot').value.replace(',', '.')); if (!isNaN(a) && a) rot(a); else flash('m-rot'); };
   $('#mRotL').onclick = () => rot(90);
@@ -1903,9 +2006,100 @@ function renderMultiProps(){
     snapshot(); selShapes().forEach(o => moveBy(o, dx, dy)); changed();
   };
   $('#mCopy').onclick = copySel;
+  $('#mLayer').onclick = () => { snapshot(); const id = $('#m-layer').value; selShapes().forEach(o => o.layer = id); changed(); renderLayers(); };
   $('#aDup').onclick = duplicate;
   $('#aDel').onclick = del;
   $('#aLib').onclick = () => openLibSave(selShapes());
+}
+/* ---------- Spiegeln und Muster ---------- */
+function toolsBlock(){
+  const o = state.pattern || {nx:3, dx:50, ny:1, dy:50};
+  return `<details class="tblock" id="tbBox"${state.tbOpen ? ' open' : ''}><summary>Spiegeln &amp; Muster</summary>
+    <div class="btnrow">
+      <button class="btn" type="button" id="mirV" title="An einer senkrechten Achse spiegeln (links ↔ rechts)">Spiegeln ↔</button>
+      <button class="btn" type="button" id="mirH" title="An einer waagerechten Achse spiegeln (oben ↕ unten)">Spiegeln ↕</button>
+      <label class="chk"><input type="checkbox" id="mirCopy"${state.mirCopy !== false ? ' checked' : ''}> als Kopie daneben</label>
+    </div>
+    <div class="props pat">
+      <label for="pat-nx">Anzahl X</label><input id="pat-nx" value="${o.nx}" inputmode="numeric">
+      <label for="pat-dx">Abstand X <em>${state.unit}</em></label><input id="pat-dx" value="${num(o.dx)}" inputmode="decimal">
+      <label for="pat-ny">Anzahl Y</label><input id="pat-ny" value="${o.ny}" inputmode="numeric">
+      <label for="pat-dy">Abstand Y <em>${state.unit}</em></label><input id="pat-dy" value="${num(o.dy)}" inputmode="decimal">
+    </div>
+    <div class="btnrow"><button class="btn" type="button" id="patGo">Muster erzeugen</button></div>
+    <p class="note">Beispiel: Anzahl X = 10, Abstand X = 50 ergibt 10 Bohrungen im Abstand 50. Mit Anzahl Y entsteht ein Raster.</p>
+  </details>`;
+}
+function bindToolsBlock(){
+  $('#tbBox').addEventListener('toggle', e => { state.tbOpen = e.target.open; });
+  $('#mirCopy').onchange = e => { state.mirCopy = e.target.checked; };
+  $('#mirV').onclick = () => mirrorSel(true);
+  $('#mirH').onclick = () => mirrorSel(false);
+  $('#patGo').onclick = () => {
+    const nx = parseInt($('#pat-nx').value, 10), ny = parseInt($('#pat-ny').value, 10), dx = parseLen($('#pat-dx').value), dy = parseLen($('#pat-dy').value);
+    if (!(nx >= 1 && nx <= 100)){ flash('pat-nx'); return; }
+    if (!(ny >= 1 && ny <= 100)){ flash('pat-ny'); return; }
+    if (isNaN(dx) || isNaN(dy)){ flash(isNaN(dx) ? 'pat-dx' : 'pat-dy'); return; }
+    if (nx * ny > 400){ flash('pat-nx'); return; }
+    state.pattern = {nx, dx, ny, dy};
+    const list = selShapes(); if (!list.length) return;
+    snapshot();
+    const ids = list.map(x => x.id);
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++){
+      if (!i && !j) continue;
+      list.forEach(o => { const c = JSON.parse(JSON.stringify(o)); c.id = nextId++; moveBy(c, r2(dx * i), r2(dy * j)); state.shapes.push(c); ids.push(c.id); });
+    }
+    setSel(ids); changed();
+    $('#hint').textContent = `Muster erzeugt: ${nx} × ${ny} (${ids.length} Teile, alle ausgewählt).`;
+  };
+}
+// Spiegeln an senkrechter (vertical = true) oder waagerechter Achse
+function mirrorShape(o, vertical, ax){
+  const M = (x, y) => vertical ? {x:r2(2*ax - x), y} : {x, y:r2(2*ax - y)};
+  if ('x1' in o){
+    const a = M(o.x1, o.y1), b = M(o.x2, o.y2); o.x1 = a.x; o.y1 = a.y; o.x2 = b.x; o.y2 = b.y;
+    if (o.type === 'dim') o.off = -o.off;
+    return;
+  }
+  if (o.type === 'hole' || o.type === 'disc' || o.type === 'text' || o.type === 'circle'){
+    const c = M(o.x, o.y); o.x = c.x; o.y = c.y;
+    if (o.type === 'circle' && !circleFull(o)){ const a0 = o.a0, a1 = o.a1; if (vertical){ o.a0 = 180 - a1; o.a1 = 180 - a0; } else { o.a0 = -a1; o.a1 = -a0; } }
+    if (o.type === 'text' && o.rot) o.rot = -o.rot;
+    return;
+  }
+  const r = o.rot || 0;
+  if (o.type === 'rect' || o.type === 'slot' || o.type === 'cutout' || o.type === 'profile'){
+    // Rechteck-artige Teile: Ankerecke wechselt, Drehung wird gespiegelt
+    if (o.type === 'slot' || o.type === 'cutout'){ const c = M(o.x, o.y); o.x = c.x; o.y = c.y; o.rot = ((-r) % 360 + 360) % 360; return; }
+    const b = o.type === 'rect' ? {x1:o.w, y1:o.h} : profileLocalBox(o);
+    const corner = vertical ? localToWorld(o, b.x1, 0) : localToWorld(o, 0, b.y1);
+    const c = M(corner.x, corner.y); o.x = c.x; o.y = c.y; o.rot = ((-r) % 360 + 360) % 360;
+    return;
+  }
+  if (o.type === 'shaft'){
+    if (vertical){ const e = localToWorld(o, shaftLen(o), 0), c = M(e.x, e.y); o.x = c.x; o.y = c.y; o.steps.reverse(); if (o.keyStep >= 0) o.keyStep = o.steps.length - 1 - o.keyStep; }
+    else { const c = M(o.x, o.y); o.x = c.x; o.y = c.y; }
+    o.rot = ((-r) % 360 + 360) % 360; return;
+  }
+  if (o.type === 'bend'){
+    const c = M(o.x, o.y); o.x = c.x; o.y = c.y; o.rot = (((vertical ? 180 - r : -r)) % 360 + 360) % 360; o.angles = o.angles.map(a => -a); return;
+  }
+  // Schrauben und Normteile
+  const c = M(o.x, o.y); o.x = c.x; o.y = c.y; o.rot = (((vertical ? -r : 180 - r)) % 360 + 360) % 360;
+}
+function mirrorSel(vertical){
+  const list = selShapes(); if (!list.length) return;
+  const b = list.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
+  const copy = state.mirCopy !== false;
+  // als Kopie: Achse an der rechten bzw. oberen Kante, sonst in der Mitte
+  const ax = vertical ? (copy ? b.x1 : (b.x0 + b.x1)/2) : (copy ? b.y1 : (b.y0 + b.y1)/2);
+  snapshot();
+  if (copy){
+    const ids = [];
+    list.forEach(o => { const c = JSON.parse(JSON.stringify(o)); c.id = nextId++; mirrorShape(c, vertical, ax); state.shapes.push(c); ids.push(c.id); });
+    setSel(ids);
+  } else list.forEach(o => mirrorShape(o, vertical, ax));
+  changed();
 }
 function duplicate(){
   const list = selShapes(); if (!list.length) return;
@@ -1934,17 +2128,91 @@ function pasteClip(){
   if (!c || !c.length) return;
   snapshot();
   const at = cursor || {x:view.cx, y:view.cy}, ids = [];
-  c.forEach(o => { const n = JSON.parse(JSON.stringify(o)); moveBy(n, snapV(at.x, false), snapV(at.y, false)); n.id = nextId++; state.shapes.push(n); ids.push(n.id); });
+  c.forEach(o => { const n = JSON.parse(JSON.stringify(o)); moveBy(n, snapV(at.x, false), snapV(at.y, false)); n.id = nextId++; n.layer = state.activeLayer || 'L1'; state.shapes.push(n); ids.push(n.id); });
   setSel(ids); setTool('select'); changed();
   $('#hint').textContent = `${ids.length} Teil${ids.length === 1 ? '' : 'e'} eingefügt.`;
 }
 
+/* ---------- Ebenen ---------- */
+const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>';
+const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
+function renderLayers(){
+  const el = $('#layers'); if (!el) return;
+  if (!Array.isArray(state.layers) || !state.layers.length) state.layers = [{id:'L1', name:'Standard', on:true, lock:false}];
+  if (!state.layers.some(l => l.id === state.activeLayer)) state.activeLayer = state.layers[0].id;
+  const cnt = id => state.shapes.filter(s => (s.layer || 'L1') === id).length;
+  el.innerHTML = state.layers.map(l => `<div class="lrow${l.id === state.activeLayer ? ' act' : ''}" data-l="${esc(l.id)}">
+      <input type="radio" name="actLayer" value="${esc(l.id)}"${l.id === state.activeLayer ? ' checked' : ''} title="Aktive Ebene: neue Teile landen hier" aria-label="aktiv">
+      <input class="lname" value="${esc(l.name)}" maxlength="40" aria-label="Name der Ebene">
+      <span class="lcnt">${cnt(l.id)}</span>
+      <button type="button" data-act="on" aria-pressed="${l.on !== false}" title="${l.on !== false ? 'Ausblenden' : 'Einblenden'}">${EYE}</button>
+      <button type="button" data-act="lock" aria-pressed="${!!l.lock}" title="${l.lock ? 'Entsperren' : 'Sperren (nicht anklickbar)'}">${LOCK}</button>
+      <button type="button" data-act="del" aria-pressed="true" title="Ebene löschen (Teile kommen auf die erste Ebene)"${state.layers.length < 2 ? ' disabled' : ''}>${TRASH}</button>
+    </div>`).join('');
+}
+$('#layers').addEventListener('change', e => {
+  const row = e.target.closest('[data-l]'); if (!row) return;
+  const L = state.layers.find(l => l.id === row.dataset.l);
+  if (e.target.name === 'actLayer'){ state.activeLayer = L.id; renderLayers(); save(); return; }
+  if (e.target.classList.contains('lname')){ L.name = e.target.value.trim() || L.name; save(); renderProps(); }
+});
+$('#layers').addEventListener('click', e => {
+  const b = e.target.closest('button[data-act]'), row = e.target.closest('[data-l]'); if (!b || !row) return;
+  const L = state.layers.find(l => l.id === row.dataset.l), act = b.dataset.act;
+  if (act === 'on'){ L.on = L.on === false; }
+  if (act === 'lock'){ L.lock = !L.lock; }
+  if (act === 'del'){
+    if (state.layers.length < 2) return;
+    if (b.dataset.armed !== '1'){ b.dataset.armed = '1'; b.style.color = '#dc2626'; b.title = 'Nochmal klicken zum Löschen'; return; }
+    const first = state.layers.find(l => l.id !== L.id);
+    state.shapes.forEach(s => { if ((s.layer || 'L1') === L.id) s.layer = first.id; });
+    state.layers = state.layers.filter(l => l !== L);
+  }
+  // ausgeblendete oder gesperrte Teile nicht ausgewählt lassen
+  const keep = selShapes().filter(isFree).map(s => s.id); setSel(keep);
+  renderLayers(); changed();
+});
+$('#bLayerAdd').onclick = () => {
+  const n = state.layers.length + 1, id = 'L' + Date.now().toString(36);
+  state.layers.push({id, name:`Ebene ${n}`, on:true, lock:false}); state.activeLayer = id;
+  renderLayers(); save();
+  setTimeout(() => { const i = document.querySelector(`[data-l="${id}"] .lname`); if (i){ i.focus(); i.select(); } }, 30);
+};
+
 /* ---------- Stückliste ---------- */
 const circleFull = s => s.a0 == null || Math.abs(s.a1 - s.a0) >= 359.99;
+// Umriss eines Blechs im lokalen System, mit Fasen oder Radien an den Ecken
+function rectOutline(s){
+  const {w, h} = s, k = s.cornerType, c = Math.min(s.corner || 0, w/2, h/2);
+  if (!c || !k || k === 'none') return [[0,0],[w,0],[w,h],[0,h]];
+  if (k === 'fase') return [[c,0],[w-c,0],[w,c],[w,h-c],[w-c,h],[c,h],[0,h-c],[0,c]];
+  const pts = [], arc = (cx, cy, a0) => { for (let i = 0; i <= 8; i++){ const a = (a0 + 90*i/8) * Math.PI / 180; pts.push([cx + c*Math.cos(a), cy + c*Math.sin(a)]); } };
+  arc(w-c, c, 270); arc(w-c, h-c, 0); arc(c, h-c, 90); arc(c, c, 180);
+  return pts;
+}
+const cornerLoss = s => { const c = Math.min(s.corner || 0, s.w/2, s.h/2); return !c || !s.cornerType || s.cornerType === 'none' ? 0 : s.cornerType === 'fase' ? 2*c*c : (4 - Math.PI)*c*c; };
+// Langloch (Länge über alles l, Breite b) und Ausschnitt (w × h, Eckradius r), zentriert um 0/0
+function cutOutline(o){
+  const pts = [];
+  if (o.type === 'slot'){
+    const r = o.b/2, a = Math.max(0, o.l/2 - r);
+    for (let i = 0; i <= 12; i++){ const t = -Math.PI/2 + Math.PI*i/12; pts.push([a + r*Math.cos(t), r*Math.sin(t)]); }
+    for (let i = 0; i <= 12; i++){ const t = Math.PI/2 + Math.PI*i/12; pts.push([-a + r*Math.cos(t), r*Math.sin(t)]); }
+    return pts;
+  }
+  const w = o.w/2, h = o.h/2, r = Math.min(o.r || 0, w, h);
+  if (!r) return [[-w,-h],[w,-h],[w,h],[-w,h]];
+  const arc = (cx, cy, a0) => { for (let i = 0; i <= 8; i++){ const a = (a0 + 90*i/8) * Math.PI / 180; pts.push([cx + r*Math.cos(a), cy + r*Math.sin(a)]); } };
+  arc(w-r, -h+r, 270); arc(w-r, h-r, 0); arc(-w+r, h-r, 90); arc(-w+r, -h+r, 180);
+  return pts;
+}
+const cutArea = o => o.type === 'hole' ? Math.PI * (o.d/2) ** 2 : o.type === 'slot' ? (Math.max(0, o.l - o.b)) * o.b + Math.PI * o.b * o.b / 4 : o.w * o.h - (4 - Math.PI) * Math.min(o.r || 0, o.w/2, o.h/2) ** 2;
+const isCut = o => o.type === 'hole' || o.type === 'slot' || o.type === 'cutout';
 function discMass(s){
   let area = Math.PI / 4 * (s.d**2 - (s.di || 0)**2);
-  state.shapes.forEach(h => { if (h.type === 'hole' && inRect(s, h.x, h.y)) area -= Math.PI * (h.d/2) ** 2; });
-  return area * s.t / 1e6 * MATS[s.mat].rho;
+  state.shapes.forEach(h => { if (isCut(h) && inRect(s, h.x, h.y)) area -= cutArea(h); });
+  return Math.max(0, area) * s.t / 1e6 * MATS[s.mat].rho;
 }
 function inRect(r, x, y){
   if (r.type === 'disc'){ const d = Math.hypot(x - r.x, y - r.y); return d < r.d/2 && d > (r.di || 0)/2; } const l = r.rot ? worldToLocal(r, {x, y}) : {x:x - r.x, y:y - r.y}; return l.x > 0 && l.x < r.w && l.y > 0 && l.y < r.h; }
@@ -1966,9 +2234,10 @@ function rotateShapes(list, deg){
 function snapPts(s){
   const L = (x, y) => localToWorld(s, x, y);
   if (s.type === 'rect'){ const {w, h} = s; return [[0,0],[w,0],[w,h],[0,h],[w/2,0],[w,h/2],[w/2,h],[0,h/2],[w/2,h/2]].map(([x, y]) => L(x, y)); }
-  if (s.type === 'hole' || s.type === 'screw') return [{x:s.x, y:s.y}];
+  if (s.type === 'hole' || s.type === 'screw' || s.type === 'slot' || s.type === 'cutout') return [{x:s.x, y:s.y}];
   if (s.type === 'disc') return [{x:s.x, y:s.y}, {x:s.x + s.d/2, y:s.y}, {x:s.x - s.d/2, y:s.y}, {x:s.x, y:s.y + s.d/2}, {x:s.x, y:s.y - s.d/2}];
   if (s.type === 'circle') return [{x:s.x, y:s.y}];
+  if (s.type === 'text') return [{x:s.x, y:s.y}];
   if ('x1' in s) return [{x:s.x1, y:s.y1}, {x:s.x2, y:s.y2}, {x:(s.x1 + s.x2)/2, y:(s.y1 + s.y2)/2}];
   if (s.type === 'profile'){ const b = profileLocalBox(s); return [[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1],[(b.x0+b.x1)/2,(b.y0+b.y1)/2]].map(([x, y]) => L(x, y)); }
   if (s.type === 'shaft'){ const l = shaftLen(s); return [L(0, 0), L(l, 0), L(l/2, 0)]; }
@@ -1978,13 +2247,13 @@ function snapPts(s){
 let snapMark = null;
 function objSnap(p, exclude){
   const r = 8 / view.z; let best = null, bd = r * r;
-  state.shapes.forEach(s => { if (exclude && exclude.has(s.id)) return; snapPts(s).forEach(q => { const d = (q.x - p.x)**2 + (q.y - p.y)**2; if (d < bd){ bd = d; best = q; } }); });
+  state.shapes.forEach(s => { if ((exclude && exclude.has(s.id)) || !isVis(s)) return; snapPts(s).forEach(q => { const d = (q.x - p.x)**2 + (q.y - p.y)**2; if (d < bd){ bd = d; best = q; } }); });
   return best ? {x:r2(best.x), y:r2(best.y)} : null;
 }
 function rectMass(s){
-  let area = s.w * s.h;
-  state.shapes.forEach(h => { if (h.type === 'hole' && inRect(s, h.x, h.y)) area -= Math.PI * (h.d/2) ** 2; });
-  return area * s.t / 1e6 * MATS[s.mat].rho;
+  let area = s.w * s.h - cornerLoss(s);
+  state.shapes.forEach(h => { if (isCut(h) && inRect(s, h.x, h.y)) area -= cutArea(h); });
+  return Math.max(0, area) * s.t / 1e6 * MATS[s.mat].rho;
 }
 function bomRows(){
   const rows = [], map = new Map();
@@ -2022,8 +2291,9 @@ function bomRows(){
 }
 function holeRows(){
   const map = new Map();
-  state.shapes.filter(s => s.type === 'hole').forEach(s => {
-    const key = s.fit && s.fit !== 'frei' ? FITS[s.fit] : 'Bohrung Ø' + num(s.d, 'mm') + ' mm';
+  state.shapes.filter(isCut).forEach(s => {
+    const key = s.type === 'slot' ? `Langloch ${num(s.l, 'mm')} × ${num(s.b, 'mm')} mm` : s.type === 'cutout' ? `Ausschnitt ${num(s.w, 'mm')} × ${num(s.h, 'mm')} mm${s.r ? ' R' + num(s.r, 'mm') : ''}`
+      : s.fit && s.fit !== 'frei' ? FITS[s.fit] : 'Bohrung Ø' + num(s.d, 'mm') + ' mm';
     map.set(key, (map.get(key) || 0) + 1);
   });
   return [...map];
@@ -2199,7 +2469,8 @@ $('#fileIn').onchange = async e => {
 };
 $('#bNew').onclick = () => showStart(true);
 $('#bProjects').onclick = () => showStart();
-const EXPORT_CSS = `.part{fill:#e4e9ee;stroke:#111;stroke-width:1.8}.metal{fill:#cfd8e0;stroke:#111;stroke-width:1.6}.hole{fill:#fff;stroke:#111;stroke-width:1.6}
+const EXPORT_CSS = `.note2{fill:#111;font-family:Arial,sans-serif;font-weight:500}.lead{fill:none;stroke:#111;stroke-width:.9}.leaddot,.leadarrow{fill:#111}.balloon{fill:#fff;stroke:#111;stroke-width:1.2}
+.part{fill:#e4e9ee;stroke:#111;stroke-width:1.8}.metal{fill:#cfd8e0;stroke:#111;stroke-width:1.6}.hole{fill:#fff;stroke:#111;stroke-width:1.6}
 .edge{fill:none;stroke:#111;stroke-width:1.8;stroke-linecap:round}.thin{fill:none;stroke:#111;stroke-width:.8}.center{fill:none;stroke:#111;stroke-width:.7;stroke-dasharray:14 3 2 3}
 .hidden{fill:none;stroke:#111;stroke-width:.8;stroke-dasharray:5 3}.dim{fill:none;stroke:#444;stroke-width:.9}.arrow{fill:#444}
 .dimtext{fill:#444;font:500 12px Consolas,monospace;paint-order:stroke;stroke:#fff;stroke-width:3.5px}.lbl{fill:#111;font:500 11px Consolas,monospace;paint-order:stroke;stroke:#fff;stroke-width:3px}
@@ -2400,9 +2671,10 @@ function dxfLaser(){
   const plates = state.shapes.filter(s => s.type === 'rect' || s.type === 'disc');
   const holes = state.shapes.filter(s => s.type === 'hole');
   plates.forEach(p => {
-    if (p.type === 'rect') D.poly(K, [[0,0],[p.w,0],[p.w,p.h],[0,p.h]].map(([x, y]) => { const w = localToWorld(p, x, y); return [w.x, w.y]; }), true);
+    if (p.type === 'rect') D.poly(K, rectOutline(p).map(([x, y]) => { const w = localToWorld(p, x, y); return [w.x, w.y]; }), true);
     else { D.circle(K, p.x, p.y, p.d/2); if (p.di > 0) D.circle(K, p.x, p.y, p.di/2); }
     holes.filter(h => inRect(p, h.x, h.y)).forEach(h => D.circle(K, h.x, h.y, h.d/2));
+    state.shapes.filter(c => (c.type === 'slot' || c.type === 'cutout') && inRect(p, c.x, c.y)).forEach(c => D.poly(K, cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y); return [w.x, w.y]; }), true));
     const b = bbox(p); D.text(T, b.x0, b.y1 + 4, 5, `${p.name || 'Blech'} t=${num(p.t, 'mm')} ${MATS[p.mat].name}`);
   });
   const all = state.shapes.length ? allBox(false) : {x0:0, y0:0, x1:0, y1:0};
@@ -2518,7 +2790,7 @@ document.addEventListener('keydown', e => {
   if (ctrl && k === 'c'){ if (copySel()) e.preventDefault(); return; }
   if (ctrl && k === 'x'){ if (copySel()){ e.preventDefault(); del(); } return; }
   if (ctrl && k === 'v'){ e.preventDefault(); if (mode === '2d') pasteClip(); return; }
-  if (ctrl && k === 'a'){ e.preventDefault(); if (mode === '2d'){ setTool('select'); setSel(state.shapes.map(s => s.id)); renderProps(); render(); } return; }
+  if (ctrl && k === 'a'){ e.preventDefault(); if (mode === '2d'){ setTool('select'); setSel(state.shapes.filter(isFree).map(s => s.id)); renderProps(); render(); } return; }
   if (ctrl) return;
   if (e.key === ' '){ spaceDown = true; svg.style.cursor = 'grab'; e.preventDefault(); return; }
   if (e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); del(); return; }
@@ -2641,6 +2913,7 @@ function ringShape(ro, ri){
 }
 const extrude = (sh, h) => new THREE.ExtrudeGeometry(sh, {depth:h, bevelEnabled:false, curveSegments:32});
 function build3d(){
+  const SH = state.shapes.filter(isVis);
   const {root, scene} = three;
   [...root.children].forEach(ch => { root.remove(ch); ch.traverse(o => { if (o.geometry && !o.userData.keep) o.geometry.dispose(); }); });
   if (three.grid){ scene.remove(three.grid); three.grid.geometry.dispose(); three.grid = null; }
@@ -2675,9 +2948,9 @@ function build3d(){
   // eigene Teile in einer Gruppe; mit CAD-Modell liegt die Zeichenebene in der gewählten Ansicht
   const dg = new THREE.Group(); three.dg = dg;
   // Bleche: überlappende Teile werden aufeinander gestapelt
-  const rects = state.shapes.filter(s => s.type === 'rect' || s.type === 'disc'), base = new Map();
+  const rects = SH.filter(s => s.type === 'rect' || s.type === 'disc'), base = new Map();
   const over = (a, b) => { const p = bbox(a), q = bbox(b); return p.x0 < q.x1 && q.x0 < p.x1 && p.y0 < q.y1 && q.y0 < p.y1; };
-  const holes = state.shapes.filter(s => s.type === 'hole');
+  const holes = SH.filter(s => s.type === 'hole'), cuts = SH.filter(s => s.type === 'slot' || s.type === 'cutout');
   rects.forEach((r, i) => {
     let z = 0; rects.slice(0, i).forEach(q => { if (over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });
     base.set(r.id, z);
@@ -2688,11 +2961,13 @@ function build3d(){
         const d = Math.hypot(h.x - r.x, h.y - r.y);
         if (d + h.d/2 < r.d/2 && d - h.d/2 > (r.di || 0)/2){ const p = new THREE.Path(); p.absarc(h.x - r.x, h.y - r.y, h.d/2, 0, Math.PI*2, true); sh.holes.push(p); }
       });
+      cuts.filter(c => inRect(r, c.x, c.y)).forEach(c => sh.holes.push(new THREE.Path(cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y); return new THREE.Vector2(w.x - r.x, w.y - r.y); }))));
       const g = extrude(sh, r.t); g.translate(r.x, r.y, z);
       dg.add(mesh(g, r, 'plate')); return;
     }
     // im lokalen System des Blechs bauen, dann drehen und verschieben
-    const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(r.w, 0); sh.lineTo(r.w, r.h); sh.lineTo(0, r.h); sh.lineTo(0, 0);
+    const sh = new THREE.Shape(rectOutline(r).map(([x, y]) => new THREE.Vector2(x, y)));
+    cuts.filter(c => inRect(r, c.x, c.y)).forEach(c => sh.holes.push(new THREE.Path(cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y), l = worldToLocal(r, w); return new THREE.Vector2(l.x, l.y); }))));
     holes.forEach(h => {
       const l = worldToLocal(r, h);
       if (l.x - h.d/2 > 0 && l.x + h.d/2 < r.w && l.y - h.d/2 > 0 && l.y + h.d/2 < r.h){
@@ -2712,7 +2987,7 @@ function build3d(){
     dg.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), edgeSel));
   });
   // Verbindungselemente
-  const screws = state.shapes.filter(s => s.type === 'screw');
+  const screws = SH.filter(s => s.type === 'screw');
   const near = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) < .01;
   // Drehteile über ein Profil (Radius, Höhe) als Rotationskörper; Höhe 0 = Auflagefläche
   const lathe = pts => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(Math.max(.01, r), y)), 40);
@@ -2786,13 +3061,13 @@ function build3d(){
   // höchste Auflage entlang einer Linie im lokalen System (für Profile und Wellen)
   const topAlong = (s, y, len) => { let m = 0; for (let i = 0; i <= 12; i++){ const w = localToWorld(s, len*i/12, y); m = Math.max(m, topAt(w.x, w.y)); } return m; };
   // Biegeteile: Querschnitt über die Breite extrudiert (steht aufrecht)
-  state.shapes.filter(s => s.type === 'bend').forEach(s => {
+  SH.filter(s => s.type === 'bend').forEach(s => {
     const sh = new THREE.Shape(bendOutline(s).map(([x, y]) => new THREE.Vector2(x, y)));
     const g = extrude(sh, s.w); g.rotateZ((s.rot || 0) * Math.PI / 180); g.translate(s.x, s.y, topAt(s.x, s.y));
     dg.add(mesh(g, s, 'plate'));
   });
   // Wellen: Zylinder je Absatz, Passfeder als dunkler Einsatz
-  state.shapes.filter(s => s.type === 'shaft').forEach(s => {
+  SH.filter(s => s.type === 'shaft').forEach(s => {
     const grp = new THREE.Group(); let x = 0;
     s.steps.forEach(t => {
       const g = new THREE.CylinderGeometry(t.d/2, t.d/2, t.l, 40); g.rotateZ(-Math.PI/2); g.translate(x + t.l/2, 0, 0);
@@ -2809,7 +3084,7 @@ function build3d(){
     dg.add(grp);
   });
   // Profile: Querschnitt entlang der Länge extrudiert
-  state.shapes.filter(s => s.type === 'profile').forEach(s => {
+  SH.filter(s => s.type === 'profile').forEach(s => {
     const q = section(s);
     const sh = new THREE.Shape(q.outer.map(([x, y]) => new THREE.Vector2(x, y)));
     if (q.hole) sh.holes.push(new THREE.Path(q.hole.map(([x, y]) => new THREE.Vector2(x, y))));
@@ -2821,7 +3096,7 @@ function build3d(){
   });
   // Schweißnähte als Raupe auf der Kante
   const topNear = (x, y) => rects.reduce((m, r) => { const b = bbox(r); return (x >= b.x0 - 1 && x <= b.x1 + 1 && y >= b.y0 - 1 && y <= b.y1 + 1) ? Math.max(m, base.get(r.id) + r.t) : m; }, 0);
-  state.shapes.filter(s => s.type === 'weld').forEach(s => {
+  SH.filter(s => s.type === 'weld').forEach(s => {
     const L = Math.hypot(s.x2 - s.x1, s.y2 - s.y1); if (L < .5) return;
     const r = Math.max(1, s.a * .8), g = new THREE.CylinderGeometry(r, r, L, 16);
     g.rotateZ(-Math.PI/2); g.rotateZ(Math.atan2(s.y2 - s.y1, s.x2 - s.x1));
@@ -2830,7 +3105,7 @@ function build3d(){
     dg.add(mesh(g, s, 'weld'));
   });
   // Kreise und Bögen als Linien
-  state.shapes.filter(s => s.type === 'circle').forEach(s => {
+  SH.filter(s => s.type === 'circle').forEach(s => {
     const a0 = circleFull(s) ? 0 : s.a0, span = circleFull(s) ? 360 : ((s.a1 - s.a0) % 360 + 360) % 360, pts = [];
     for (let i = 0; i <= 64; i++){ const a = (a0 + span * i / 64) * Math.PI / 180; pts.push(new THREE.Vector3(s.x + s.d/2*Math.cos(a), s.y + s.d/2*Math.sin(a), .05)); }
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
@@ -2838,7 +3113,7 @@ function build3d(){
     const l = new THREE.Line(geo, m); if (s.style === 'center') l.computeLineDistances(); l.userData.id = s.id; dg.add(l);
   });
   // Linien
-  state.shapes.filter(s => s.type === 'line').forEach(s => {
+  SH.filter(s => s.type === 'line').forEach(s => {
     const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(s.x1, s.y1, .05), new THREE.Vector3(s.x2, s.y2, .05)]);
     const m = s.style === 'center' ? new THREE.LineDashedMaterial({color:s.id === selId ? selC : ink, dashSize:8, gapSize:3}) : (s.id === selId ? edgeSel : edgeMat);
     const l = new THREE.Line(geo, m); if (s.style === 'center') l.computeLineDistances(); l.userData.id = s.id; dg.add(l);
@@ -3273,6 +3548,7 @@ function loadProject(rec){
   closeCad(true); mPts = []; if (three) updateMeasure();
   project = {id:rec.id, name:rec.name, by:rec.by || ''};
   state = Object.assign(freshState(false), rec.data);
+  if (!Array.isArray(state.layers) || !state.layers.length){ state.layers = [{id:'L1', name:'Standard', on:true, lock:false}]; state.activeLayer = 'L1'; }
   state.title = Object.assign({name:rec.name, by:rec.by || '', date:today}, state.title);
   nextId = state.shapes.reduce((m, s) => Math.max(m, s.id || 0), 0) + 1;
   state.shapes.forEach(s => { if (!s.id) s.id = nextId++; });
@@ -3281,7 +3557,7 @@ function loadProject(rec){
   $('#start').hidden = true; document.documentElement.classList.remove('locked');
   renderProjectName(); renderUnits(); renderTools(); setSaveState('saved');
   requestAnimationFrame(() => {
-    fit(); render(); renderProps(); renderBom(); renderTitle();
+    fit(); render(); renderProps(); renderBom(); renderTitle(); renderLayers();
     if (mode === '3d' && three){ build3d(); fit3d(); draw3d(); } else refit3d = true;
   });
 }
@@ -3499,7 +3775,7 @@ function insertLib(it){
   snapshot();
   const shapes = JSON.parse(JSON.stringify(it.shapes)), b = boxOf(shapes);
   const dx = snapV(view.cx - (b.x1 - b.x0)/2, false) - b.x0, dy = snapV(view.cy - (b.y1 - b.y0)/2, false) - b.y0;
-  shapes.forEach(o => { moveShape(o, dx, dy); o.id = nextId++; state.shapes.push(o); });
+  shapes.forEach(o => { moveShape(o, dx, dy); o.id = nextId++; o.layer = state.activeLayer || 'L1'; state.shapes.push(o); });
   selId = shapes.length === 1 ? shapes[0].id : null;
   $('#libDlg').hidden = true;
   changed();
@@ -3529,7 +3805,7 @@ $('#libSaveProj').onclick = () => {
 /* ---------- Start ---------- */
 new ResizeObserver(() => render()).observe($('#stage'));
 renderUnits(); renderTools();
-requestAnimationFrame(() => { fit(); render(); renderProps(); renderBom(); renderTitle(); });
+requestAnimationFrame(() => { fit(); render(); renderProps(); renderBom(); renderTitle(); renderLayers(); });
 renderProjectName(); setSaveState('none'); showStart();
 })();
 </script>
