@@ -50,7 +50,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding:10px
 .logo svg{width:18px;height:18px}
 .brand h1{font:600 1rem/1.1 var(--f-body);letter-spacing:-.01em;margin:0;white-space:nowrap}
 .brand span{display:block;font-size:.75rem;color:var(--muted);font-weight:400}
-.tools{display:flex;gap:2px;padding:3px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-inline:auto}
+.tools{display:flex;flex-wrap:wrap;gap:2px;padding:3px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-inline:auto}
 .tool{display:flex;align-items:center;gap:7px;border:0;background:transparent;border-radius:9px;padding:6px 12px;cursor:pointer;color:var(--muted);font-weight:500;transition:background .15s,color .15s}
 .tool svg{width:18px;height:18px;flex:none}
 .tool kbd{display:none}
@@ -473,6 +473,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Rechteck</b>: auf dem Blatt ziehen (oder einmal tippen für 100 × 50 mm). Für Bleche, Flachstahl, Laschen.</li>
             <li><b>Bohrung</b>: tippen, wo die Bohrung hin soll. Oben wählen: Durchgangsbohrung oder Gewinde.</li>
             <li><b>Schraube</b>: tippen. Auf einer Bohrung rastet sie mittig ein. Art, Größe und Länge oben wählen.</li>
+            <li><b>Ronde</b>: runde Bleche und Flansche mit Innenloch. <b>Kreis</b>: Kreis, Bogen oder Lochkreis mit gleichmäßig verteilten Bohrungen.</li>
             <li><b>Biegeteil</b>: Schenkel als Außenmaße und Biegewinkel eintragen. Die gestreckte Länge (Zuschnitt) wird nach DIN 6935 berechnet.</li>
             <li><b>Welle</b>: tippen, dann rechts die Absätze als Ø×Länge eintragen, z. B. <kbd>25×40; 35×100; 25×40</kbd>. Passfedernut nach DIN 6885 auswählbar.</li>
             <li><b>Profil</b>: Winkel, U-Stahl, Rohre und Rundstahl. Längsansicht in Richtung der Länge ziehen, Querschnitt einfach antippen.</li>
@@ -481,7 +482,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Auswahl</b>: Teil anklicken, verschieben, an den Ecken ziehen. Werte rechts genau eintippen, z.&nbsp;B. <kbd>25cm</kbd> oder <kbd>0,3m</kbd>.</li>
             <li>Mehrere Teile: Rahmen aufziehen (nach rechts = ganz drin, nach links = berührt) oder Shift + Klick. <kbd>Strg+C</kbd> <kbd>Strg+V</kbd> <kbd>Strg+X</kbd> <kbd>Strg+A</kbd>.</li>
             <li>Ansicht verschieben: rechte Maustaste ziehen (am Handy: leere Fläche ziehen). Zoomen: Mausrad oder zwei Finger.</li>
-            <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>G</kbd> <kbd>W</kbd> <kbd>P</kbd> <kbd>N</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
+            <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>O</kbd> <kbd>K</kbd> <kbd>G</kbd> <kbd>W</kbd> <kbd>P</kbd> <kbd>N</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
           </ul>
         </details>
       </section>
@@ -589,6 +590,8 @@ const opts = {
   profile:{kind:'L', size:'L 50×5', len:500, view:'side', mat:'S235JR'},
   shaft:{steps:'25×40; 30×25; 35×100; 30×25; 25×40', mat:'C45'},
   bend:{legs:'40; 60; 40', angles:'90; 90', t:3, r:4, w:100, mat:'S235JR'},
+  disc:{d:200, di:0, t:10, mat:'S235JR'},
+  circle:{kind:'full', style:'solid', n:6, D:100, a0:0, fit:'D-M10'},
   weld:{kind:'kehl', a:4, around:false},
 };
 
@@ -830,6 +833,7 @@ function rotBox(s, b){
 function bbox(s){
   if (s.type === 'profile') return rotBox(s, profileLocalBox(s));
   if (s.type === 'bend') return rotBox(s, bendLocalBox(s));
+  if (s.type === 'disc' || s.type === 'circle') return {x0:s.x - s.d/2, y0:s.y - s.d/2, x1:s.x + s.d/2, y1:s.y + s.d/2};
   if (s.type === 'shaft'){ const r = shaftDmax(s)/2; return rotBox(s, {x0:0, y0:-r, x1:shaftLen(s), y1:r}); }
   if (s.type === 'rect') return s.rot ? rotBox(s, {x0:0, y0:0, x1:s.w, y1:s.h}) : {x0:s.x, y0:s.y, x1:s.x + s.w, y1:s.y + s.h};
   if (s.type === 'hole') return {x0:s.x - s.d/2, y0:s.y - s.d/2, x1:s.x + s.d/2, y1:s.y + s.d/2};
@@ -850,6 +854,13 @@ function hit(s, p, tol){
   if (s.type === 'rect'){ const l = s.rot ? worldToLocal(s, p) : {x:p.x - s.x, y:p.y - s.y}; return l.x >= -tol && l.x <= s.w + tol && l.y >= -tol && l.y <= s.h + tol; }
   if (s.type === 'hole') return Math.hypot(p.x - s.x, p.y - s.y) <= s.d/2 + tol;
   if (s.type === 'screw'){ const l = worldToLocal(s, p), b = screwLocalBox(s); return l.x >= b.x0 - tol && l.x <= b.x1 + tol && l.y >= b.y0 - tol && l.y <= b.y1 + tol; }
+  if (s.type === 'disc') return Math.hypot(p.x - s.x, p.y - s.y) <= s.d/2 + tol;
+  if (s.type === 'circle'){
+    const r = Math.hypot(p.x - s.x, p.y - s.y); if (Math.abs(r - s.d/2) > tol * 1.5) return false;
+    if (circleFull(s)) return true;
+    const a = ((Math.atan2(p.y - s.y, p.x - s.x) * 180 / Math.PI - s.a0) % 360 + 360) % 360;
+    return a <= ((s.a1 - s.a0) % 360 + 360) % 360;
+  }
   if (s.type === 'bend'){ const l = worldToLocal(s, p), o = bendOutline(s); return inPoly(l, o) || o.some((q, i) => distSeg(l, {x:q[0], y:q[1]}, {x:o[(i+1) % o.length][0], y:o[(i+1) % o.length][1]}) <= tol); }
   if (s.type === 'shaft'){ const l = worldToLocal(s, p), r = shaftDmax(s)/2; return l.x >= -tol && l.x <= shaftLen(s) + tol && Math.abs(l.y) <= r + tol; }
   if (s.type === 'profile'){ const l = worldToLocal(s, p), b = profileLocalBox(s); return l.x >= b.x0 - tol && l.x <= b.x1 + tol && l.y >= b.y0 - tol && l.y <= b.y1 + tol; }
@@ -861,7 +872,7 @@ function hit(s, p, tol){
   }
   return false;
 }
-const LAYER = {rect:0, profile:1, shaft:1, bend:1, line:2, hole:3, weld:4, screw:5, dim:6};
+const LAYER = {disc:0, circle:2, rect:0, profile:1, shaft:1, bend:1, line:2, hole:3, weld:4, screw:5, dim:6};
 const ordered = () => state.shapes.slice().sort((a, b) => LAYER[a.type] - LAYER[b.type]);
 function pick(p){
   const tol = 6 / view.z, list = ordered().reverse();
@@ -875,7 +886,7 @@ function handles(s){
   if (s.type === 'line' || s.type === 'weld') return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}];
   if (s.type === 'profile' && s.view === 'side'){ const w = localToWorld(s, s.len, section(s).w / 2); return [{k:'len', x:w.x, y:w.y}]; }
   if (s.type === 'dim'){ const n = dimNormal(s); return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}, {k:'off', x:(s.x1 + s.x2)/2 + n.x*s.off, y:(s.y1 + s.y2)/2 + n.y*s.off}]; }
-  if (s.type === 'hole') return [{k:'r', x:s.x + s.d/2, y:s.y}];
+  if (s.type === 'hole' || s.type === 'disc' || s.type === 'circle') return [{k:'r', x:s.x + s.d/2, y:s.y}];
   return [];
 }
 
@@ -1036,6 +1047,23 @@ function shapeMarkup(s, T, showDims){
     o += profileMarkup(s, T, showDims);
   } else if (s.type === 'shaft'){
     o += shaftMarkup(s, T, showDims);
+  } else if (s.type === 'disc'){
+    const cx = T.x(s.x), cy = T.y(s.y), R = s.d/2*T.z, ex = R + 8;
+    o += `<circle class="part" cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(R)}"/>`;
+    if (s.di > 0) o += `<circle class="hole" cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(s.di/2*T.z)}"/>`;
+    o += `<line class="center" x1="${f1(cx - ex)}" y1="${f1(cy)}" x2="${f1(cx + ex)}" y2="${f1(cy)}"/><line class="center" x1="${f1(cx)}" y1="${f1(cy - ex)}" x2="${f1(cx)}" y2="${f1(cy + ex)}"/>`;
+    if (showDims){
+      o += dimMarkup(T, s.x - s.d/2, s.y - s.d/2, s.x + s.d/2, s.y - s.d/2, -14, 'Ø' + num(s.d));
+      o += `<text class="lbl" x="${f1(cx + R*.72 + 4)}" y="${f1(cy - R*.72 - 4)}">${esc(s.name || 'Ronde')} · t=${num(s.t)}${s.di > 0 ? ' · innen Ø' + num(s.di) : ''}</text>`;
+    }
+  } else if (s.type === 'circle'){
+    const cx = T.x(s.x), cy = T.y(s.y), R = s.d/2*T.z, cls = s.style === 'center' ? 'center' : 'edge';
+    if (circleFull(s)) o += `<circle class="${cls}" cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(R)}"/>`;
+    else {
+      const a0 = s.a0 * Math.PI / 180, a1 = s.a1 * Math.PI / 180, span = ((s.a1 - s.a0) % 360 + 360) % 360;
+      o += `<path class="${cls}" d="M${f1(cx + R*Math.cos(a0))},${f1(cy - R*Math.sin(a0))} A${f1(R)},${f1(R)} 0 ${span > 180 ? 1 : 0} 0 ${f1(cx + R*Math.cos(a1))},${f1(cy - R*Math.sin(a1))}"/>`;
+    }
+    if (showDims && s.style !== 'center') o += `<text class="lbl" x="${f1(cx + R*.72 + 4)}" y="${f1(cy - R*.72 - 4)}">${circleFull(s) ? 'Ø' + num(s.d) : 'R' + num(s.d/2)}</text>`;
   } else if (s.type === 'bend'){
     const P = ([x, y]) => { const w = localToWorld(s, x, y); return f1(T.x(w.x)) + ',' + f1(T.y(w.y)); };
     o += `<polygon class="part" points="${bendOutline(s).map(P).join(' ')}"/>`;
@@ -1126,6 +1154,8 @@ const ICONS = {
   line:'<path d="M4 19L20 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
   profile:'<path d="M5 4v15h15" fill="none" stroke="currentColor" stroke-width="3"/>',
   shaft:'<path d="M2 10h4V8h5V6h4v2h4v2h3v4h-3v2h-4v2h-4v-2H6v-2H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  disc:'<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  circle:'<path d="M4 16a9 9 0 0116 0" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="16" r="1.4" fill="currentColor"/>',
   bend:'<path d="M3 6h7a3 3 0 013 3v6a3 3 0 003 3h5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>',
   weld:'<path d="M3 17h18" stroke="currentColor" stroke-width="2"/><path d="M5 16l3-5M9 16l3-5M13 16l3-5M17 16l3-5" stroke="currentColor" stroke-width="1.6"/>',
   dim:'<path d="M3 7v10M21 7v10M4 12h16" stroke="currentColor" stroke-width="1.6"/><path d="M4 12l4-2.5v5zM20 12l-4-2.5v5z" fill="currentColor"/>',
@@ -1135,6 +1165,8 @@ const TOOLS = [
   {k:'rect', n:'Rechteck', key:'R', hint:'Rechteck aufziehen – oder einmal tippen für 100 × 50 mm.'},
   {k:'hole', n:'Bohrung', key:'B', hint:'Tippen, wo die Bohrung sitzen soll (Mittelpunkt).'},
   {k:'screw', n:'Schraube', key:'S', hint:'Tippen zum Setzen. Auf einer Bohrung rastet die Schraube mittig ein.'},
+  {k:'disc', n:'Ronde', key:'O', hint:'Tippen = Mitte der Ronde bzw. des Flansches. Durchmesser, Innenloch und Dicke oben einstellen.'},
+  {k:'circle', n:'Kreis', key:'K', hint:'Kreis/Bogen: von der Mitte aus ziehen. Lochkreis: Mitte antippen, die Bohrungen werden verteilt.'},
   {k:'bend', n:'Biegeteil', key:'G', hint:'Tippen zum Setzen. Oben Schenkel (Außenmaße) und Biegewinkel eintragen, z. B. 40; 60; 40 und 90; 90.'},
   {k:'shaft', n:'Welle', key:'W', hint:'Tippen, wo die Welle links beginnen soll. Absätze oben eintragen, z. B. 25×40; 35×100.'},
   {k:'profile', n:'Profil', key:'P', hint:'Längsansicht: in Richtung der Länge ziehen (oder tippen). Querschnitt: tippen.'},
@@ -1173,6 +1205,20 @@ function renderToolOpts(){
       <label>Größe ${optSelect('o-size', SIZES.map(v => [v, v]), opts.screw.size)}</label>
       ${KINDS[k].len ? `<label>Länge ${optSelect('o-len', LENGTHS.map(v => [v, v + ' mm']), opts.screw.len)}</label>` : ''}
       <label>Ansicht ${optSelect('o-view', [['top','von oben'],['side','von der Seite']], opts.screw.view)}</label>`;
+  } else if (tool === 'disc'){
+    const o = opts.disc;
+    h = `<label>Ø außen <input id="o-dd" value="${num(o.d)}" inputmode="decimal"> ${state.unit}</label>
+      <label>Ø innen <input id="o-ddi" value="${num(o.di)}" inputmode="decimal"> ${state.unit}</label>
+      <label>Dicke <input id="o-dt" value="${num(o.t)}" inputmode="decimal"> ${state.unit}</label>
+      <label>Werkstoff ${optSelect('o-dmat', Object.entries(MATS).map(([k, m]) => [k, m.name]), o.mat)}</label>`;
+  } else if (tool === 'circle'){
+    const o = opts.circle;
+    h = `<label>Art ${optSelect('o-ckind', [['full','Kreis'],['arc','Bogen (90°)'],['bolt','Lochkreis mit Bohrungen']], o.kind)}</label>` + (o.kind === 'bolt'
+      ? `<label>Anzahl <input id="o-cn" value="${o.n}" inputmode="numeric" style="width:4em"></label>
+         <label>Lochkreis Ø <input id="o-cD" value="${num(o.D)}" inputmode="decimal"> ${state.unit}</label>
+         <label>Startwinkel <input id="o-ca" value="${dec(o.a0)}" inputmode="decimal" style="width:4em"> °</label>
+         <label>Bohrung ${optSelect('o-cfit', Object.entries(FITS).filter(([k]) => k !== 'frei'), o.fit)}</label>`
+      : `<label>Linienart ${optSelect('o-cstyle', [['solid','Körperkante (breit)'],['center','Mittellinie']], o.style)}</label>`);
   } else if (tool === 'bend'){
     const o = opts.bend;
     h = `<label>Schenkel <input id="o-blegs" value="${esc(o.legs)}" class="txt" style="width:9em"> mm</label>
@@ -1218,6 +1264,16 @@ $('#toolopts').addEventListener('change', e => {
   if (id === 'o-len') opts.screw.len = +v;
   if (id === 'o-view') opts.screw.view = v;
   if (id === 'o-style') opts.line.style = v;
+  if (id === 'o-dd'){ const t = parseLen(v); if (t > 0) opts.disc.d = t; }
+  if (id === 'o-ddi'){ const t = parseLen(v); if (t >= 0) opts.disc.di = t; }
+  if (id === 'o-dt'){ const t = parseLen(v); if (t > 0) opts.disc.t = t; }
+  if (id === 'o-dmat') opts.disc.mat = v;
+  if (id === 'o-ckind') opts.circle.kind = v;
+  if (id === 'o-cstyle') opts.circle.style = v;
+  if (id === 'o-cn'){ const n = parseInt(v, 10); if (n >= 2 && n <= 72) opts.circle.n = n; }
+  if (id === 'o-cD'){ const t = parseLen(v); if (t > 0) opts.circle.D = t; }
+  if (id === 'o-ca'){ const a = parseFloat(v.replace(',', '.')); if (!isNaN(a)) opts.circle.a0 = a; }
+  if (id === 'o-cfit') opts.circle.fit = v;
   if (id === 'o-blegs'){ if (parseNums(v)) opts.bend.legs = v; else { e.target.style.borderColor = '#dc2626'; return; } }
   if (id === 'o-bang'){ if (parseNums(v, true)) opts.bend.angles = v; else { e.target.style.borderColor = '#dc2626'; return; } }
   if (id === 'o-bt'){ const t = parseLen(v); if (t > 0) opts.bend.t = t; }
@@ -1294,6 +1350,21 @@ svg.addEventListener('pointerdown', e => {
   else if (tool === 'line'){ s = {type:'line', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, style:opts.line.style}; drag = {mode:'create', shape:s, start:sp, created:true}; }
   else if (tool === 'dim'){ s = {type:'dim', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, off:Math.round(20 / view.z)}; drag = {mode:'create', shape:s, start:sp, created:true}; }
   else if (tool === 'weld'){ const o = opts.weld; s = {type:'weld', kind:o.kind, a:o.a, around:o.around, x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y}; drag = {mode:'create', shape:s, start:sp, created:true}; }
+  else if (tool === 'disc'){ const o = opts.disc; s = {type:'disc', name:o.di > 0 ? 'Flansch' : 'Ronde', x:sp.x, y:sp.y, d:o.d, di:o.di, t:o.t, mat:o.mat}; }
+  else if (tool === 'circle' && opts.circle.kind === 'bolt'){
+    // Lochkreis: Mittellinie + gleichmäßig verteilte Bohrungen, alles zusammen ausgewählt
+    const o = opts.circle, g = NORM[o.fit.slice(2)], d = o.fit[0] === 'G' ? g.kl : g.dh, ids = [];
+    const c = {type:'circle', x:sp.x, y:sp.y, d:o.D, a0:0, a1:360, style:'center', id:nextId++}; state.shapes.push(c); ids.push(c.id);
+    for (let i = 0; i < o.n; i++){
+      const a = (o.a0 + 360 / o.n * i) * Math.PI / 180;
+      const hl = {type:'hole', x:r2(sp.x + o.D/2*Math.cos(a)), y:r2(sp.y + o.D/2*Math.sin(a)), d, fit:o.fit, id:nextId++};
+      state.shapes.push(hl); ids.push(hl.id);
+    }
+    setSel(ids); changed();
+    $('#hint').textContent = `Lochkreis Ø${num(o.D)} mit ${o.n} Bohrungen gesetzt. Zusammen ausgewählt, kann also gleich verschoben werden.`;
+    return;
+  }
+  else if (tool === 'circle'){ const o = opts.circle; s = {type:'circle', x:sp.x, y:sp.y, d:0, a0:0, a1:o.kind === 'arc' ? 90 : 360, style:o.style}; drag = {mode:'create', shape:s, start:sp, created:true}; }
   else if (tool === 'bend'){ const o = opts.bend; s = {type:'bend', name:'Biegeteil', x:sp.x, y:sp.y, rot:0, legs:parseNums(o.legs), angles:parseNums(o.angles, true), t:o.t, r:o.r, w:o.w, mat:o.mat}; }
   else if (tool === 'shaft'){ s = {type:'shaft', x:sp.x, y:sp.y, rot:0, mat:opts.shaft.mat, chamfer:1, keyStep:-1, keyLen:0, steps:parseSteps(opts.shaft.steps)}; }
   else if (tool === 'profile'){
@@ -1333,6 +1404,10 @@ svg.addEventListener('pointermove', e => {
   } else if (drag.mode === 'create'){
     const a = drag.start;
     if (s.type === 'rect'){ s.x = Math.min(a.x, sp.x); s.y = Math.min(a.y, sp.y); s.w = Math.abs(sp.x - a.x); s.h = Math.abs(sp.y - a.y); }
+    else if (s.type === 'circle'){
+      s.d = r2(2 * Math.hypot(sp.x - a.x, sp.y - a.y));
+      if (!circleFull(s)){ const ang = Math.round(Math.atan2(sp.y - a.y, sp.x - a.x) * 180 / Math.PI); s.a0 = ang; s.a1 = ang + 90; }
+    }
     else if (s.type === 'profile'){
       const dx = sp.x - a.x, dy = sp.y - a.y;
       if (Math.max(Math.abs(dx), Math.abs(dy)) >= 1){
@@ -1373,7 +1448,7 @@ svg.addEventListener('pointermove', e => {
     else if (drag.h === 'p2'){ s.x2 = sp.x; s.y2 = sp.y; }
     else if (drag.h === 'off'){ const n = dimNormal(s); s.off = Math.round(((p.x - s.x1)*n.x + (p.y - s.y1)*n.y) * 2) / 2; }
     else if (drag.h === 'len'){ s.len = Math.max(1, snapV(worldToLocal(s, p).x, free)); }
-    else if (drag.h === 'r'){ s.d = Math.max(.5, Math.round(Math.hypot(p.x - s.x, p.y - s.y) * 4) / 2); s.fit = 'frei'; }
+    else if (drag.h === 'r'){ s.d = Math.max(.5, Math.round(Math.hypot(p.x - s.x, p.y - s.y) * 4) / 2); if (s.type === 'hole') s.fit = 'frei'; if (s.type === 'disc' && s.di >= s.d) s.di = 0; }
   }
   render();
   if (drag.mode !== 'pan') renderProps();
@@ -1396,6 +1471,7 @@ function endPointer(e){
   if (d.mode === 'create'){
     const s = d.shape;
     if (s.type === 'rect' && (s.w < .5 || s.h < .5)){ s.w = 100; s.h = 50; }
+    if (s.type === 'circle' && s.d < 1){ state.shapes = state.shapes.filter(x => x !== s); undoStack.pop(); clearSel(); changed(); return; }
     if ((s.type === 'line' || s.type === 'dim' || s.type === 'weld') && Math.hypot(s.x2 - s.x1, s.y2 - s.y1) < .5){
       state.shapes = state.shapes.filter(x => x !== s); undoStack.pop(); selId = null; changed(); return;
     }
@@ -1455,6 +1531,14 @@ function fieldsFor(s){
     {k:'view', l:'Ansicht', kind:'select', o:[['top','von oben'],['side','von der Seite']]},
     {k:'rot', l:'Drehung', kind:'deg'},
     len('x', 'X'), len('y', 'Y')];
+  if (s.type === 'disc') return [
+    {k:'name', l:'Benennung', kind:'text'}, len('d', 'Ø außen'), len('di', 'Ø innen'), len('t', 'Dicke'),
+    {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
+    len('x', 'X Mitte'), len('y', 'Y Mitte')];
+  if (s.type === 'circle') return [
+    {k:'style', l:'Linienart', kind:'select', o:[['solid','Körperkante (breit)'],['center','Mittellinie']]},
+    len('d', 'Durchmesser'), {k:'a0', l:'Startwinkel', kind:'deg'}, {k:'a1', l:'Endwinkel', kind:'deg'},
+    len('x', 'X Mitte'), len('y', 'Y Mitte')];
   if (s.type === 'bend') return [
     {k:'name', l:'Benennung', kind:'text'},
     {k:'legsTxt', l:'Schenkel (außen)', kind:'text'},
@@ -1498,13 +1582,15 @@ function getVal(s, k){
   if (k === '_len') return Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
   if (k === 'around') return s.around ? '1' : '0';
   if (k === 'rot') return s.rot || 0;
+  if (k === 'a0') return s.a0 ?? 0;
+  if (k === 'a1') return s.a1 ?? 360;
   if (k === 'stepsTxt') return stepsText(s);
   if (k === 'legsTxt') return s.legs.map(dec).join('; ');
   if (k === 'anglesTxt') return s.angles.map(dec).join('; ');
   if (k === '_ang') return Math.round(Math.atan2(s.y2 - s.y1, s.x2 - s.x1) * 1800 / Math.PI) / 10;
   return s[k];
 }
-const TYPENAMES = {bend:'Biegeteil', rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht', shaft:'Welle'};
+const TYPENAMES = {disc:'Ronde / Flansch', circle:'Kreis / Bogen', bend:'Biegeteil', rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht', shaft:'Welle'};
 function renderProps(){
   const s = byId(selId), el = $('#props');
   if (s && multi.size){ renderMultiProps(); return; }
@@ -1530,6 +1616,9 @@ function renderProps(){
   if (s.type === 'profile'){
     const q = section(s), pr = PROFILES[s.kind], kgm = q.area / 1e6 * 1000 * MATS[s.mat].rho;
     h += `<p class="note">${pr.name} ${esc(s.size)} · ${pr.norm} · Querschnitt ${dec(q.area.toFixed(0))} mm² · ${dec(kgm.toFixed(2))} kg/m · Masse ca. <b>${dec(profileMass(s).toFixed(2))} kg</b></p>`;
+  }
+  if (s.type === 'disc'){
+    h += `<p class="note">Masse ca. <b>${dec(discMass(s).toFixed(2))} kg</b> (${MATS[s.mat].name}, Bohrungen abgezogen). Für einen Lochkreis: Werkzeug <b>Kreis</b> → Art „Lochkreis“ und auf die Mitte tippen.</p>`;
   }
   if (s.type === 'bend'){
     const c = bendCalc(s);
@@ -1570,6 +1659,11 @@ $('#props').addEventListener('change', e => {
   const s = byId(selId); if (!s || !e.target.id.startsWith('p-')) return;
   const k = e.target.id.slice(2), f = fieldsFor(s).find(f => f.k === k), v = e.target.value;
   snapshot();
+  if (k === 'a0' || k === 'a1'){
+    const a = parseFloat(v.replace(',', '.'));
+    if (isNaN(a)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
+    s[k] = a; if (s.a0 == null) s.a0 = 0; if (s.a1 == null) s.a1 = 360; changed(); return;
+  }
   if (k === 'rot'){
     const a = parseFloat(v.replace(',', '.'));
     if (isNaN(a)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
@@ -1599,6 +1693,7 @@ $('#props').addEventListener('change', e => {
   } else {
     const n = parseLen(v);
     const positive = ['w','h','t','d','len','keyLen'].includes(k);
+    if (k === 'di' && !(n >= 0 && n < s.d)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
     if (isNaN(n) || (positive && n <= 0)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
     s[k] = Math.round(n * 1000) / 1000;
     if (k === 'd') s.fit = 'frei';
@@ -1676,7 +1771,14 @@ function pasteClip(){
 }
 
 /* ---------- Stückliste ---------- */
-function inRect(r, x, y){ const l = r.rot ? worldToLocal(r, {x, y}) : {x:x - r.x, y:y - r.y}; return l.x > 0 && l.x < r.w && l.y > 0 && l.y < r.h; }
+const circleFull = s => s.a0 == null || Math.abs(s.a1 - s.a0) >= 359.99;
+function discMass(s){
+  let area = Math.PI / 4 * (s.d**2 - (s.di || 0)**2);
+  state.shapes.forEach(h => { if (h.type === 'hole' && inRect(s, h.x, h.y)) area -= Math.PI * (h.d/2) ** 2; });
+  return area * s.t / 1e6 * MATS[s.mat].rho;
+}
+function inRect(r, x, y){
+  if (r.type === 'disc'){ const d = Math.hypot(x - r.x, y - r.y); return d < r.d/2 && d > (r.di || 0)/2; } const l = r.rot ? worldToLocal(r, {x, y}) : {x:x - r.x, y:y - r.y}; return l.x > 0 && l.x < r.w && l.y > 0 && l.y < r.h; }
 function moveBy(o, dx, dy){ if ('x1' in o){ o.x1 += dx; o.x2 += dx; o.y1 += dy; o.y2 += dy; } else { o.x += dx; o.y += dy; } }
 function rotPt(px, py, cx, cy, a){ const c = Math.cos(a), n = Math.sin(a), dx = px - cx, dy = py - cy; return {x:cx + dx*c - dy*n, y:cy + dx*n + dy*c}; }
 const r2 = v => Math.round(v * 100) / 100;
@@ -1721,6 +1823,10 @@ function bomRows(){
   state.shapes.filter(s => s.type === 'rect').forEach(s => {
     const m = rectMass(s);
     add(`r|${s.name}|${s.w}|${s.h}|${s.t}|${s.mat}|${m.toFixed(3)}`, {name:s.name || 'Blech', dim:`${num(s.w)} × ${num(s.h)} × ${num(s.t)} ${state.unit}`, mat:MATS[s.mat].name, mass:m});
+  });
+  state.shapes.filter(s => s.type === 'disc').forEach(s => {
+    const m = discMass(s);
+    add(`d|${s.name}|${s.d}|${s.di}|${s.t}|${s.mat}|${m.toFixed(3)}`, {name:s.name || 'Ronde', dim:`Ø${num(s.d)}${s.di > 0 ? ' / Ø' + num(s.di) : ''} × ${num(s.t)} ${state.unit}`, mat:MATS[s.mat].name, mass:m});
   });
   state.shapes.filter(s => s.type === 'bend').forEach(s => {
     const L = bendCalc(s).L;
@@ -1783,6 +1889,7 @@ function cutPieces(){
   state.shapes.forEach(s => {
     if (s.type === 'profile') push(bars, `${PROFILES[s.kind].name} ${s.size} · ${MATS[s.mat].name}`, {l:s.len, n:'Profil'});
     if (s.type === 'shaft') push(bars, `Rundstahl Ø${num(shaftDmax(s), 'mm')} · ${MATS[s.mat].name}`, {l:shaftLen(s) + 2, n:'Welle (+2 mm Aufmaß)'});
+    if (s.type === 'disc') push(sheets, `Blech ${num(s.t, 'mm')} mm · ${MATS[s.mat].name}`, {w:s.d, h:s.d, n:s.name || 'Ronde'});
     if (s.type === 'rect') push(sheets, `Blech ${num(s.t, 'mm')} mm · ${MATS[s.mat].name}`, {w:s.w, h:s.h, n:s.name || 'Blech'});
     if (s.type === 'bend') push(sheets, `Blech ${num(s.t, 'mm')} mm · ${MATS[s.mat].name}`, {w:bendCalc(s).L, h:s.w, n:s.name || 'Biegeteil'});
   });
@@ -1873,7 +1980,7 @@ $('#bCopyBom').onclick = async () => {
 /* ---------- Schriftfeld ---------- */
 function renderTitle(){
   const t = state.title;
-  const mats = [...new Set(state.shapes.filter(s => s.type === 'rect' || s.type === 'profile' || s.type === 'shaft' || s.type === 'bend').map(s => MATS[s.mat].name))].join(', ') || '–';
+  const mats = [...new Set(state.shapes.filter(s => s.type === 'rect' || s.type === 'disc' || s.type === 'profile' || s.type === 'shaft' || s.type === 'bend').map(s => MATS[s.mat].name))].join(', ') || '–';
   $('#tblock').innerHTML = `<div class="big">${esc(t.name || 'Ohne Namen')}</div>
     <div>Gezeichnet</div><div>${esc(t.by || '–')}</div>
     <div>Datum</div><div>${esc(t.date)}</div>
@@ -2275,12 +2382,22 @@ function build3d(){
   // eigene Teile in einer Gruppe; mit CAD-Modell liegt die Zeichenebene in der gewählten Ansicht
   const dg = new THREE.Group(); three.dg = dg;
   // Bleche: überlappende Teile werden aufeinander gestapelt
-  const rects = state.shapes.filter(s => s.type === 'rect'), base = new Map();
+  const rects = state.shapes.filter(s => s.type === 'rect' || s.type === 'disc'), base = new Map();
   const over = (a, b) => { const p = bbox(a), q = bbox(b); return p.x0 < q.x1 && q.x0 < p.x1 && p.y0 < q.y1 && q.y0 < p.y1; };
   const holes = state.shapes.filter(s => s.type === 'hole');
   rects.forEach((r, i) => {
     let z = 0; rects.slice(0, i).forEach(q => { if (over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });
     base.set(r.id, z);
+    if (r.type === 'disc'){
+      const sh = new THREE.Shape(); sh.absarc(0, 0, r.d/2, 0, Math.PI*2, false);
+      if (r.di > 0){ const p = new THREE.Path(); p.absarc(0, 0, r.di/2, 0, Math.PI*2, true); sh.holes.push(p); }
+      holes.forEach(h => {
+        const d = Math.hypot(h.x - r.x, h.y - r.y);
+        if (d + h.d/2 < r.d/2 && d - h.d/2 > (r.di || 0)/2){ const p = new THREE.Path(); p.absarc(h.x - r.x, h.y - r.y, h.d/2, 0, Math.PI*2, true); sh.holes.push(p); }
+      });
+      const g = extrude(sh, r.t); g.translate(r.x, r.y, z);
+      dg.add(mesh(g, r, 'plate')); return;
+    }
     // im lokalen System des Blechs bauen, dann drehen und verschieben
     const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(r.w, 0); sh.lineTo(r.w, r.h); sh.lineTo(0, r.h); sh.lineTo(0, 0);
     holes.forEach(h => {
@@ -2376,7 +2493,7 @@ function build3d(){
     dg.add(mesh(g, s, 'plate'));
   });
   // Schweißnähte als Raupe auf der Kante
-  const topNear = (x, y) => rects.reduce((m, r) => (x >= r.x - 1 && x <= r.x + r.w + 1 && y >= r.y - 1 && y <= r.y + r.h + 1) ? Math.max(m, base.get(r.id) + r.t) : m, 0);
+  const topNear = (x, y) => rects.reduce((m, r) => { const b = bbox(r); return (x >= b.x0 - 1 && x <= b.x1 + 1 && y >= b.y0 - 1 && y <= b.y1 + 1) ? Math.max(m, base.get(r.id) + r.t) : m; }, 0);
   state.shapes.filter(s => s.type === 'weld').forEach(s => {
     const L = Math.hypot(s.x2 - s.x1, s.y2 - s.y1); if (L < .5) return;
     const r = Math.max(1, s.a * .8), g = new THREE.CylinderGeometry(r, r, L, 16);
@@ -2384,6 +2501,14 @@ function build3d(){
     const mx = (s.x1 + s.x2)/2, my = (s.y1 + s.y2)/2;
     g.translate(mx, my, topNear(mx, my));
     dg.add(mesh(g, s, 'weld'));
+  });
+  // Kreise und Bögen als Linien
+  state.shapes.filter(s => s.type === 'circle').forEach(s => {
+    const a0 = circleFull(s) ? 0 : s.a0, span = circleFull(s) ? 360 : ((s.a1 - s.a0) % 360 + 360) % 360, pts = [];
+    for (let i = 0; i <= 64; i++){ const a = (a0 + span * i / 64) * Math.PI / 180; pts.push(new THREE.Vector3(s.x + s.d/2*Math.cos(a), s.y + s.d/2*Math.sin(a), .05)); }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const m = s.style === 'center' ? new THREE.LineDashedMaterial({color:isSel(s.id) ? selC : ink, dashSize:8, gapSize:3}) : (isSel(s.id) ? edgeSel : edgeMat);
+    const l = new THREE.Line(geo, m); if (s.style === 'center') l.computeLineDistances(); l.userData.id = s.id; dg.add(l);
   });
   // Linien
   state.shapes.filter(s => s.type === 'line').forEach(s => {
