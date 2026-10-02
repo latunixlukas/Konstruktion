@@ -141,6 +141,25 @@ html.locked,html.locked body{overflow:hidden}
 .opt input{width:16px;height:16px;accent-color:var(--fg);flex:none}
 .expform .btnrow{justify-content:flex-end;margin-top:4px}
 
+/* Bibliothek */
+.libpanel{width:min(960px,100%);max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:12px;align-content:start}
+.libbar{display:flex;flex-wrap:wrap;gap:8px}
+.libbar input{flex:1 1 200px;min-width:0}
+.libbar .btn{margin-left:auto}
+.libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.libcard{border:1px solid var(--line);border-radius:12px;background:var(--raised);display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}
+.libcard svg.thumb{width:100%;height:120px;display:block;background:var(--paper);border-bottom:1px solid var(--line)}
+.libcard .lt{padding:10px 12px;display:grid;gap:2px;min-width:0}
+.libcard .lt b{font-weight:600;overflow-wrap:anywhere}
+.libcard .lt span{font-size:.78rem;color:var(--muted)}
+.libcard .lt .cat{font:500 .68rem var(--f-mono);text-transform:uppercase;letter-spacing:.06em}
+.libcard .la{display:flex;gap:6px;padding:0 12px 12px}
+.libcard .la .btn{padding:5px 10px;font-size:.8rem}
+.libcard .la .primary{flex:1}
+.lsform{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:center}
+.lsform label{font-size:.84rem;color:var(--muted)}
+.lsform input,.lsform select{width:100%}
+
 /* Zuschnitt */
 .cutpanel{width:min(860px,100%);max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:14px}
 .cuthead{display:flex;align-items:center;justify-content:space-between}
@@ -276,7 +295,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
   .tool{padding:7px 6px}
   .actions{margin-left:auto}
 }
-@media (max-width: 640px){ .brandtxt span{max-width:calc(100vw - 90px)} .titleblock{display:none} #bProjects span{display:none} .brandtxt h1{font-size:.9rem} }
+@media (max-width: 640px){ .brandtxt span{max-width:calc(100vw - 90px)} .titleblock{display:none} #bProjects span,#bLib span{display:none} .brandtxt h1{font-size:.9rem} }
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
@@ -296,6 +315,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       <button class="btn icon" id="bUndo" type="button" title="Rückgängig (Strg+Z)" aria-label="Rückgängig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
       <button class="btn icon" id="bRedo" type="button" title="Wiederholen (Strg+Y)" aria-label="Wiederholen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/></svg></button>
       <button class="btn icon" id="bTheme" type="button" title="Hell / Dunkel umschalten" aria-label="Hell oder Dunkel"></button>
+      <button class="btn" id="bLib" type="button" title="Teile-Bibliothek: Teile speichern und einfügen"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4v16H4zM10 4h4v16h-4z"/><path d="M16.5 4.5l3.5 1-4 15-3.5-1"/></svg><span>Bibliothek</span></button>
       <button class="btn" id="bProjects" type="button" title="Projekte öffnen oder neu anlegen"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Projekte</span></button>
       <details class="menu" id="fileMenu">
         <summary class="btn primary">Datei</summary>
@@ -353,6 +373,31 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
     </div>
   </div>
 
+  <div class="modal" id="libDlg" hidden>
+    <div class="panel libpanel" role="dialog" aria-labelledby="libTitle">
+      <div class="cuthead"><h3 id="libTitle">Bibliothek</h3><button class="btn icon" type="button" id="libClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="libbar">
+        <input id="libSearch" class="txt" placeholder="Suchen …" autocomplete="off">
+        <select id="libCat"></select>
+        <button class="btn" type="button" id="libSaveProj">Ganzes Projekt als Baugruppe speichern</button>
+      </div>
+      <p class="note" id="libInfo"></p>
+      <div class="libgrid" id="libGrid"></div>
+    </div>
+  </div>
+  <div class="modal" id="libSaveDlg" hidden>
+    <form class="panel expform" id="libSaveForm" novalidate>
+      <h3>In Bibliothek speichern</h3>
+      <div class="lsform">
+        <label for="lsName">Name</label><input id="lsName" class="txt" maxlength="80" placeholder="z. B. Antriebswelle Ø35">
+        <label for="lsCat">Kategorie</label><select id="lsCat"></select>
+        <label for="lsDesc">Beschreibung</label><input id="lsDesc" class="txt" maxlength="200" placeholder="optional, z. B. für Getriebe G2">
+      </div>
+      <p class="note" id="lsInfo"></p>
+      <p class="err" id="lsErr"></p>
+      <div class="btnrow"><button type="button" class="btn" id="lsCancel">Abbrechen</button><button type="submit" class="btn primary">Speichern</button></div>
+    </form>
+  </div>
   <div class="modal" id="cutDlg" hidden>
     <div class="panel cutpanel" role="dialog" aria-labelledby="cutTitle">
       <div class="cuthead"><h3 id="cutTitle">Zuschnitt</h3><button class="btn icon" type="button" id="cutClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -1444,10 +1489,12 @@ function renderProps(){
   }
   h += `<div class="btnrow">
     <button class="btn" type="button" id="aDup">Duplizieren</button>
+    <button class="btn" type="button" id="aLib">In Bibliothek</button>
     ${s.type === 'rect' ? '<button class="btn" type="button" id="aRot">Drehen 90°</button>' : ''}
     <button class="btn danger" type="button" id="aDel">Löschen</button></div>`;
   el.innerHTML = h;
   $('#aDup').onclick = duplicate;
+  $('#aLib').onclick = () => openLibSave([s]);
   $('#aDel').onclick = del;
   if ($('#aRot')) $('#aRot').onclick = () => { snapshot(); const cx = s.x + s.w/2, cy = s.y + s.h/2; [s.w, s.h] = [s.h, s.w]; s.x = snapV(cx - s.w/2, true); s.y = snapV(cy - s.h/2, true); changed(); };
 }
@@ -1901,6 +1948,8 @@ document.addEventListener('keydown', e => {
   const tag = (e.target.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
   if (!$('#start').hidden) return;
+  if (!$('#libSaveDlg').hidden){ if (e.key === 'Escape') $('#libSaveDlg').hidden = true; return; }
+  if (!$('#libDlg').hidden){ if (e.key === 'Escape') $('#libDlg').hidden = true; return; }
   if (!$('#cutDlg').hidden){ if (e.key === 'Escape') $('#cutDlg').hidden = true; return; }
   if (!$('#expDlg').hidden){ if (e.key === 'Escape') $('#expDlg').hidden = true; return; }
   const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
@@ -2465,8 +2514,8 @@ const lsGet = k => { try { return localStorage.getItem(k); } catch(e){ return nu
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch(e){} };
 const lsDel = k => { try { localStorage.removeItem(k); } catch(e){} };
 let cloud = false, code = lsGet(LS_CODE) || '', projectList = [];
-async function api(method, id, body){
-  const r = await fetch(API + (id ? '?id=' + encodeURIComponent(id) : ''), {
+async function api(method, id, body, base = API){
+  const r = await fetch(base + (id ? '?id=' + encodeURIComponent(id) : ''), {
     method, headers:{'content-type':'application/json', 'x-werkstatt-code':code}, body:body ? JSON.stringify(body) : undefined});
   if (r.status === 401){ const e = new Error('code'); e.code = 401; throw e; }
   if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -2634,7 +2683,7 @@ $('#newForm').addEventListener('submit', async e => {
   const rec = {id:newId(), name, by, updated:Date.now(), data};
   try { await putProject(rec); }
   catch(ex){ err.textContent = ex.code === 401 ? 'Der Werkstatt-Code fehlt oder ist falsch.' : 'Speichern hat nicht geklappt. Bitte nochmal versuchen.'; return; }
-  $('#npName').value = '';
+  $('#npName').value = ''; $('#npTpl').value = 'leer';
   loadProject(rec);
 });
 $('#codeForm').addEventListener('submit', async e => {
@@ -2643,6 +2692,106 @@ $('#codeForm').addEventListener('submit', async e => {
   await refreshList();
   $('#codeErr').textContent = $('#codeForm').hidden ? '' : 'Der Code stimmt nicht. Frag deinen Ausbilder.';
 });
+
+/* ---------- Bibliothek: Teile für alle speichern und einfügen ---------- */
+const LIB_API = '/api/library', LS_LIB = 'wz-bibliothek';
+const LIB_CATS = ['Wellen', 'Bleche & Biegeteile', 'Profile', 'Verbindungselemente', 'Baugruppen', 'Sonstiges'];
+const catFor = list => list.length > 1 ? 'Baugruppen' : ({shaft:'Wellen', rect:'Bleche & Biegeteile', bend:'Bleche & Biegeteile', profile:'Profile', screw:'Verbindungselemente', hole:'Verbindungselemente'}[list[0].type] || 'Sonstiges');
+const LibLocal = {
+  all(){ try { return JSON.parse(lsGet(LS_LIB) || '[]'); } catch(e){ return []; } },
+  put(rec){ lsSet(LS_LIB, JSON.stringify([rec, ...LibLocal.all().filter(x => x.id !== rec.id)])); },
+  del(id){ lsSet(LS_LIB, JSON.stringify(LibLocal.all().filter(x => x.id !== id))); },
+};
+const libList = () => cloud ? api('GET', null, null, LIB_API) : Promise.resolve(LibLocal.all());
+async function libPut(rec){ if (cloud) await api('PUT', rec.id, rec, LIB_API); else LibLocal.put(rec); }
+async function libDel(id){ if (cloud) await api('DELETE', id, null, LIB_API); else LibLocal.del(id); }
+
+// Teile verschieben (für Nullpunkt beim Speichern und Lage beim Einfügen)
+function moveShape(o, dx, dy){ if ('x1' in o){ o.x1 += dx; o.x2 += dx; o.y1 += dy; o.y2 += dy; } else { o.x += dx; o.y += dy; } }
+function boxOf(list){ return list.map(bbox).reduce((a, b) => ({x0:Math.min(a.x0, b.x0), y0:Math.min(a.y0, b.y0), x1:Math.max(a.x1, b.x1), y1:Math.max(a.y1, b.y1)})); }
+function thumbSvg(list){
+  const b = boxOf(list), bw = Math.max(1, b.x1 - b.x0), bh = Math.max(1, b.y1 - b.y0), z = Math.min(170 / bw, 96 / bh);
+  const T = mkT({cx:(b.x0 + b.x1)/2, cy:(b.y0 + b.y1)/2, z}, 200, 120);
+  return `<svg class="thumb" viewBox="0 0 200 120" aria-hidden="true">${list.map(o => shapeMarkup(o, T, false)).join('')}</svg>`;
+}
+
+let libPending = null, libItems = [];
+function openLibSave(list){
+  if (!list.length){ return; }
+  libPending = JSON.parse(JSON.stringify(list));
+  const one = list.length === 1 ? list[0] : null;
+  $('#lsName').value = one ? (one.name || (one.type === 'shaft' ? `Welle Ø${num(shaftDmax(one), 'mm')} × ${num(shaftLen(one), 'mm')}` : one.type === 'profile' ? `${PROFILES[one.kind].name} ${one.size}` : TYPENAMES[one.type])) : (state.title.name || 'Baugruppe');
+  $('#lsCat').innerHTML = LIB_CATS.map(c => `<option${c === catFor(list) ? ' selected' : ''}>${c}</option>`).join('');
+  $('#lsDesc').value = '';
+  $('#lsInfo').textContent = (list.length === 1 ? '1 Teil' : `${list.length} Teile`) + (cloud ? ' · wird online gespeichert, alle sehen es.' : ' · wird in diesem Browser gespeichert.');
+  $('#lsErr').textContent = ''; $('#libSaveDlg').hidden = false;
+  setTimeout(() => $('#lsName').select(), 30);
+}
+$('#lsCancel').onclick = () => { $('#libSaveDlg').hidden = true; };
+$('#libSaveForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = $('#lsName').value.trim();
+  if (!name){ $('#lsErr').textContent = 'Bitte gib dem Eintrag einen Namen.'; return; }
+  const shapes = libPending.map(o => { const c = {...o}; delete c.id; return c; });
+  const b = boxOf(shapes); shapes.forEach(o => moveShape(o, -b.x0, -b.y0));
+  const rec = {id:newId(), name, cat:$('#lsCat').value, desc:$('#lsDesc').value.trim(), by:state.title.by || (project && project.by) || '', updated:Date.now(), shapes};
+  try { await libPut(rec); }
+  catch(err){ $('#lsErr').textContent = err.code === 401 ? 'Der Werkstatt-Code fehlt oder ist falsch.' : 'Speichern hat nicht geklappt. Bitte nochmal versuchen.'; return; }
+  $('#libSaveDlg').hidden = true;
+  $('#hint').textContent = `„${name}“ ist jetzt in der Bibliothek.`;
+  if (!$('#libDlg').hidden) refreshLib();
+});
+
+async function refreshLib(){
+  $('#libInfo').textContent = 'Wird geladen …';
+  await detectStore();
+  try { libItems = await libList(); } catch(e){ libItems = []; $('#libInfo').textContent = 'Die Bibliothek konnte nicht geladen werden.'; renderLib(); return; }
+  $('#libInfo').textContent = cloud ? 'Online: Alle sehen diese Teile und können sie einfügen.' : 'Nur in diesem Browser. Auf Netlify ist die Bibliothek für alle sichtbar.';
+  renderLib();
+}
+let libDelArmed = null;
+function renderLib(){
+  const q = $('#libSearch').value.trim().toLowerCase(), cat = $('#libCat').value;
+  const list = libItems.filter(it => (!cat || it.cat === cat) && (!q || `${it.name} ${it.desc} ${it.by} ${it.cat}`.toLowerCase().includes(q)));
+  if (!libItems.length){ $('#libGrid').innerHTML = '<p class="empty">Noch leer. Wähle in der Zeichnung ein Teil aus und klicke rechts auf „In Bibliothek“.</p>'; return; }
+  if (!list.length){ $('#libGrid').innerHTML = '<p class="empty">Nichts gefunden.</p>'; return; }
+  $('#libGrid').innerHTML = list.map(it => {
+    let thumb = ''; try { thumb = thumbSvg(it.shapes); } catch(e){}
+    return `<div class="libcard">${thumb}<div class="lt"><span class="cat">${esc(it.cat)}</span><b>${esc(it.name)}</b>${it.desc ? `<span>${esc(it.desc)}</span>` : ''}<span>${it.shapes.length} Teil${it.shapes.length === 1 ? '' : 'e'} · ${esc(it.by || 'ohne Namen')} · ${fmtDate(it.updated)}</span></div>
+      <div class="la"><button class="btn primary" type="button" data-ins="${esc(it.id)}">Einfügen</button><button class="btn danger" type="button" data-ldel="${esc(it.id)}">Löschen</button></div></div>`;
+  }).join('');
+}
+function insertLib(it){
+  if (!project){ return; }
+  if (mode === '3d') setMode('2d');
+  snapshot();
+  const shapes = JSON.parse(JSON.stringify(it.shapes)), b = boxOf(shapes);
+  const dx = snapV(view.cx - (b.x1 - b.x0)/2, false) - b.x0, dy = snapV(view.cy - (b.y1 - b.y0)/2, false) - b.y0;
+  shapes.forEach(o => { moveShape(o, dx, dy); o.id = nextId++; state.shapes.push(o); });
+  selId = shapes.length === 1 ? shapes[0].id : null;
+  $('#libDlg').hidden = true;
+  changed();
+  $('#hint').textContent = `„${it.name}“ eingefügt. Mit „Auswahl“ an die richtige Stelle schieben.`;
+}
+$('#libGrid').addEventListener('click', async e => {
+  const ins = e.target.closest('[data-ins]'), d = e.target.closest('[data-ldel]');
+  if (ins){ const it = libItems.find(x => x.id === ins.dataset.ins); if (it) insertLib(it); return; }
+  if (d){
+    if (libDelArmed !== d.dataset.ldel){ libDelArmed = d.dataset.ldel; d.textContent = 'Wirklich?'; d.classList.add('warn'); return; }
+    libDelArmed = null;
+    try { await libDel(d.dataset.ldel); await refreshLib(); } catch(err){ $('#libInfo').textContent = 'Löschen hat nicht geklappt.'; }
+  }
+});
+$('#libCat').innerHTML = '<option value="">Alle Kategorien</option>' + LIB_CATS.map(c => `<option>${c}</option>`).join('');
+$('#libSearch').addEventListener('input', renderLib);
+$('#libCat').addEventListener('change', renderLib);
+$('#bLib').onclick = () => { $('#libDlg').hidden = false; refreshLib(); };
+$('#libClose').onclick = () => { $('#libDlg').hidden = true; };
+$('#libDlg').addEventListener('click', e => { if (e.target.id === 'libDlg') $('#libDlg').hidden = true; });
+$('#libSaveProj').onclick = () => {
+  if (!state.shapes.length){ $('#libInfo').textContent = 'Das Projekt ist noch leer.'; return; }
+  openLibSave(state.shapes);
+};
 
 /* ---------- Start ---------- */
 new ResizeObserver(() => render()).observe($('#stage'));
