@@ -424,8 +424,14 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <legend>Format</legend>
         <label class="opt"><input type="radio" name="expFmt" value="pdf" checked> <span><b>PDF</b> · A4 quer, eine Seite je Inhalt</span></label>
         <label class="opt"><input type="radio" name="expFmt" value="png"> <span><b>PNG-Bild</b> · alles untereinander in einem Bild</span></label>
+        <label class="opt"><input type="radio" name="expFmt" value="dxf"> <span><b>DXF</b> · für CAD, Laser, Plasma, Wasserstrahl</span></label>
       </fieldset>
-      <fieldset>
+      <fieldset id="dxfSet" hidden>
+        <legend>DXF-Inhalt</legend>
+        <label class="opt"><input type="radio" name="dxfMode" value="laser" checked> <span><b>Laser-Zuschnitt</b> · nur Bleche, Ronden und Abwicklungen der Biegeteile mit Bohrungen, Maßstab 1:1</span></label>
+        <label class="opt"><input type="radio" name="dxfMode" value="draw"> <span><b>Ganze Zeichnung</b> · alle Linien, Mittellinien, Maße und Texte</span></label>
+      </fieldset>
+      <fieldset id="expContent">
         <legend>Inhalt</legend>
         <label class="opt"><input type="checkbox" id="ex2d" checked> 2D-Zeichnung mit Maßen</label>
         <label class="opt"><input type="checkbox" id="ex3d" checked> 3D-Ansicht</label>
@@ -2362,11 +2368,125 @@ function openExport(){
   $('#expGo').focus();
 }
 $('#bExport').onclick = openExport;
+document.querySelectorAll('input[name="expFmt"]').forEach(r => r.addEventListener('change', () => {
+  const dxf = document.querySelector('input[name="expFmt"]:checked').value === 'dxf';
+  $('#dxfSet').hidden = !dxf; $('#expContent').hidden = dxf; $('#expNote').hidden = dxf;
+}));
+
+/* ---------- DXF (R12, Millimeter) ---------- */
+function dxfText(t){ return String(t).replace(/Ø/g, '%%c').replace(/°/g, '%%d').replace(/±/g, '%%p').replace(/×/g, 'x').replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue').replace(/ß/g, 'ss').replace(/[–−]/g, '-').replace(/[^\x20-\x7e]/g, ''); }
+function makeDxf(){
+  const ents = [], layers = new Map(), n = v => (Math.round(v * 1000) / 1000).toString();
+  const L = (name, color) => { if (!layers.has(name)) layers.set(name, color); return name; };
+  return {
+    line(ly, x1, y1, x2, y2){ if (Math.hypot(x2 - x1, y2 - y1) < 1e-6) return; ents.push(`0\nLINE\n8\n${ly}\n10\n${n(x1)}\n20\n${n(y1)}\n30\n0\n11\n${n(x2)}\n21\n${n(y2)}\n31\n0`); },
+    circle(ly, x, y, r){ ents.push(`0\nCIRCLE\n8\n${ly}\n10\n${n(x)}\n20\n${n(y)}\n30\n0\n40\n${n(r)}`); },
+    arc(ly, x, y, r, a0, a1){ ents.push(`0\nARC\n8\n${ly}\n10\n${n(x)}\n20\n${n(y)}\n30\n0\n40\n${n(r)}\n50\n${n(a0)}\n51\n${n(a1)}`); },
+    text(ly, x, y, h, t, rot = 0){ ents.push(`0\nTEXT\n8\n${ly}\n10\n${n(x)}\n20\n${n(y)}\n30\n0\n40\n${n(h)}\n1\n${dxfText(t)}\n50\n${n(rot)}`); },
+    poly(ly, pts, closed){ for (let i = 0; i < pts.length - (closed ? 0 : 1); i++){ const a = pts[i], b = pts[(i + 1) % pts.length]; this.line(ly, a[0], a[1], b[0], b[1]); } },
+    layer: L,
+    toString(){
+      const lt = [...layers].map(([nm, c]) => `0\nLAYER\n2\n${nm}\n70\n0\n62\n${c}\n6\nCONTINUOUS`).join('\n');
+      return `0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n${layers.size}\n${lt}\n0\nENDTAB\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n${ents.join('\n')}\n0\nENDSEC\n0\nEOF\n`;
+    },
+  };
+}
+// Laser: Bleche und Ronden an ihrer Stelle, Biegeteile als Abwicklung darunter
+function dxfLaser(){
+  const D = makeDxf(), K = D.layer('KONTUR', 7), B = D.layer('BIEGELINIE', 1), T = D.layer('BESCHRIFTUNG', 3);
+  const plates = state.shapes.filter(s => s.type === 'rect' || s.type === 'disc');
+  const holes = state.shapes.filter(s => s.type === 'hole');
+  plates.forEach(p => {
+    if (p.type === 'rect') D.poly(K, [[0,0],[p.w,0],[p.w,p.h],[0,p.h]].map(([x, y]) => { const w = localToWorld(p, x, y); return [w.x, w.y]; }), true);
+    else { D.circle(K, p.x, p.y, p.d/2); if (p.di > 0) D.circle(K, p.x, p.y, p.di/2); }
+    holes.filter(h => inRect(p, h.x, h.y)).forEach(h => D.circle(K, h.x, h.y, h.d/2));
+    const b = bbox(p); D.text(T, b.x0, b.y1 + 4, 5, `${p.name || 'Blech'} t=${num(p.t, 'mm')} ${MATS[p.mat].name}`);
+  });
+  const all = state.shapes.length ? allBox(false) : {x0:0, y0:0, x1:0, y1:0};
+  let x = all.x0, y = all.y0 - 40;
+  state.shapes.filter(s => s.type === 'bend').forEach(s => {
+    const c = bendCalc(s), Lg = c.L, w = s.w, y0 = y - w;
+    D.poly(K, [[x, y0],[x + Lg, y0],[x + Lg, y0 + w],[x, y0 + w]], true);
+    let acc = 0;
+    s.legs.slice(0, -1).forEach((l, i) => { acc += l + c.vs[i] / 2 + (i ? c.vs[i - 1] / 2 : 0); D.line(B, x + acc, y0, x + acc, y0 + w); });
+    D.text(T, x, y0 + w + 4, 5, `${s.name || 'Biegeteil'} Abwicklung ${num(Lg, 'mm')} x ${num(w, 'mm')} t=${num(s.t, 'mm')}`);
+    x += Lg + 30;
+  });
+  return D.toString();
+}
+// Ganze Zeichnung: die SVG-Zeichnung im Maßstab 1:1 in DXF-Elemente umwandeln
+function dxfDrawing(){
+  const D = makeDxf(), host = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  host.setAttribute('style', 'position:absolute;left:-99999px;top:0;width:10px;height:10px');
+  const T = {z:1, x:v => v, y:v => -v};
+  host.innerHTML = ordered().map(sh => shapeMarkup(sh, T, state.showDims)).join('');
+  document.body.appendChild(host);
+  const layerOf = el => {
+    const c = (el.getAttribute('class') || '').split(' ')[0];
+    if (['part','metal','hole','edge','cut'].includes(c)) return D.layer('KONTUR', 7);
+    if (c === 'center') return D.layer('MITTELLINIE', 1);
+    if (c === 'hidden') return D.layer('VERDECKT', 4);
+    if (['dim','arrow','dimtext'].includes(c)) return D.layer('MASSE', 3);
+    if (['weld','wsym','warrow'].includes(c)) return D.layer('NAEHTE', 6);
+    if (c === 'lbl') return D.layer('TEXT', 2);
+    return D.layer('DUENN', 8);
+  };
+  const pt = (x, y) => [x, -y];
+  host.querySelectorAll('*').forEach(el => {
+    const ly = layerOf(el), tag = el.tagName.toLowerCase(), A = k => parseFloat(el.getAttribute(k));
+    if (tag === 'line'){ const a = pt(A('x1'), A('y1')), b = pt(A('x2'), A('y2')); D.line(ly, a[0], a[1], b[0], b[1]); }
+    else if (tag === 'circle'){ const c = pt(A('cx'), A('cy')); D.circle(ly, c[0], c[1], A('r')); }
+    else if (tag === 'rect'){ const x = A('x'), y = A('y'), w = A('width'), h = A('height'); D.poly(ly, [pt(x, y), pt(x + w, y), pt(x + w, y + h), pt(x, y + h)], true); }
+    else if (tag === 'polygon' || tag === 'polyline'){
+      const nums = (el.getAttribute('points') || '').trim().split(/[\s,]+/).map(Number), ps = [];
+      for (let i = 0; i + 1 < nums.length; i += 2) ps.push(pt(nums[i], nums[i + 1]));
+      D.poly(ly, ps, tag === 'polygon');
+    }
+    else if (tag === 'path'){
+      // jede Teilfigur (M …) für sich abtasten, damit keine Verbindungslinien entstehen
+      (el.getAttribute('d') || '').split(/(?=M)/).filter(Boolean).forEach(sub => {
+        const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'path'); tmp.setAttribute('d', sub); host.appendChild(tmp);
+        const len = tmp.getTotalLength(), steps = /[AaCcQq]/.test(sub) ? Math.max(8, Math.ceil(len / 2)) : 0;
+        if (steps){ const ps = []; for (let i = 0; i <= steps; i++){ const q = tmp.getPointAtLength(len * i / steps); ps.push(pt(q.x, q.y)); } D.poly(ly, ps, false); }
+        else {
+          const segs = sub.match(/[MLlHhVvZz][^MLlHhVvZz]*/g) || []; let cx = 0, cy = 0, sx = 0, sy = 0; const ps = [];
+          segs.forEach(sg => { const c = sg[0], v = sg.slice(1).trim().split(/[\s,]+/).filter(Boolean).map(Number);
+            if (c === 'M'){ cx = v[0]; cy = v[1]; sx = cx; sy = cy; ps.push(pt(cx, cy)); }
+            else if (c === 'L'){ cx = v[0]; cy = v[1]; ps.push(pt(cx, cy)); }
+            else if (c === 'l'){ cx += v[0]; cy += v[1]; ps.push(pt(cx, cy)); }
+            else if (c === 'H'){ cx = v[0]; ps.push(pt(cx, cy)); } else if (c === 'h'){ cx += v[0]; ps.push(pt(cx, cy)); }
+            else if (c === 'V'){ cy = v[0]; ps.push(pt(cx, cy)); } else if (c === 'v'){ cy += v[0]; ps.push(pt(cx, cy)); }
+            else if (c === 'Z' || c === 'z'){ ps.push(pt(sx, sy)); } });
+          D.poly(ly, ps, false);
+        }
+        tmp.remove();
+      });
+    }
+    else if (tag === 'text'){
+      const tr = (el.getAttribute('transform') || '').match(/rotate\(([-\d.]+)/), rot = tr ? -parseFloat(tr[1]) : 0;
+      const fs = parseFloat(getComputedStyle(el).fontSize) || 11, p0 = pt(A('x'), A('y'));
+      let x = p0[0]; const anchor = el.getAttribute('text-anchor');
+      const wEst = el.textContent.length * fs * .6;
+      if (anchor === 'middle') x -= wEst / 2 * Math.cos(rot * Math.PI / 180);
+      else if (anchor === 'end') x -= wEst * Math.cos(rot * Math.PI / 180);
+      D.text(ly, x, p0[1], fs * .7, el.textContent, rot);
+    }
+  });
+  host.remove();
+  return D.toString();
+}
 $('#expCancel').onclick = () => { $('#expDlg').hidden = true; };
 $('#expDlg').addEventListener('click', e => { if (e.target.id === 'expDlg') $('#expDlg').hidden = true; });
 $('#expForm').addEventListener('submit', async e => {
   e.preventDefault();
   const opt = {fmt:document.querySelector('input[name="expFmt"]:checked').value, d2:$('#ex2d').checked, d3:$('#ex3d').checked, bom:$('#exBom').checked, cad:$('#exCad').checked};
+  if (opt.fmt === 'dxf'){
+    const laser = document.querySelector('input[name="dxfMode"]:checked').value === 'laser';
+    if (laser && !state.shapes.some(s => ['rect','disc','bend'].includes(s.type))){ $('#expErr').textContent = 'Für den Laser-Zuschnitt braucht es Bleche, Ronden oder Biegeteile.'; return; }
+    try { download(fileBase() + (laser ? '_laser' : '') + '.dxf', new Blob([laser ? dxfLaser() : dxfDrawing()], {type:'application/dxf'})); $('#expDlg').hidden = true; }
+    catch(err){ $('#expErr').textContent = 'DXF-Export hat nicht geklappt.'; }
+    return;
+  }
   if (!opt.d2 && !opt.d3 && !opt.bom){ $('#expErr').textContent = 'Bitte mindestens einen Inhalt ankreuzen.'; return; }
   const btn = $('#expGo'); btn.disabled = true; btn.textContent = 'Wird erstellt …'; $('#expErr').textContent = '';
   try {
