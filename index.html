@@ -475,6 +475,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Schraube</b>: tippen. Auf einer Bohrung rastet sie mittig ein. Art, Größe und Länge oben wählen.</li>
             <li><b>Ronde</b>: runde Bleche und Flansche mit Innenloch. <b>Kreis</b>: Kreis, Bogen oder Lochkreis mit gleichmäßig verteilten Bohrungen.</li>
             <li><b>Biegeteil</b>: Schenkel als Außenmaße und Biegewinkel eintragen. Die gestreckte Länge (Zuschnitt) wird nach DIN 6935 berechnet.</li>
+            <li><b>Passungen</b>: an Wellenabsätze die Toleranz schreiben (z. B. <kbd>30k6×25</kbd>), bei Bohrungen „Toleranz“ wählen (z. B. H7). Abmaße und Spiel/Übermaß nach ISO 286 stehen dann bei den Eigenschaften.</li>
             <li><b>Welle</b>: tippen, dann rechts die Absätze als Ø×Länge eintragen, z. B. <kbd>25×40; 35×100; 25×40</kbd>. Passfedernut nach DIN 6885 auswählbar.</li>
             <li><b>Profil</b>: Winkel, U-Stahl, Rohre und Rundstahl. Längsansicht in Richtung der Länge ziehen, Querschnitt einfach antippen.</li>
             <li><b>Naht</b>: entlang der Kante ziehen, an die geschweißt wird. Art und a-Maß oben wählen.</li>
@@ -806,6 +807,54 @@ function parseNums(str, signed){
   return out.length && out.every(v => !isNaN(v) && (signed ? v !== 0 && Math.abs(v) < 180 : v > 0)) ? out : null;
 }
 function inPoly(p, poly){ let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++){ const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > p.y) !== (yj > p.y) && p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi) c = !c; } return c; }
+/* Passungen nach ISO 286-2: Abmaße in µm, Nennmaßbereiche bis 500 mm */
+const IT_UP = [3,6,10,18,30,50,80,120,180,250,315,400,500];
+const IT = {5:[4,5,6,8,9,11,13,15,18,20,23,25,27], 6:[6,8,9,11,13,16,19,22,25,29,32,36,40], 7:[10,12,15,18,21,25,30,35,40,46,52,57,63],
+  8:[14,18,22,27,33,39,46,54,63,72,81,89,97], 9:[25,30,36,43,52,62,74,87,100,115,130,140,155], 10:[40,48,58,70,84,100,120,140,160,185,210,230,250],
+  11:[60,75,90,110,130,160,190,220,250,290,320,360,400]};
+const ES_SHAFT = {d:[-20,-30,-40,-50,-65,-80,-100,-120,-145,-170,-190,-210,-230], e:[-14,-20,-25,-32,-40,-50,-60,-72,-85,-100,-110,-125,-135],
+  f:[-6,-10,-13,-16,-20,-25,-30,-36,-43,-50,-56,-62,-68], g:[-2,-4,-5,-6,-7,-9,-10,-12,-14,-15,-17,-18,-20], h:Array(13).fill(0)};
+const EI_SHAFT = {k:[0,1,1,1,2,2,2,3,3,4,4,4,5], m:[2,4,6,7,8,9,11,13,15,17,20,21,23], n:[4,8,10,12,15,17,20,23,27,31,34,37,40], p:[6,12,15,18,22,26,32,37,43,50,56,62,68]};
+const HOLE_TOLS = ['H6','H7','H8','H9','H11','G7','F7','F8','E8','D10','JS7','K6','K7','M6','M7','N7','P7'];
+const SHAFT_TOLS = ['h6','h7','h9','h11','g6','f7','e8','d9','js6','k6','m6','n6','p6'];
+function tolDev(code, d){
+  const m = String(code || '').match(/^([A-Za-z]{1,2})(\d{1,2})$/); if (!m) return null;
+  const L = m[1], g = +m[2], l = L.toLowerCase(), hole = L !== l, i = IT_UP.findIndex(u => d <= u);
+  if (i < 0 || !IT[g]) return null;
+  const it = IT[g][i];
+  if (l === 'js') return {up:it/2, lo:-it/2};
+  if (!hole){
+    if (ES_SHAFT[l]) return {up:ES_SHAFT[l][i], lo:ES_SHAFT[l][i] - it};
+    if (EI_SHAFT[l]){ const ei = l === 'k' && (g < 4 || g > 7) ? 0 : EI_SHAFT[l][i]; return {up:ei + it, lo:ei}; }
+    return null;
+  }
+  if (ES_SHAFT[l]){ const EI = -ES_SHAFT[l][i]; return {up:EI + it, lo:EI}; }
+  if (EI_SHAFT[l]){
+    const delta = i > 0 && IT[g - 1] && ((l === 'p' && g <= 7) || (l !== 'p' && g <= 8)) ? it - IT[g - 1][i] : 0;
+    const ES = l === 'k' && g > 8 ? 0 : -EI_SHAFT[l][i] + delta;
+    return {up:ES, lo:ES - it};
+  }
+  return null;
+}
+const um = v => (v > 0 ? '+' : v < 0 ? '−' : '') + dec((Math.abs(v) / 1000).toFixed(3)).replace(/^0,000$/, '0');
+function tolText(code, d){ const t = tolDev(code, d); return t ? `${um(t.up)} / ${um(t.lo)} mm (Höchstmaß ${dec((d + t.up/1000).toFixed(3))}, Mindestmaß ${dec((d + t.lo/1000).toFixed(3))})` : ''; }
+function fitText(holeCode, shaftCode, d){
+  const H = tolDev(holeCode, d), S = tolDev(shaftCode, d); if (!H || !S) return '';
+  const max = H.up - S.lo, min = H.lo - S.up;
+  const kind = min >= 0 ? 'Spielpassung' : max <= 0 ? 'Übermaßpassung' : 'Übergangspassung';
+  const f = v => dec((v / 1000).toFixed(3));
+  return min >= 0 ? `${kind}: Spiel ${f(min)} bis ${f(max)} mm` : max <= 0 ? `${kind}: Übermaß ${f(-max)} bis ${f(-min)} mm` : `${kind}: Spiel bis ${f(max)} mm, Übermaß bis ${f(-min)} mm`;
+}
+/* Allgemeintoleranzen ISO 2768-1, Längenmaße (±mm) */
+const GT_UP = [3,6,30,120,400,1000,2000,4000];
+const GT = {f:[.05,.05,.1,.15,.2,.3,.5,null], m:[.1,.1,.2,.3,.5,.8,1.2,2], c:[.2,.3,.5,.8,1.2,2,3,4], v:[null,.5,1,1.5,2.5,4,6,8]};
+function gtFor(len){ const g = state.title.gt || 'm'; if (!GT[g]) return null; const i = GT_UP.findIndex(u => len <= u); return i < 0 ? null : GT[g][i]; }
+function gtNote(vals){
+  const g = state.title.gt || 'm'; if (!GT[g]) return '';
+  const parts = vals.filter(v => v > .5).map(v => { const t = gtFor(v); return t != null ? `${num(v, 'mm')} ±${dec(t)}` : null; }).filter(Boolean);
+  return parts.length ? `<p class="note">Allgemeintoleranz ISO 2768-${g}: ${parts.join(' · ')} mm</p>` : '';
+}
+const RA_OPTS = [['','–'],['0,8','Ra 0,8'],['1,6','Ra 1,6'],['3,2','Ra 3,2'],['6,3','Ra 6,3'],['12,5','Ra 12,5'],['25','Ra 25']];
 const shaftLen = s => s.steps.reduce((a, t) => a + t.l, 0);
 const shaftDmax = s => Math.max(...s.steps.map(t => t.d));
 const shaftMass = s => s.steps.reduce((a, t) => a + Math.PI/4 * t.d**2 * t.l, 0) / 1e6 * MATS[s.mat].rho;
@@ -816,13 +865,14 @@ function shaftKey(s){
   const l = Math.max(k.b, Math.min(s.keyLen || t.l - 8, t.l - 4));
   return {...k, l, xc:x0 + t.l/2, d:t.d};
 }
-const stepsText = s => s.steps.map(t => `${dec(t.d)}×${dec(t.l)}`).join('; ');
+const stepsText = s => s.steps.map(t => `${dec(t.d)}${t.tol || ''}×${dec(t.l)}`).join('; ');
 function parseSteps(str){
   const parts = String(str).split(/[;\n]+/).map(x => x.trim()).filter(Boolean), out = [];
   for (const q of parts){
-    const m = q.replace(/,/g, '.').match(/^(?:ø|Ø)?\s*(\d+(?:\.\d+)?)\s*[x×*]\s*(\d+(?:\.\d+)?)$/i);
-    if (!m || !(+m[1] > 0) || !(+m[2] > 0)) return null;
-    out.push({d:+m[1], l:+m[2]});
+    const m = q.replace(/,/g, '.').match(/^(?:ø|Ø)?\s*(\d+(?:\.\d+)?)\s*([a-zA-Z]{1,2}\d{1,2})?\s*[x×*]\s*(\d+(?:\.\d+)?)$/);
+    if (!m || !(+m[1] > 0) || !(+m[3] > 0)) return null;
+    if (m[2] && !tolDev(m[2].toLowerCase() === m[2] ? m[2] : m[2].toLowerCase(), +m[1])) return null;
+    out.push(m[2] ? {d:+m[1], tol:m[2].toLowerCase(), l:+m[3]} : {d:+m[1], l:+m[3]});
   }
   return out.length ? out : null;
 }
@@ -979,7 +1029,7 @@ function shaftMarkup(s, T, showDims){
     st.forEach(t => {
       if (t.l * T.z > 26){
         const w = localToWorld(s, x + t.l/2, t.d/2);
-        o += `<text class="lbl" x="${f1(T.x(w.x))}" y="${f1(T.y(w.y) - 5)}" text-anchor="middle">Ø${num(t.d)}</text>`;
+        o += `<text class="lbl" x="${f1(T.x(w.x))}" y="${f1(T.y(w.y) - 5)}" text-anchor="middle">Ø${num(t.d)}${t.tol ? ' ' + t.tol : ''}</text>`;
       }
       x += t.l;
     });
@@ -1014,8 +1064,16 @@ function screwLabel(s){
   const k = KINDS[s.kind];
   return k.len ? `${s.size}×${s.len}` : (s.kind === 'washer' ? `Scheibe ${NORM[s.size].d}` : s.size);
 }
-function holeLabel(s){ return s.fit && s.fit.startsWith('G-') ? s.fit.slice(2) : 'Ø' + num(s.d); }
+function holeLabel(s){ return s.fit && s.fit.startsWith('G-') ? s.fit.slice(2) : 'Ø' + num(s.d) + (s.tol ? ' ' + s.tol : ''); }
 function shapeMarkup(s, T, showDims){
+  let o = shapeMarkupInner(s, T, showDims);
+  if (s.ra && showDims){
+    const b = bbox(s), x = T.x(b.x1) + 6, y = T.y(b.y1) + 2;
+    o += `<path class="thin" d="M${f1(x)},${f1(y + 6)}l4,6l8,-16h22"/><text class="lbl" x="${f1(x + 16)}" y="${f1(y - 6)}">Ra ${esc(s.ra)}</text>`;
+  }
+  return o;
+}
+function shapeMarkupInner(s, T, showDims){
   let o = '';
   if (s.type === 'rect'){
     const c = [[0,0],[s.w,0],[s.w,s.h],[0,s.h]].map(([x, y]) => localToWorld(s, x, y));
@@ -1519,10 +1577,14 @@ function fieldsFor(s){
   if (s.type === 'rect') return [
     {k:'name', l:'Benennung', kind:'text'}, len('w', 'Breite'), len('h', 'Höhe'), len('t', 'Dicke'),
     {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
+    {k:'ra', l:'Oberfläche', kind:'select', o:RA_OPTS},
     {k:'rot', l:'Drehung', kind:'deg'},
     len('x', 'X Ecke'), len('y', 'Y Ecke')];
   if (s.type === 'hole') return [
-    {k:'fit', l:'Art', kind:'select', o:Object.entries(FITS)}, len('d', 'Durchmesser'), len('x', 'X Mitte'), len('y', 'Y Mitte')];
+    {k:'fit', l:'Art', kind:'select', o:Object.entries(FITS)}, len('d', 'Durchmesser'),
+    ...(s.fit && s.fit.startsWith('G-') ? [] : [{k:'tol', l:'Toleranz', kind:'select', o:[['','–'], ...HOLE_TOLS.map(t => [t, t])]}]),
+    ...(s.tol ? [{k:'mate', l:'Passt zu Welle', kind:'select', o:[['','–'], ...SHAFT_TOLS.map(t => [t, t])]}] : []),
+    len('x', 'X Mitte'), len('y', 'Y Mitte')];
   if (s.type === 'screw') return [
     {k:'kind', l:'Art', kind:'select', o:Object.entries(KINDS).map(([v, o]) => [v, o.name])},
     {k:'size', l:'Gewinde', kind:'select', o:SIZES.map(v => [v, v])},
@@ -1534,6 +1596,7 @@ function fieldsFor(s){
   if (s.type === 'disc') return [
     {k:'name', l:'Benennung', kind:'text'}, len('d', 'Ø außen'), len('di', 'Ø innen'), len('t', 'Dicke'),
     {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
+    {k:'ra', l:'Oberfläche', kind:'select', o:RA_OPTS},
     len('x', 'X Mitte'), len('y', 'Y Mitte')];
   if (s.type === 'circle') return [
     {k:'style', l:'Linienart', kind:'select', o:[['solid','Körperkante (breit)'],['center','Mittellinie']]},
@@ -1550,6 +1613,7 @@ function fieldsFor(s){
   if (s.type === 'shaft') return [
     {k:'stepsTxt', l:'Absätze Ø×L', kind:'text'},
     {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
+    {k:'ra', l:'Oberfläche', kind:'select', o:RA_OPTS},
     len('chamfer', 'Fase'),
     {k:'keyStep', l:'Passfedernut', kind:'select', o:[[-1,'keine'], ...s.steps.map((t, i) => [i, `in Absatz ${i + 1} (Ø${dec(t.d)})`])]},
     ...(s.keyStep >= 0 ? [len('keyLen', 'Nutlänge')] : []),
@@ -1640,6 +1704,18 @@ function renderProps(){
     const g = NORM[s.size];
     h += `<p class="note">${KINDS[s.kind].norm} · Schlüsselweite SW ${dec(s.kind === 'cyl' ? g.sw : g.s)} · Durchgangsloch Ø${dec(g.dh)} · Kernloch Ø${dec(g.kl)}</p>`;
   }
+  if (s.type === 'hole' && s.tol){
+    h += `<p class="note">Ø${num(s.d, 'mm')} <b>${s.tol}</b>: ${tolText(s.tol, s.d)}${s.mate ? `<br>Passung <b>${s.tol}/${s.mate}</b> · ${fitText(s.tol, s.mate, s.d)}` : '<br>Wähle „Passt zu Welle“, um Spiel oder Übermaß zu sehen.'}</p>`;
+  }
+  if (s.type === 'rect') h += gtNote([s.w, s.h, s.t]);
+  if (s.type === 'disc') h += gtNote([s.d, s.di, s.t]);
+  if (s.type === 'profile') h += gtNote([s.len]);
+  if (s.type === 'bend') h += gtNote([...s.legs, s.w]);
+  if (s.type === 'shaft'){
+    const tl = s.steps.filter(t => t.tol);
+    h += tl.length ? `<p class="note">${tl.map(t => `Ø${num(t.d, 'mm')} <b>${t.tol}</b>: ${tolText(t.tol, t.d)}`).join('<br>')}</p>` : `<p class="note">Toleranz an einen Absatz schreiben, z. B. <b>30k6×25</b> für einen Lagersitz.</p>`;
+    h += gtNote([shaftLen(s), ...s.steps.map(t => t.l)]);
+  }
   if (s.type === 'hole' && s.fit && s.fit.startsWith('G-')){
     const g = NORM[s.fit.slice(2)];
     h += `<p class="note">Erst mit Ø${dec(g.kl)} bohren, dann ${s.fit.slice(2)} schneiden. Das dünne ¾-Kreis-Bogen zeigt das Gewinde.</p>`;
@@ -1673,6 +1749,8 @@ $('#props').addEventListener('change', e => {
     s[k] = (k === 'len' || k === 'rot' || k === 'a' || k === 'keyStep') ? +v : (k === 'around' ? v === '1' : v);
     if (k === 'keyStep' && +v >= 0) s.keyLen = Math.max(8, s.steps[+v].l - 8);
     if (k === 'kind' && s.type === 'profile') s.size = Object.keys(PROFILES[v].sizes)[0];
+    if (k === 'tol' && !v) s.mate = '';
+    if (k === 'fit' && v.startsWith('G-')){ s.tol = ''; s.mate = ''; }
     if (k === 'fit' && v !== 'frei'){ const g = NORM[v.slice(2)]; s.d = v[0] === 'G' ? g.kl : g.dh; }
     if (k === 'kind' && s.type === 'screw' && !GRADES[v].includes(s.grade)) s.grade = GRADES[v][0];
   } else if (k === 'legsTxt' || k === 'anglesTxt'){
@@ -1985,11 +2063,13 @@ function renderTitle(){
     <div>Gezeichnet</div><div>${esc(t.by || '–')}</div>
     <div>Datum</div><div>${esc(t.date)}</div>
     <div>Werkstoff</div><div>${esc(mats)}</div>
-    <div>Maße in</div><div>${state.unit}</div>`;
+    <div>Maße in</div><div>${state.unit}</div>
+    <div>Allg.-Tol.</div><div>${t.gt === '-' ? '–' : 'ISO 2768-' + (t.gt || 'm')}</div>`;
   if (!document.activeElement || !document.activeElement.id.startsWith('t-')){
     $('#tprops').innerHTML = `<label for="t-name">Benennung</label><input id="t-name" value="${esc(t.name)}" class="txt">
       <label for="t-by">Gezeichnet von</label><input id="t-by" value="${esc(t.by)}" placeholder="Name Azubi" class="txt">
-      <label for="t-date">Datum</label><input id="t-date" value="${esc(t.date)}">`;
+      <label for="t-date">Datum</label><input id="t-date" value="${esc(t.date)}">
+      <label for="t-gt">Allgemeintoleranz</label>${optSelect('t-gt', [['f','ISO 2768-f (fein)'],['m','ISO 2768-m (mittel)'],['c','ISO 2768-c (grob)'],['v','ISO 2768-v (sehr grob)'],['-','keine']], t.gt || 'm')}`;
   }
 }
 $('#tprops').addEventListener('input', e => {
@@ -2042,7 +2122,7 @@ function exportSVG(withTitle = true){
   if (!withTitle) return {o:o + '</svg>', w, hh};
   const y = hh - 60, x = Math.max(10, w - 330);
   o += `<rect x="${x}" y="${y}" width="320" height="50" fill="#fff" stroke="#111" stroke-width="1.5"/><text class="tbh" x="${x + 8}" y="${y + 19}">${esc(state.title.name)}</text>`;
-  o += `<text class="tb" x="${x + 8}" y="${y + 40}">${esc(state.title.by || '–')} · ${esc(state.title.date)} · Maße in ${state.unit}</text></svg>`;
+  o += `<text class="tb" x="${x + 8}" y="${y + 40}">${esc(state.title.by || '–')} · ${esc(state.title.date)} · Maße in ${state.unit}${gtLabel()}</text></svg>`;
   return {o, w, hh};
 }
 $('#bSvg').onclick = () => download(fileBase() + '.svg', new Blob([exportSVG().o], {type:'image/svg+xml'}));
@@ -2088,7 +2168,8 @@ function bomTable(){
   const total = bomRows().reduce((a, r) => a + (r.mass ? r.mass * r.qty : 0), 0);
   return {rows, total, holes:holeRows(), welds:weldRows()};
 }
-const subtitle = () => `${state.title.by ? 'Gezeichnet: ' + state.title.by + ' · ' : ''}${state.title.date} · Maße in ${state.unit}`;
+const gtLabel = () => state.title.gt === '-' ? '' : ' · ISO 2768-' + (state.title.gt || 'm');
+const subtitle = () => `${state.title.by ? 'Gezeichnet: ' + state.title.by + ' · ' : ''}${state.title.date} · Maße in ${state.unit}${gtLabel()}`;
 
 async function exportPDF(opt, imgs){
   await loadScript(JSPDF_URL, () => window.jspdf);
@@ -2111,7 +2192,7 @@ async function exportPDF(opt, imgs){
     doc.text('GEZEICHNET', bx + 2, by + 3); doc.text('DATUM', bx + 62, by + 3); doc.text('MASSE IN', bx + 2, by + 11); doc.text('BLATT', bx + 62, by + 11);
     doc.setFontSize(9); doc.setTextColor(20);
     doc.text(state.title.by || '–', bx + 2, by + 7); doc.text(state.title.date || '', bx + 62, by + 7);
-    doc.text(state.unit, bx + 2, by + 15); doc.text(`${i + 1} / ${pages.length}`, bx + 62, by + 15);
+    doc.text(state.unit + gtLabel(), bx + 2, by + 15); doc.text(`${i + 1} / ${pages.length}`, bx + 62, by + 15);
   };
   const fitImg = (c, x, y, w, h) => {
     const k = Math.min(w / c.width, h / c.height), iw = c.width * k, ih = c.height * k;
