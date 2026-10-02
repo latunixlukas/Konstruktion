@@ -204,6 +204,10 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .cadbar select{padding:2px 6px;font-size:.78rem;border-radius:99px}
 .cadbar label.chk{font-size:.78rem;white-space:nowrap}
+.cutbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:4;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:6px 10px;font-size:.8rem;max-width:calc(100% - 28px)}
+.cutbar input[type=range]{width:min(260px,40vw);accent-color:var(--fg)}
+.cutbar select{padding:2px 6px;font-size:.78rem;border-radius:99px}
+.cutpos{font-family:var(--f-mono);font-size:.74rem;color:var(--muted);min-width:7em}
 .cadbar{flex-wrap:wrap;position:absolute;left:14px;top:58px;z-index:4;display:flex;align-items:center;gap:10px;padding:5px 6px 5px 6px;font-size:.82rem;max-width:calc(100% - 90px)}
 .cadbar #cadName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .cadtag{font:600 .7rem var(--f-mono);background:var(--fg);color:var(--invert);border-radius:99px;padding:2px 8px}
@@ -447,12 +451,20 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <button type="button" id="zIn" title="Hineinzoomen" aria-label="Hineinzoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         <button type="button" id="zOut" title="Herauszoomen" aria-label="Herauszoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
         <button type="button" id="zFit" title="Alles anzeigen" aria-label="Alles anzeigen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+        <button type="button" id="zCut" title="Schnittansicht" aria-label="Schnittansicht" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M12 4v16" stroke-dasharray="2 2"/><path d="M12 4l8 4v8l-8 4" fill="currentColor" fill-opacity=".25"/></svg></button>
         <button type="button" id="zMeasure" title="Messen: zwei Punkte anklicken" aria-label="Messen" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><path d="M6.5 17.5l11-11" stroke-dasharray="2.5 2.5"/></svg></button>
         <button type="button" id="zDims" title="Maße am angeklickten Teil anzeigen" aria-label="Maße anzeigen" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16L16 3l5 5L8 21z"/><path d="M7 12l2 2M10 9l2 2M13 6l2 2"/></svg></button>
       </div>
       <div class="status pill" id="status"></div>
       <div id="v3" hidden>
         <div class="m3 mlabel" id="m3d" hidden></div>
+        <div class="cutbar pill" id="cutBar3" hidden>
+          <span class="cadtag">Schnitt</span>
+          <select id="cutAxis" aria-label="Schnittachse"><option value="x">X (längs)</option><option value="y">Y (quer)</option><option value="z">Z (Höhe)</option></select>
+          <input type="range" id="cutRange" min="0" max="100" value="50" aria-label="Lage des Schnitts">
+          <span id="cutPos" class="cutpos"></span>
+          <label class="chk"><input type="checkbox" id="cutFlip"> andere Seite</label>
+        </div>
         <div class="m3" id="m3x" hidden></div><div class="m3" id="m3y" hidden></div><div class="m3" id="m3z" hidden></div>
       </div>
       <div class="cadbar pill" id="cadBar" hidden>
@@ -483,6 +495,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Maß</b>: von Punkt zu Punkt ziehen. Der Abstand wird automatisch beschriftet.</li>
             <li><b>Auswahl</b>: Teil anklicken, verschieben, an den Ecken ziehen. Werte rechts genau eintippen, z.&nbsp;B. <kbd>25cm</kbd> oder <kbd>0,3m</kbd>.</li>
             <li>Mehrere Teile: Rahmen aufziehen (nach rechts = ganz drin, nach links = berührt) oder Shift + Klick. <kbd>Strg+C</kbd> <kbd>Strg+V</kbd> <kbd>Strg+X</kbd> <kbd>Strg+A</kbd>.</li>
+            <li><b>3D</b>: ausgewähltes Teil ziehen = verschieben, mit Shift ziehen = anheben (oder Feld „Höhe Z“, Tasten Bild↑/Bild↓). Schnitt-Knopf rechts oben schneidet das Modell auf.</li>
             <li>Ansicht verschieben: rechte Maustaste ziehen (am Handy: leere Fläche ziehen). Zoomen: Mausrad oder zwei Finger.</li>
             <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>O</kbd> <kbd>K</kbd> <kbd>G</kbd> <kbd>W</kbd> <kbd>P</kbd> <kbd>N</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
           </ul>
@@ -1626,7 +1639,12 @@ function fit(){
 }
 
 /* ---------- Eigenschaften ---------- */
+const Z_TYPES = ['rect','disc','profile','shaft','bend','screw'];
 function fieldsFor(s){
+  const f = fieldsForBase(s);
+  return Z_TYPES.includes(s.type) ? [...f, {k:'z', l:'Höhe Z (3D)', kind:'len'}] : f;
+}
+function fieldsForBase(s){
   const len = (k, l) => ({k, l, kind:'len'});
   if (s.type === 'rect') return [
     {k:'name', l:'Benennung', kind:'text'}, len('w', 'Breite'), len('h', 'Höhe'), len('t', 'Dicke'),
@@ -1700,6 +1718,7 @@ function getVal(s, k){
   if (k === '_len') return Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
   if (k === 'around') return s.around ? '1' : '0';
   if (k === 'rot') return s.rot || 0;
+  if (k === 'z') return s.z || 0;
   if (k === 'a0') return s.a0 ?? 0;
   if (k === 'a1') return s.a1 ?? 360;
   if (k === 'stepsTxt') return stepsText(s);
@@ -2383,6 +2402,10 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape'){ clearSel(); setTool('select'); renderProps(); return; }
   const t = TOOLS.find(t => t.key.toLowerCase() === k);
   if (t){ setTool(t.k); return; }
+  if ((e.key === 'PageUp' || e.key === 'PageDown') && (selId || multi.size)){
+    e.preventDefault(); const st = (e.shiftKey ? 1 : state.snap) * (e.key === 'PageUp' ? 1 : -1);
+    snapshot(); selShapes().forEach(o => { o.z = r2((o.z || 0) + st); }); changed(); return;
+  }
   const arrows = {ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,1], ArrowDown:[0,-1]};
   if (arrows[e.key] && (selId || multi.size)){
     e.preventDefault();
@@ -2409,7 +2432,7 @@ async function setMode(m){
   mode = m; renderModeSeg();
   $('#v3').hidden = m !== '3d'; svg.style.visibility = m === '3d' ? 'hidden' : '';
   if (m === '2d' && cad){ requestAnimationFrame(() => { fit(); render(); }); }
-  $('#zDims').hidden = m !== '3d'; $('#zMeasure').hidden = m !== '3d';
+  $('#zDims').hidden = m !== '3d'; $('#zMeasure').hidden = m !== '3d'; $('#zCut').hidden = m !== '3d';
   renderToolOpts();
   if (m === '3d'){
     $('#hint').textContent = '3D wird geladen …';
@@ -2417,7 +2440,7 @@ async function setMode(m){
     if (mode !== '3d') return;
     const first = !three;
     init3d(); build3d(); if (first || refit3d){ fit3d(); refit3d = false; } draw3d();
-    $('#hint').textContent = 'Ziehen = drehen · Rechte Maustaste oder Shift = verschieben · Mausrad = zoomen';
+    $('#hint').textContent = 'Ziehen = drehen · Rechte Maustaste = Ansicht schieben · ausgewähltes Teil ziehen = verschieben, mit Shift = anheben';
     if (cad && selId == null) renderCadInfo();
   } else {
     if (cad) renderProps();
@@ -2502,9 +2525,9 @@ function build3d(){
   scene.background = col('--paper');
   const ink = col('--ink'), selC = col('--sel');
   const mats = {
-    plate:new THREE.MeshStandardMaterial({color:col('--part'), metalness:.2, roughness:.65}),
-    metal:new THREE.MeshStandardMaterial({color:col('--metal'), metalness:.45, roughness:.45}),
-    sel:new THREE.MeshStandardMaterial({color:col('--sel-soft'), metalness:.1, roughness:.6}),
+    plate:new THREE.MeshStandardMaterial({color:col('--part'), metalness:.2, roughness:.65, side:THREE.DoubleSide}),
+    metal:new THREE.MeshStandardMaterial({color:col('--metal'), metalness:.45, roughness:.45, side:THREE.DoubleSide}),
+    sel:new THREE.MeshStandardMaterial({color:col('--sel-soft'), metalness:.1, roughness:.6, side:THREE.DoubleSide}),
     weld:new THREE.MeshStandardMaterial({color:col('--metal').lerp(col('--ink'), .3), metalness:.3, roughness:.8}),
   };
   const edgeMat = new THREE.LineBasicMaterial({color:ink}), edgeSel = new THREE.LineBasicMaterial({color:selC});
@@ -2697,9 +2720,15 @@ function build3d(){
     const m = s.style === 'center' ? new THREE.LineDashedMaterial({color:s.id === selId ? selC : ink, dashSize:8, gapSize:3}) : (s.id === selId ? edgeSel : edgeMat);
     const l = new THREE.Line(geo, m); if (s.style === 'center') l.computeLineDistances(); l.userData.id = s.id; dg.add(l);
   });
+  // eigene Höhe (Z) je Teil
+  dg.children.forEach(ch => {
+    const id = ch.userData.id != null ? ch.userData.id : (ch.children.find(c => c.userData.id != null) || {userData:{}}).userData.id;
+    const sh = id != null && byId(id); if (sh && sh.z) ch.position.z += sh.z;
+  });
   if (cad && cad.view !== 'top'){ dg.matrixAutoUpdate = false; dg.matrix.copy(drawPlaneMatrix()); }
   root.add(dg);
   }
+  if (cut3d.on) applyCut(false);
   // Maßrahmen um das ausgewählte Teil
   three.mbox = null;
   if (dims3d){
@@ -2739,6 +2768,7 @@ function bind3d(el){
   el.addEventListener('pointerdown', e => {
     el.setPointerCapture(e.pointerId); pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
     last = {x:e.clientX, y:e.clientY}; moved = 0; how = (e.button === 2 || e.button === 1 || e.shiftKey) ? 'pan' : 'rot';
+    if (e.button === 0 && pts.size === 1 && !measureOn && start3dMove(e)) how = 'move';
     if (pts.size === 2){ const [a, b] = [...pts.values()]; pinchD = Math.hypot(a.x - b.x, a.y - b.y); }
   });
   el.addEventListener('pointermove', e => {
@@ -2751,6 +2781,7 @@ function bind3d(el){
     const dx = e.clientX - last.x, dy = e.clientY - last.y; last = {x:e.clientX, y:e.clientY};
     moved += Math.abs(dx) + Math.abs(dy);
     const o = three.orb;
+    if (how === 'move'){ move3d(e); return; }
     if (how === 'rot'){ o.az -= dx * .008; o.el = Math.min(1.55, Math.max(-1.55, o.el + dy * .008)); }
     else {
       const c = three.camera, k = 2 * o.r * Math.tan(35 * Math.PI / 360) / el.clientHeight;
@@ -2762,11 +2793,61 @@ function bind3d(el){
   const end = e => {
     if (!pts.has(e.pointerId)) return;
     pts.delete(e.pointerId); if (pts.size < 2) pinchD = 0;
+    if (how === 'move' && drag3){ const d = drag3; drag3 = null; if (moved < 4){ undoStack.pop(); pick3d(e); } else changed(); return; }
     if (moved < 4 && pts.size === 0) pick3d(e);
   };
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   el.addEventListener('wheel', e => { e.preventDefault(); zoom3d(Math.exp(e.deltaY * .0015)); draw3d(); }, {passive:false});
 }
+// Ausgewählte Teile in 3D ziehen: normal = waagerecht (X/Y), mit Shift = senkrecht (Höhe Z)
+let drag3 = null;
+function rayAt(e){
+  const r = three.renderer.domElement.getBoundingClientRect(), ray = new THREE.Raycaster();
+  ray.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), three.camera);
+  return ray;
+}
+function start3dMove(e){
+  if (cad && cad.view !== 'top') return false;
+  const h = rayAt(e).intersectObjects(three.dg ? three.dg.children : [], true).find(x => x.object.isMesh);
+  if (!h) return false;
+  let o = h.object; while (o && o.userData.id == null) o = o.parent;
+  if (!o || !isSel(o.userData.id)) return false;
+  snapshot();
+  const shapes = selShapes();
+  drag3 = {p0:h.point.clone(), plane:new THREE.Plane(new THREE.Vector3(0, 0, 1), -h.point.z), y0:e.clientY, vertical:e.shiftKey,
+    shapes, origs:shapes.map(x => JSON.parse(JSON.stringify(x)))};
+  return true;
+}
+function move3d(e){
+  const d = drag3; if (!d) return;
+  if (d.vertical){
+    const k = 2 * three.orb.r * Math.tan(35 * Math.PI / 360) / three.renderer.domElement.clientHeight;
+    const dz = snapV((d.y0 - e.clientY) * k, e.altKey);
+    d.shapes.forEach((x, i) => { x.z = r2((d.origs[i].z || 0) + dz); });
+    $('#hint').textContent = `Höhe ${dz >= 0 ? '+' : ''}${num(dz)} ${state.unit}`;
+  } else {
+    const p = rayAt(e).ray.intersectPlane(d.plane, new THREE.Vector3()); if (!p) return;
+    const dx = snapV(p.x - d.p0.x, e.altKey), dy = snapV(p.y - d.p0.y, e.altKey);
+    d.shapes.forEach((x, i) => { Object.assign(x, JSON.parse(JSON.stringify(d.origs[i]))); moveBy(x, dx, dy); });
+    $('#hint').textContent = `Verschoben um X ${num(dx)} · Y ${num(dy)} ${state.unit}`;
+  }
+  build3d(); draw3d(); renderProps();
+}
+
+// Schnittansicht: alles hinter der Ebene wird ausgeblendet
+let cut3d = {on:false, axis:'x', pos:50, flip:false};
+function applyCut(redraw = true){
+  if (!three) return;
+  const b = cut3d.on ? new THREE.Box3().setFromObject(three.root) : null;
+  if (!cut3d.on || b.isEmpty()){ three.renderer.clippingPlanes = []; if (redraw) draw3d(); return; }
+  const ax = cut3d.axis, v = b.min[ax] + (b.max[ax] - b.min[ax]) * cut3d.pos / 100;
+  const n = new THREE.Vector3(ax === 'x' ? -1 : 0, ax === 'y' ? -1 : 0, ax === 'z' ? -1 : 0);
+  if (cut3d.flip) n.negate();
+  three.renderer.clippingPlanes = [new THREE.Plane(n, cut3d.flip ? -v : v)];
+  $('#cutPos').textContent = `${ax.toUpperCase()} = ${num(v)} ${state.unit}`;
+  if (redraw) draw3d();
+}
+
 // Messen: Punkt auf einer Fläche treffen, nahe Eckpunkte fangen
 function measurePick(e){
   const r = three.renderer.domElement.getBoundingClientRect();
@@ -2866,7 +2947,7 @@ function setCad(name, meshes){
     if (m.nor) g.setAttribute('normal', new THREE.BufferAttribute(m.nor, 3));
     g.setIndex(new THREE.BufferAttribute(m.idx, 1));
     if (!m.nor) g.computeVertexNormals();
-    const mat = m.color ? new THREE.MeshStandardMaterial({color:new THREE.Color(m.color[0], m.color[1], m.color[2]), metalness:.3, roughness:.6}) : null;
+    const mat = m.color ? new THREE.MeshStandardMaterial({color:new THREE.Color(m.color[0], m.color[1], m.color[2]), metalness:.3, roughness:.6, side:THREE.DoubleSide}) : null;
     return {name:m.name || `Teil ${i + 1}`, geo:g, mat};
   }), view:'top', snap:true};
   // Nullpunkt: linke, vordere, untere Ecke des Modells auf 0/0/0
@@ -2956,6 +3037,12 @@ function renderCadInfo(){
 $('#bCad').onclick = () => $('#cadIn').click();
 $('#cadIn').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) openCad(f); };
 $('#cadClose').onclick = () => closeCad();
+$('#zCut').onclick = () => {
+  cut3d.on = !cut3d.on; $('#zCut').setAttribute('aria-pressed', cut3d.on); $('#cutBar3').hidden = !cut3d.on; applyCut();
+};
+$('#cutAxis').onchange = e => { cut3d.axis = e.target.value; applyCut(); };
+$('#cutRange').oninput = e => { cut3d.pos = +e.target.value; applyCut(); };
+$('#cutFlip').onchange = e => { cut3d.flip = e.target.checked; applyCut(); };
 $('#zMeasure').onclick = () => {
   measureOn = !measureOn; mPts = []; $('#zMeasure').setAttribute('aria-pressed', measureOn);
   updateMeasure();
