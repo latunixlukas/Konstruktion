@@ -4,7 +4,10 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 
 - **Projekte**: Startmenü mit Projektliste, neues Projekt nur mit Projektname und Azubi-Name
 - **Zeichnen**: Mehrfachauswahl (Rahmen, Shift + Klick), Strg+C/V/X/A, Fangen an Ecken/Mitten/Bohrungen, Drehen in jedem Winkel
-- Rechtecke (Bleche, Flachstahl, Laschen) mit Dicke und Werkstoff, frei drehbar
+- Rechtecke (Bleche, Flachstahl, Laschen) mit Dicke und Werkstoff, frei drehbar, Ecken scharfkantig, mit Fase oder Radius
+- **Spiegeln** (↔ / ↕, an Ort und Stelle oder als Kopie) und **Muster** (n × m Kopien mit Abstand)
+- **Ebenen**: anlegen, umbenennen, ein-/ausblenden, sperren, Teile verschieben; ausgeblendete Ebenen fehlen auch in 3D
+- **Beschriftung**: freier Text, Positionsnummern (zählen automatisch hoch) und Hinweispfeile mit Text
 - **Ronden/Flansche**, Kreise, Bögen und Lochkreise
 - **Profile**: Winkelstahl (EN 10056-1), U-Stahl (DIN 1026-1), Quadrat- und Rechteckrohr (EN 10219), Rundrohr (EN 10220), Rundstahl (EN 10060), als Längsansicht oder Querschnitt
 - **Schweißnähte**: Kehlnaht, V-, HV- und I-Naht mit Symbol nach ISO 2553 (a-Maß, Länge, ringsum)
@@ -13,7 +16,7 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 - **Zuschnitt**: Profile/Wellen auf Stangen (z. B. 6 m) und Bleche/Biegeteile auf Tafeln verteilen, mit Schnittbreite, Reststücken und Belegungsskizze
 - **Bibliothek** mit über 300 eingebauten Standardteilen (Schrauben, Muttern, Scheiben, Stifte, Sicherungsringe, Kugellager, Flacheisen, Bleche, alle Profile, Ronden, Flansche, Wellen) und Suche mit mehreren Wörtern (z. B. „M8 30“); dazu eigene Teile (z. B. eine Welle) oder ganze Projekte als Baugruppe speichern, mit Kategorie, Suche und Vorschau; auf Netlify für alle sichtbar und mit einem Klick einfügbar
 - **Beispiel-Projekte**: Wandkonsole, Antriebswelle mit Lagerböcken, Tischgestell aus Quadratrohr
-- Bohrungen: Durchgangsbohrungen nach ISO 273 oder Gewinde mit Kernloch
+- Bohrungen: Durchgangsbohrungen nach ISO 273 oder Gewinde mit Kernloch, außerdem Langlöcher und Rechteck-Ausschnitte (gehen in 3D, Masse und DXF-Laserzuschnitt durch)
 - Normteile: Sechskant-, Zylinder-, Senkschraube, Gewindestift, Mutter, Sicherungsmutter, Scheibe, Zylinderstift, Sicherungsring DIN 471, Rillenkugellager 62xx – von oben oder von der Seite
 - **Passungen** nach ISO 286 (Abmaße, Spiel/Übermaß), Allgemeintoleranz ISO 2768, Oberflächenangabe Ra
 - Linien, Mittellinien und Maße
