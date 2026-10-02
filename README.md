@@ -14,7 +14,8 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 - Umschaltbar zwischen 2D (Zeichnen) und 3D (Ansehen, Drehen, Zoomen), mit Maß-Knopf: Teil anklicken zeigt Länge × Breite × Höhe
 - **CAD-Modelle** (STEP, .stp/.step): werden nur im Browser gelesen, nicht hochgeladen und nicht gespeichert. In 2D als grauer Hintergrund (Draufsicht/Vorderansicht/Seitenansicht) mit Kantenfang, in 3D zusammen mit den eigenen Teilen
 - Einheiten mm / cm / m umschaltbar, Eingaben wie `25cm` oder `0,3m` möglich
-- Automatische Stückliste mit Masse (kg) und Nahtlängen, Schriftfeld, Export als PNG/SVG
+- Automatische Stückliste mit Masse (kg) und Nahtlängen, Schriftfeld
+- **Export** als PDF (A4 quer, je eine Seite 2D-Zeichnung, 3D-Ansicht, Stückliste) oder als ein PNG-Bild; Inhalte frei wählbar, außerdem SVG
 
 ## Speichern
 

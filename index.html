@@ -132,6 +132,15 @@ html.locked,html.locked body{overflow:hidden}
 .prow .btn{padding:4px 10px;font-size:.78rem}
 @media (max-width: 760px){ .start{padding-top:24px} .start-grid,.excards{grid-template-columns:1fr} }
 
+/* Export-Dialog */
+.modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.4);display:grid;place-items:center;padding:16px;overflow:auto}
+.expform{width:min(440px,100%);display:grid;gap:14px;box-shadow:var(--shadow)}
+.expform fieldset{border:0;padding:0;margin:0;display:grid;gap:8px}
+.expform legend{font-size:.8rem;color:var(--muted);margin-bottom:8px;padding:0}
+.opt{display:flex;gap:10px;align-items:center;cursor:pointer}
+.opt input{width:16px;height:16px;accent-color:var(--fg);flex:none}
+.expform .btnrow{justify-content:flex-end;margin-top:4px}
+
 /* Optionsleiste */
 .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--surface);min-height:50px}
 .toolopts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:.85rem}
@@ -275,7 +284,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <button id="bSave" type="button">Als Datei sichern (.json)</button>
           <button id="bOpen" type="button">Datei öffnen (.json, .stp) …</button>
           <hr>
-          <button id="bPng" type="button">Als Bild (PNG)</button>
+          <button id="bExport" type="button">Exportieren (PDF / PNG) …</button>
           <button id="bSvg" type="button">Als Vektorgrafik (SVG)</button>
           <hr>
           <button id="bCad" type="button">CAD-Modell ansehen (.stp / .step) …</button>
@@ -321,6 +330,27 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <div class="excards" id="excards"></div>
       </div>
     </div>
+  </div>
+
+  <div class="modal" id="expDlg" hidden>
+    <form class="panel expform" id="expForm" novalidate>
+      <h3>Exportieren</h3>
+      <fieldset>
+        <legend>Format</legend>
+        <label class="opt"><input type="radio" name="expFmt" value="pdf" checked> <span><b>PDF</b> · A4 quer, eine Seite je Inhalt</span></label>
+        <label class="opt"><input type="radio" name="expFmt" value="png"> <span><b>PNG-Bild</b> · alles untereinander in einem Bild</span></label>
+      </fieldset>
+      <fieldset>
+        <legend>Inhalt</legend>
+        <label class="opt"><input type="checkbox" id="ex2d" checked> 2D-Zeichnung mit Maßen</label>
+        <label class="opt"><input type="checkbox" id="ex3d" checked> 3D-Ansicht</label>
+        <label class="opt"><input type="checkbox" id="exBom" checked> Stückliste</label>
+        <label class="opt" id="exCadRow" hidden><input type="checkbox" id="exCad"> CAD-Modell in der 3D-Ansicht mitnehmen</label>
+      </fieldset>
+      <p class="note" id="expNote">Die 3D-Ansicht wird so exportiert, wie sie gerade gedreht ist. Ohne 3D-Ansicht offen wird sie automatisch eingepasst.</p>
+      <p class="err" id="expErr"></p>
+      <div class="btnrow"><button type="button" class="btn" id="expCancel">Abbrechen</button><button type="submit" class="btn primary" id="expGo">Exportieren</button></div>
+    </form>
   </div>
 
   <div class="toolbar">
@@ -1182,9 +1212,9 @@ function zoomCenter(f){ const r = svg.getBoundingClientRect(); zoomAt(r.left + W
 $('#zIn').onclick = () => { if (mode === '3d' && three){ zoom3d(1/1.4); draw3d(); } else zoomCenter(1.4); };
 $('#zOut').onclick = () => { if (mode === '3d' && three){ zoom3d(1.4); draw3d(); } else zoomCenter(1/1.4); };
 $('#zFit').onclick = () => { if (mode === '3d' && three){ fit3d(); draw3d(); } else { fit(); render(); } };
-function allBox(){
+function allBox(withCad = true){
   const boxes = state.shapes.map(bbox);
-  if (cad && cad.box2d && mode === '2d') boxes.push(cad.box2d);
+  if (withCad && cad && cad.box2d && mode === '2d') boxes.push(cad.box2d);
   if (!boxes.length) return {x0:0, y0:0, x1:200, y1:120};
   return boxes.reduce((a, b) => ({x0:Math.min(a.x0, b.x0), y0:Math.min(a.y0, b.y0), x1:Math.max(a.x1, b.x1), y1:Math.max(a.y1, b.y1)}));
 }
@@ -1476,29 +1506,186 @@ const EXPORT_CSS = `.part{fill:#e4e9ee;stroke:#111;stroke-width:1.8}.metal{fill:
 .dimtext{fill:#444;font:500 12px Consolas,monospace;paint-order:stroke;stroke:#fff;stroke-width:3.5px}.lbl{fill:#111;font:500 11px Consolas,monospace;paint-order:stroke;stroke:#fff;stroke-width:3px}
 .cut{fill:url(#hatch);stroke:#111;stroke-width:1.6}.hatchbg{fill:#f2f2f2}.hatchl{stroke:#111;stroke-width:.7}.weld{fill:none;stroke:#111;stroke-width:1.1}.wsym{fill:none;stroke:#111;stroke-width:1}.warrow{fill:#111}
 .tb{fill:#111;font:12px Arial,sans-serif}.tbh{fill:#111;font:bold 15px Arial,sans-serif}`;
-function exportSVG(){
-  const b = allBox(), pad = 60, bw = Math.max(20, b.x1 - b.x0), bh = Math.max(20, b.y1 - b.y0);
-  const z = Math.min(1400 / bw, 1000 / bh, 8);
-  const w = Math.round(bw*z + pad*2), hh = Math.round(bh*z + pad*2) + 70;
+function exportSVG(withTitle = true){
+  const b = allBox(false), pad = 60, bw = Math.max(20, b.x1 - b.x0), bh = Math.max(20, b.y1 - b.y0);
+  const z = Math.min(1400 / bw, 1000 / bh, 8), tb = withTitle ? 70 : 0;
+  const w = Math.round(bw*z + pad*2), hh = Math.round(bh*z + pad*2) + tb;
   const v = {cx:(b.x0 + b.x1)/2, cy:(b.y0 + b.y1)/2, z};
-  const T = mkT(v, w, hh - 70);
+  const T = mkT(v, w, hh - tb);
   let o = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hh}" viewBox="0 0 ${w} ${hh}"><style>${EXPORT_CSS}</style>${HATCH}<rect width="100%" height="100%" fill="#fff"/>`;
   ordered().forEach(s => { o += shapeMarkup(s, T, state.showDims); });
+  if (!withTitle) return {o:o + '</svg>', w, hh};
   const y = hh - 60, x = Math.max(10, w - 330);
   o += `<rect x="${x}" y="${y}" width="320" height="50" fill="#fff" stroke="#111" stroke-width="1.5"/><text class="tbh" x="${x + 8}" y="${y + 19}">${esc(state.title.name)}</text>`;
   o += `<text class="tb" x="${x + 8}" y="${y + 40}">${esc(state.title.by || '–')} · ${esc(state.title.date)} · Maße in ${state.unit}</text></svg>`;
   return {o, w, hh};
 }
 $('#bSvg').onclick = () => download(fileBase() + '.svg', new Blob([exportSVG().o], {type:'image/svg+xml'}));
-$('#bPng').onclick = () => {
-  const {o, w, hh} = exportSVG(), img = new Image();
-  img.onload = () => {
-    const c = document.createElement('canvas'); c.width = w*2; c.height = hh*2;
-    const g = c.getContext('2d'); g.scale(2, 2); g.drawImage(img, 0, 0);
-    c.toBlob(bl => bl && download(fileBase() + '.png', bl), 'image/png');
+
+/* ---------- Export: PDF oder PNG mit 2D, 3D und Stückliste ---------- */
+const JSPDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+function loadScript(url, ready){
+  return new Promise((res, rej) => { if (ready()) return res(); const sc = document.createElement('script'); sc.src = url; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); });
+}
+function image2d(){
+  const {o, w, hh} = exportSVG(false);
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => { const c = document.createElement('canvas'); c.width = w*2; c.height = hh*2; const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.scale(2, 2); g.drawImage(img, 0, 0); res(c); };
+    img.onerror = rej;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(o);
+  });
+}
+async function image3d(withCad){
+  await loadThree();
+  const root = document.documentElement, prevTheme = root.dataset.theme, savedCad = cad, wasOpen = mode === '3d' && three;
+  init3d();
+  root.dataset.theme = 'light';              // fürs Drucken immer hell
+  if (!withCad) cad = null;
+  try {
+    build3d();
+    if (!wasOpen){ fit3d(); three.orb.r *= .62; refit3d = true; }
+    const W3 = 1800, H3 = 1100, r = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+    r.setPixelRatio(1); r.setSize(W3, H3, false);
+    const cam = three.camera.clone(); cam.aspect = W3 / H3; placeCam(cam);
+    r.render(three.scene, cam);
+    const c = document.createElement('canvas'); c.width = W3; c.height = H3; c.getContext('2d').drawImage(r.domElement, 0, 0);
+    r.dispose(); if (r.forceContextLoss) r.forceContextLoss();
+    return c;
+  } finally {
+    cad = savedCad;
+    if (prevTheme) root.dataset.theme = prevTheme; else delete root.dataset.theme;
+    build3d(); draw3d();
+  }
+}
+function bomTable(){
+  const rows = bomRows().map((r, i) => [String(i + 1), String(r.qty), r.name, r.dim, r.mat, r.mass == null ? '–' : dec(r.mass.toFixed(2))]);
+  const total = bomRows().reduce((a, r) => a + (r.mass ? r.mass * r.qty : 0), 0);
+  return {rows, total, holes:holeRows(), welds:weldRows()};
+}
+const subtitle = () => `${state.title.by ? 'Gezeichnet: ' + state.title.by + ' · ' : ''}${state.title.date} · Maße in ${state.unit}`;
+
+async function exportPDF(opt, imgs){
+  await loadScript(JSPDF_URL, () => window.jspdf);
+  const doc = new window.jspdf.jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+  const pages = [];
+  if (imgs.d2) pages.push({title:'Zeichnung', img:imgs.d2});
+  if (imgs.d3) pages.push({title:'3D-Ansicht', img:imgs.d3});
+  if (opt.bom) pages.push({title:'Stückliste', bom:true});
+  const PW = 297, PH = 210, M = 12;
+  const frame = (p, i) => {
+    if (i) doc.addPage();
+    doc.setDrawColor(20); doc.setLineWidth(.5); doc.rect(M - 4, M - 4, PW - 2*(M - 4), PH - 2*(M - 4));
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.text(state.title.name || 'Ohne Namen', M, M + 3);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(p.title, PW - M, M + 3, {align:'right'});
+    doc.setLineWidth(.2); doc.line(M, M + 6, PW - M, M + 6);
+    // Schriftfeld unten rechts
+    const bw = 120, bh = 16, bx = PW - M - bw, by = PH - M - bh;
+    doc.setLineWidth(.4); doc.rect(bx, by, bw, bh); doc.line(bx, by + 8, bx + bw, by + 8); doc.line(bx + 60, by, bx + 60, by + bh);
+    doc.setFontSize(6.5); doc.setTextColor(110);
+    doc.text('GEZEICHNET', bx + 2, by + 3); doc.text('DATUM', bx + 62, by + 3); doc.text('MASSE IN', bx + 2, by + 11); doc.text('BLATT', bx + 62, by + 11);
+    doc.setFontSize(9); doc.setTextColor(20);
+    doc.text(state.title.by || '–', bx + 2, by + 7); doc.text(state.title.date || '', bx + 62, by + 7);
+    doc.text(state.unit, bx + 2, by + 15); doc.text(`${i + 1} / ${pages.length}`, bx + 62, by + 15);
   };
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(o);
-};
+  const fitImg = (c, x, y, w, h) => {
+    const k = Math.min(w / c.width, h / c.height), iw = c.width * k, ih = c.height * k;
+    doc.addImage(c, 'PNG', x + (w - iw)/2, y + (h - ih)/2, iw, ih, undefined, 'FAST');
+  };
+  pages.forEach((p, i) => {
+    frame(p, i);
+    if (p.img){ fitImg(p.img, M, M + 9, PW - 2*M, PH - 2*M - 30); return; }
+    // Stückliste als Tabelle
+    const t = bomTable(), cols = [[M, 'Pos'], [M + 12, 'Stk'], [M + 24, 'Benennung'], [M + 100, 'Abmessung'], [M + 180, 'Werkstoff'], [PW - M, 'kg']];
+    let y = M + 14;
+    const head = (labels, rightLast) => { doc.setFont('helvetica', 'bold'); doc.setFontSize(8); labels.forEach(([x, l], k) => doc.text(l, x, y, rightLast && k === labels.length - 1 ? {align:'right'} : undefined)); doc.setFont('helvetica', 'normal'); y += 2; doc.line(M, y, PW - M, y); y += 5; };
+    const newPageIfNeeded = () => { if (y > PH - M - 24){ doc.addPage(); frame({title:'Stückliste (Forts.)'}, 1); y = M + 14; } };
+    const clip = (txt, w) => { let s = String(txt); while (s.length > 3 && doc.getTextWidth(s) > w) s = s.slice(0, -2); return s === String(txt) ? s : s + '…'; };
+    doc.setFontSize(9);
+    if (t.rows.length){
+      head(cols, true);
+      t.rows.forEach(r => {
+        newPageIfNeeded(); doc.setFontSize(9);
+        doc.text(r[0], M, y); doc.text(r[1], M + 12, y); doc.text(clip(r[2], 74), M + 24, y); doc.text(clip(r[3], 78), M + 100, y); doc.text(clip(r[4], 60), M + 180, y); doc.text(r[5], PW - M, y, {align:'right'});
+        y += 6;
+      });
+      doc.line(M, y - 3, PW - M, y - 3); doc.setFont('helvetica', 'bold'); doc.text('Gesamtmasse', M + 24, y + 2); doc.text(dec(t.total.toFixed(2)) + ' kg', PW - M, y + 2, {align:'right'}); doc.setFont('helvetica', 'normal');
+      y += 12;
+    }
+    if (t.holes.length){
+      newPageIfNeeded(); head([[M, 'Stk'], [M + 12, 'Bohrungen']]);
+      t.holes.forEach(([k, n]) => { newPageIfNeeded(); doc.setFontSize(9); doc.text(String(n), M, y); doc.text(k, M + 12, y); y += 6; });
+      y += 6;
+    }
+    if (t.welds.length){
+      newPageIfNeeded(); head([[M, 'Stk'], [M + 12, 'Schweißnähte'], [M + 120, 'Länge']]);
+      t.welds.forEach(([k, r]) => { newPageIfNeeded(); doc.setFontSize(9); doc.text(String(r.n), M, y); doc.text(k, M + 12, y); doc.text(fmt(r.len), M + 120, y); y += 6; });
+    }
+    if (!t.rows.length && !t.holes.length && !t.welds.length) doc.text('Noch keine Teile.', M, y);
+  });
+  doc.save(fileBase() + '.pdf');
+}
+
+async function exportPNG(opt, imgs){
+  const W = 2000, P = 48, blocks = [];
+  if (imgs.d2) blocks.push(['Zeichnung', imgs.d2]);
+  if (imgs.d3) blocks.push(['3D-Ansicht', imgs.d3]);
+  const t = opt.bom ? bomTable() : null, lh = 40;
+  const bomH = t ? 70 + (t.rows.length + 2) * lh + (t.holes.length ? (t.holes.length + 2) * lh : 0) + (t.welds.length ? (t.welds.length + 2) * lh : 0) : 0;
+  let H = 150 + bomH + P;
+  blocks.forEach(([, c]) => { H += 60 + c.height * (W - 2*P) / c.width + 30; });
+  const c = document.createElement('canvas'); c.width = W; c.height = Math.ceil(H);
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, c.height);
+  g.fillStyle = '#111'; g.font = 'bold 44px Arial, sans-serif'; g.fillText(state.title.name || 'Ohne Namen', P, 80);
+  g.font = '26px Arial, sans-serif'; g.fillStyle = '#555'; g.fillText(subtitle(), P, 122);
+  g.fillStyle = '#ddd'; g.fillRect(P, 140, W - 2*P, 2);
+  let y = 150;
+  blocks.forEach(([title, img]) => {
+    g.fillStyle = '#111'; g.font = 'bold 30px Arial, sans-serif'; g.fillText(title, P, y + 45);
+    const h = img.height * (W - 2*P) / img.width;
+    g.drawImage(img, P, y + 60, W - 2*P, h);
+    g.strokeStyle = '#ddd'; g.lineWidth = 2; g.strokeRect(P, y + 60, W - 2*P, h);
+    y += 60 + h + 30;
+  });
+  if (t){
+    const row = (cells, bold) => {
+      g.font = (bold ? 'bold ' : '') + '24px Arial, sans-serif'; g.fillStyle = '#111';
+      const xs = [P, P + 90, P + 180, P + 760, P + 1380];
+      cells.slice(0, 5).forEach((v, k) => g.fillText(String(v), xs[k], y));
+      if (cells[5] != null){ g.textAlign = 'right'; g.fillText(String(cells[5]), W - P, y); g.textAlign = 'left'; }
+      y += lh;
+    };
+    g.font = 'bold 30px Arial, sans-serif'; g.fillText('Stückliste', P, y + 45); y += 100;
+    if (t.rows.length){ row(['Pos', 'Stk', 'Benennung', 'Abmessung', 'Werkstoff', 'kg'], true); t.rows.forEach(r => row(r)); row(['', '', 'Gesamtmasse', '', '', dec(t.total.toFixed(2)) + ' kg'], true); }
+    if (t.holes.length){ y += lh/2; row(['Stk', 'Bohrungen'], true); t.holes.forEach(([k, n]) => row([n, k])); }
+    if (t.welds.length){ y += lh/2; row(['Stk', 'Schweißnähte', '', '', '', 'Länge'], true); t.welds.forEach(([k, r]) => row([r.n, k, '', '', '', fmt(r.len)])); }
+  }
+  await new Promise(res => c.toBlob(b => { if (b) download(fileBase() + '.png', b); res(); }, 'image/png'));
+}
+
+function openExport(){
+  $('#fileMenu').open = false;
+  $('#exCadRow').hidden = !cad; $('#exCad').checked = false;
+  $('#expErr').textContent = ''; $('#expDlg').hidden = false;
+  $('#expGo').focus();
+}
+$('#bExport').onclick = openExport;
+$('#expCancel').onclick = () => { $('#expDlg').hidden = true; };
+$('#expDlg').addEventListener('click', e => { if (e.target.id === 'expDlg') $('#expDlg').hidden = true; });
+$('#expForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const opt = {fmt:document.querySelector('input[name="expFmt"]:checked').value, d2:$('#ex2d').checked, d3:$('#ex3d').checked, bom:$('#exBom').checked, cad:$('#exCad').checked};
+  if (!opt.d2 && !opt.d3 && !opt.bom){ $('#expErr').textContent = 'Bitte mindestens einen Inhalt ankreuzen.'; return; }
+  const btn = $('#expGo'); btn.disabled = true; btn.textContent = 'Wird erstellt …'; $('#expErr').textContent = '';
+  try {
+    const imgs = {d2:opt.d2 ? await image2d() : null, d3:opt.d3 ? await image3d(opt.cad) : null};
+    if (opt.fmt === 'pdf') await exportPDF(opt, imgs); else await exportPNG(opt, imgs);
+    $('#expDlg').hidden = true;
+  } catch(err){
+    $('#expErr').textContent = 'Export hat nicht geklappt. Für 3D und PDF braucht die Seite beim ersten Mal Internet.';
+  } finally { btn.disabled = false; btn.textContent = 'Exportieren'; }
+});
 
 /* ---------- Tastatur ---------- */
 let spaceDown = false;
@@ -1506,6 +1693,7 @@ document.addEventListener('keydown', e => {
   const tag = (e.target.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
   if (!$('#start').hidden) return;
+  if (!$('#expDlg').hidden){ if (e.key === 'Escape') $('#expDlg').hidden = true; return; }
   const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   if (ctrl && k === 'z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
   if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))){ e.preventDefault(); redo(); return; }
@@ -1585,11 +1773,14 @@ function resize3d(){
 }
 function draw3d(){
   if (!three || mode !== '3d') return;
-  const o = three.orb, c = three.camera, ce = Math.cos(o.el);
-  c.position.set(o.t.x + o.r*ce*Math.cos(o.az), o.t.y + o.r*ce*Math.sin(o.az), o.t.z + o.r*Math.sin(o.el));
-  c.lookAt(o.t); c.near = o.r / 200; c.far = o.r * 200; c.updateProjectionMatrix();
+  const c = three.camera; placeCam(c);
   three.renderer.render(three.scene, c);
   placeDims3d();
+}
+function placeCam(c){
+  const o = three.orb, ce = Math.cos(o.el);
+  c.position.set(o.t.x + o.r*ce*Math.cos(o.az), o.t.y + o.r*ce*Math.sin(o.az), o.t.z + o.r*Math.sin(o.el));
+  c.lookAt(o.t); c.near = o.r / 200; c.far = o.r * 200; c.updateProjectionMatrix();
 }
 function placeDims3d(){
   const els = ['#m3x', '#m3y', '#m3z'].map(q => $(q)), b = three && three.mbox;
