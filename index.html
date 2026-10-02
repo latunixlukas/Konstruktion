@@ -141,6 +141,25 @@ html.locked,html.locked body{overflow:hidden}
 .opt input{width:16px;height:16px;accent-color:var(--fg);flex:none}
 .expform .btnrow{justify-content:flex-end;margin-top:4px}
 
+/* Zuschnitt */
+.cutpanel{width:min(860px,100%);max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:14px}
+.cuthead{display:flex;align-items:center;justify-content:space-between}
+.cutset{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.85rem;color:var(--muted)}
+.cutset label{display:flex;align-items:center;gap:6px}
+.cutset input{width:6em}
+.cutgroup{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px}
+.cutgroup h4{margin:0;font:600 .92rem var(--f-body)}
+.cutsum{font-size:.84rem;color:var(--muted)}
+.cutsum b{color:var(--fg)}
+.cutwarn{color:#dc2626;font-size:.84rem}
+.barvis{display:flex;height:22px;border:1px solid var(--line-strong);border-radius:4px;overflow:hidden;background:repeating-linear-gradient(45deg,var(--surface),var(--surface) 4px,var(--line) 4px,var(--line) 6px)}
+.barvis span{background:var(--part);border-right:2px solid var(--fg);font:500 .66rem var(--f-mono);display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;color:var(--fg)}
+.barrow{display:grid;grid-template-columns:4.5em minmax(0,1fr) 7em;gap:8px;align-items:center;font-size:.78rem;font-family:var(--f-mono)}
+.sheets{display:flex;flex-wrap:wrap;gap:10px}
+.sheets svg{border:1px solid var(--line-strong);border-radius:4px;background:repeating-linear-gradient(45deg,var(--surface),var(--surface) 4px,var(--line) 4px,var(--line) 6px)}
+.sheets rect.pc{fill:var(--part);stroke:var(--fg);stroke-width:1}
+.sheets text{font:500 9px var(--f-mono);fill:var(--fg)}
+
 /* Optionsleiste */
 .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--surface);min-height:50px}
 .toolopts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:.85rem}
@@ -170,6 +189,8 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
 .cadbar #cadName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .cadtag{font:600 .7rem var(--f-mono);background:var(--fg);color:var(--invert);border-radius:99px;padding:2px 8px}
 .cadbar button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 10px;cursor:pointer;font-size:.78rem}
+.mlabel{transform:translate(-50%,calc(-100% - 10px))!important;background:var(--fg)!important;color:var(--invert)!important;text-align:center;line-height:1.3;padding:4px 9px!important}
+.mlabel small{display:block;font-size:.66rem;opacity:.75}
 .m3{position:absolute;z-index:3;transform:translate(-50%,-50%);font:500 .74rem var(--f-mono);background:var(--sel);color:#fff;padding:2px 7px;border-radius:5px;pointer-events:none;white-space:nowrap}
 #m3y{transform:translate(-50%,6px)}
 #m3z{transform:translate(10px,-50%)}
@@ -332,6 +353,18 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
     </div>
   </div>
 
+  <div class="modal" id="cutDlg" hidden>
+    <div class="panel cutpanel" role="dialog" aria-labelledby="cutTitle">
+      <div class="cuthead"><h3 id="cutTitle">Zuschnitt</h3><button class="btn icon" type="button" id="cutClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="cutset">
+        <label>Stangenlänge <input id="cutBar" value="6000" inputmode="decimal"> mm</label>
+        <label>Blechtafel <select id="cutSheet"><option value="2000x1000">2000 × 1000</option><option value="2500x1250">2500 × 1250</option><option value="3000x1500">3000 × 1500</option></select> mm</label>
+        <label>Schnittbreite <input id="cutKerf" value="3" inputmode="decimal"> mm</label>
+      </div>
+      <div id="cutOut"></div>
+      <div class="btnrow"><button class="btn" type="button" id="cutCopy">Als Text kopieren</button></div>
+    </div>
+  </div>
   <div class="modal" id="expDlg" hidden>
     <form class="panel expform" id="expForm" novalidate>
       <h3>Exportieren</h3>
@@ -366,10 +399,12 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <button type="button" id="zIn" title="Hineinzoomen" aria-label="Hineinzoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         <button type="button" id="zOut" title="Herauszoomen" aria-label="Herauszoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
         <button type="button" id="zFit" title="Alles anzeigen" aria-label="Alles anzeigen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+        <button type="button" id="zMeasure" title="Messen: zwei Punkte anklicken" aria-label="Messen" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><path d="M6.5 17.5l11-11" stroke-dasharray="2.5 2.5"/></svg></button>
         <button type="button" id="zDims" title="Maße am angeklickten Teil anzeigen" aria-label="Maße anzeigen" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16L16 3l5 5L8 21z"/><path d="M7 12l2 2M10 9l2 2M13 6l2 2"/></svg></button>
       </div>
       <div class="status pill" id="status"></div>
       <div id="v3" hidden>
+        <div class="m3 mlabel" id="m3d" hidden></div>
         <div class="m3" id="m3x" hidden></div><div class="m3" id="m3y" hidden></div><div class="m3" id="m3z" hidden></div>
       </div>
       <div class="cadbar pill" id="cadBar" hidden>
@@ -390,13 +425,14 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Rechteck</b>: auf dem Blatt ziehen (oder einmal tippen für 100 × 50 mm). Für Bleche, Flachstahl, Laschen.</li>
             <li><b>Bohrung</b>: tippen, wo die Bohrung hin soll. Oben wählen: Durchgangsbohrung oder Gewinde.</li>
             <li><b>Schraube</b>: tippen. Auf einer Bohrung rastet sie mittig ein. Art, Größe und Länge oben wählen.</li>
+            <li><b>Biegeteil</b>: Schenkel als Außenmaße und Biegewinkel eintragen. Die gestreckte Länge (Zuschnitt) wird nach DIN 6935 berechnet.</li>
             <li><b>Welle</b>: tippen, dann rechts die Absätze als Ø×Länge eintragen, z. B. <kbd>25×40; 35×100; 25×40</kbd>. Passfedernut nach DIN 6885 auswählbar.</li>
             <li><b>Profil</b>: Winkel, U-Stahl, Rohre und Rundstahl. Längsansicht in Richtung der Länge ziehen, Querschnitt einfach antippen.</li>
             <li><b>Naht</b>: entlang der Kante ziehen, an die geschweißt wird. Art und a-Maß oben wählen.</li>
             <li><b>Maß</b>: von Punkt zu Punkt ziehen. Der Abstand wird automatisch beschriftet.</li>
             <li><b>Auswahl</b>: Teil anklicken, verschieben, an den Ecken ziehen. Werte rechts genau eintippen, z.&nbsp;B. <kbd>25cm</kbd> oder <kbd>0,3m</kbd>.</li>
             <li>Verschieben der Ansicht: leere Fläche ziehen. Zoomen: Mausrad oder zwei Finger.</li>
-            <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>W</kbd> <kbd>P</kbd> <kbd>N</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
+            <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>G</kbd> <kbd>W</kbd> <kbd>P</kbd> <kbd>N</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
           </ul>
         </details>
       </section>
@@ -405,7 +441,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <div id="props"></div>
       </section>
       <section>
-        <h2>Stückliste <button class="btn" type="button" id="bCopyBom">Kopieren</button></h2>
+        <h2>Stückliste <span class="row"><button class="btn" type="button" id="bCut">Zuschnitt</button><button class="btn" type="button" id="bCopyBom">Kopieren</button></span></h2>
         <div id="bom"></div>
       </section>
       <section>
@@ -503,6 +539,7 @@ const opts = {
   line:{style:'solid'},
   profile:{kind:'L', size:'L 50×5', len:500, view:'side', mat:'S235JR'},
   shaft:{steps:'25×40; 30×25; 35×100; 30×25; 25×40', mat:'C45'},
+  bend:{legs:'40; 60; 40', angles:'90; 90', t:3, r:4, w:100, mat:'S235JR'},
   weld:{kind:'kehl', a:4, around:false},
 };
 
@@ -669,6 +706,41 @@ function section(s){
 }
 const profileMass = s => section(s).area * s.len / 1e6 * MATS[s.mat].rho;
 function profileLocalBox(s){ const q = section(s); return s.view === 'section' ? {x0:0, y0:0, x1:q.w, y1:q.h} : {x0:0, y0:0, x1:s.len, y1:q.w}; }
+// Biegeteile: Schenkel als Außenmaße, gestreckte Länge nach DIN 6935
+function bendCalc(s){
+  const t = s.t, r = s.r, n = s.legs.length;
+  const k = r / t >= 5 ? 1 : Math.max(0, Math.min(1, .65 + .5 * Math.log10(Math.max(r / t, .01))));
+  const vs = s.legs.slice(1).map((_, i) => {
+    const alpha = Math.min(179, Math.abs(s.angles[i] ?? 90)), beta = 180 - alpha;   // beta = Öffnungswinkel
+    const bow = Math.PI * alpha / 180 * (r + k * t / 2);
+    return beta >= 90 ? bow - 2 * (r + t) * Math.tan(alpha / 2 * Math.PI / 180) : bow - 2 * (r + t);
+  });
+  return {k, vs, L:s.legs.reduce((a, b) => a + b, 0) + vs.reduce((a, b) => a + b, 0)};
+}
+function bendPts(s){
+  const pts = [[0, 0]]; let h = 0, x = 0, y = 0;
+  s.legs.forEach((l, i) => { x += l * Math.cos(h); y += l * Math.sin(h); pts.push([x, y]); if (i < s.legs.length - 1) h += (s.angles[i] ?? 90) * Math.PI / 180; });
+  return pts;
+}
+function offsetSide(pts, d){
+  const nrm = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1; return [-dy / L, dx / L]; };
+  return pts.map((p, i) => {
+    const n1 = i > 0 ? nrm(pts[i-1], p) : null, n2 = i < pts.length - 1 ? nrm(p, pts[i+1]) : null;
+    if (!n1) return [p[0] + n2[0]*d, p[1] + n2[1]*d];
+    if (!n2) return [p[0] + n1[0]*d, p[1] + n1[1]*d];
+    let mx = n1[0] + n2[0], my = n1[1] + n2[1]; const ml = Math.hypot(mx, my) || 1; mx /= ml; my /= ml;
+    const k = d / Math.max(mx*n1[0] + my*n1[1], .2);
+    return [p[0] + mx*k, p[1] + my*k];
+  });
+}
+const bendOutline = s => { const c = bendPts(s); return [...offsetSide(c, s.t/2), ...offsetSide(c, -s.t/2).reverse()]; };
+function bendLocalBox(s){ const o = bendOutline(s); return {x0:Math.min(...o.map(p => p[0])), y0:Math.min(...o.map(p => p[1])), x1:Math.max(...o.map(p => p[0])), y1:Math.max(...o.map(p => p[1]))}; }
+const bendMass = s => bendCalc(s).L * s.w * s.t / 1e6 * MATS[s.mat].rho;
+function parseNums(str, signed){
+  const out = String(str).split(/[;\n]+/).map(x => x.trim()).filter(Boolean).map(x => parseFloat(x.replace(',', '.')));
+  return out.length && out.every(v => !isNaN(v) && (signed ? v !== 0 && Math.abs(v) < 180 : v > 0)) ? out : null;
+}
+function inPoly(p, poly){ let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++){ const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > p.y) !== (yj > p.y) && p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi) c = !c; } return c; }
 const shaftLen = s => s.steps.reduce((a, t) => a + t.l, 0);
 const shaftDmax = s => Math.max(...s.steps.map(t => t.d));
 const shaftMass = s => s.steps.reduce((a, t) => a + Math.PI/4 * t.d**2 * t.l, 0) / 1e6 * MATS[s.mat].rho;
@@ -695,6 +767,7 @@ function rotBox(s, b){
 }
 function bbox(s){
   if (s.type === 'profile') return rotBox(s, profileLocalBox(s));
+  if (s.type === 'bend') return rotBox(s, bendLocalBox(s));
   if (s.type === 'shaft'){ const r = shaftDmax(s)/2; return rotBox(s, {x0:0, y0:-r, x1:shaftLen(s), y1:r}); }
   if (s.type === 'rect') return {x0:s.x, y0:s.y, x1:s.x + s.w, y1:s.y + s.h};
   if (s.type === 'hole') return {x0:s.x - s.d/2, y0:s.y - s.d/2, x1:s.x + s.d/2, y1:s.y + s.d/2};
@@ -715,6 +788,7 @@ function hit(s, p, tol){
   if (s.type === 'rect') return p.x >= s.x - tol && p.x <= s.x + s.w + tol && p.y >= s.y - tol && p.y <= s.y + s.h + tol;
   if (s.type === 'hole') return Math.hypot(p.x - s.x, p.y - s.y) <= s.d/2 + tol;
   if (s.type === 'screw'){ const l = worldToLocal(s, p), b = screwLocalBox(s); return l.x >= b.x0 - tol && l.x <= b.x1 + tol && l.y >= b.y0 - tol && l.y <= b.y1 + tol; }
+  if (s.type === 'bend'){ const l = worldToLocal(s, p), o = bendOutline(s); return inPoly(l, o) || o.some((q, i) => distSeg(l, {x:q[0], y:q[1]}, {x:o[(i+1) % o.length][0], y:o[(i+1) % o.length][1]}) <= tol); }
   if (s.type === 'shaft'){ const l = worldToLocal(s, p), r = shaftDmax(s)/2; return l.x >= -tol && l.x <= shaftLen(s) + tol && Math.abs(l.y) <= r + tol; }
   if (s.type === 'profile'){ const l = worldToLocal(s, p), b = profileLocalBox(s); return l.x >= b.x0 - tol && l.x <= b.x1 + tol && l.y >= b.y0 - tol && l.y <= b.y1 + tol; }
   if (s.type === 'line') return distSeg(p, {x:s.x1, y:s.y1}, {x:s.x2, y:s.y2}) <= tol;
@@ -725,7 +799,7 @@ function hit(s, p, tol){
   }
   return false;
 }
-const LAYER = {rect:0, profile:1, shaft:1, line:2, hole:3, weld:4, screw:5, dim:6};
+const LAYER = {rect:0, profile:1, shaft:1, bend:1, line:2, hole:3, weld:4, screw:5, dim:6};
 const ordered = () => state.shapes.slice().sort((a, b) => LAYER[a.type] - LAYER[b.type]);
 function pick(p){
   const tol = 6 / view.z, list = ordered().reverse();
@@ -898,6 +972,19 @@ function shapeMarkup(s, T, showDims){
     o += profileMarkup(s, T, showDims);
   } else if (s.type === 'shaft'){
     o += shaftMarkup(s, T, showDims);
+  } else if (s.type === 'bend'){
+    const P = ([x, y]) => { const w = localToWorld(s, x, y); return f1(T.x(w.x)) + ',' + f1(T.y(w.y)); };
+    o += `<polygon class="part" points="${bendOutline(s).map(P).join(' ')}"/>`;
+    if (showDims){
+      const c = bendPts(s);
+      s.legs.forEach((l, i) => {
+        const a = c[i], b = c[i+1], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
+        const m = localToWorld(s, (a[0] + b[0])/2 - dy/L*(s.t/2 + 8/T.z), (a[1] + b[1])/2 + dx/L*(s.t/2 + 8/T.z));
+        o += `<text class="lbl" x="${f1(T.x(m.x))}" y="${f1(T.y(m.y))}" text-anchor="middle" dominant-baseline="middle">${num(l)}</text>`;
+      });
+      const w0 = localToWorld(s, c[0][0], c[0][1]);
+      o += `<text class="lbl" x="${f1(T.x(w0.x))}" y="${f1(T.y(w0.y) + 18)}">${esc(s.name || 'Biegeteil')} · t=${num(s.t)} · Zuschnitt ${num(bendCalc(s).L)}</text>`;
+    }
   } else if (s.type === 'weld'){
     o += weldMarkup(s, T);
   } else if (s.type === 'line'){
@@ -967,6 +1054,7 @@ const ICONS = {
   line:'<path d="M4 19L20 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
   profile:'<path d="M5 4v15h15" fill="none" stroke="currentColor" stroke-width="3"/>',
   shaft:'<path d="M2 10h4V8h5V6h4v2h4v2h3v4h-3v2h-4v2h-4v-2H6v-2H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  bend:'<path d="M3 6h7a3 3 0 013 3v6a3 3 0 003 3h5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>',
   weld:'<path d="M3 17h18" stroke="currentColor" stroke-width="2"/><path d="M5 16l3-5M9 16l3-5M13 16l3-5M17 16l3-5" stroke="currentColor" stroke-width="1.6"/>',
   dim:'<path d="M3 7v10M21 7v10M4 12h16" stroke="currentColor" stroke-width="1.6"/><path d="M4 12l4-2.5v5zM20 12l-4-2.5v5z" fill="currentColor"/>',
 };
@@ -975,6 +1063,7 @@ const TOOLS = [
   {k:'rect', n:'Rechteck', key:'R', hint:'Rechteck aufziehen – oder einmal tippen für 100 × 50 mm.'},
   {k:'hole', n:'Bohrung', key:'B', hint:'Tippen, wo die Bohrung sitzen soll (Mittelpunkt).'},
   {k:'screw', n:'Schraube', key:'S', hint:'Tippen zum Setzen. Auf einer Bohrung rastet die Schraube mittig ein.'},
+  {k:'bend', n:'Biegeteil', key:'G', hint:'Tippen zum Setzen. Oben Schenkel (Außenmaße) und Biegewinkel eintragen, z. B. 40; 60; 40 und 90; 90.'},
   {k:'shaft', n:'Welle', key:'W', hint:'Tippen, wo die Welle links beginnen soll. Absätze oben eintragen, z. B. 25×40; 35×100.'},
   {k:'profile', n:'Profil', key:'P', hint:'Längsansicht: in Richtung der Länge ziehen (oder tippen). Querschnitt: tippen.'},
   {k:'weld', n:'Naht', key:'N', hint:'Schweißnaht entlang der Kante ziehen. Das Nahtsymbol erscheint automatisch.'},
@@ -1011,6 +1100,13 @@ function renderToolOpts(){
       <label>Größe ${optSelect('o-size', SIZES.map(v => [v, v]), opts.screw.size)}</label>
       ${KINDS[k].len ? `<label>Länge ${optSelect('o-len', LENGTHS.map(v => [v, v + ' mm']), opts.screw.len)}</label>` : ''}
       <label>Ansicht ${optSelect('o-view', [['top','von oben'],['side','von der Seite']], opts.screw.view)}</label>`;
+  } else if (tool === 'bend'){
+    const o = opts.bend;
+    h = `<label>Schenkel <input id="o-blegs" value="${esc(o.legs)}" class="txt" style="width:9em"> mm</label>
+      <label>Winkel <input id="o-bang" value="${esc(o.angles)}" class="txt" style="width:7em"> °</label>
+      <label>Dicke <input id="o-bt" value="${num(o.t)}" inputmode="decimal"> ${state.unit}</label>
+      <label>Radius innen <input id="o-br" value="${num(o.r)}" inputmode="decimal"> ${state.unit}</label>
+      <label>Breite <input id="o-bw" value="${num(o.w)}" inputmode="decimal"> ${state.unit}</label>`;
   } else if (tool === 'shaft'){
     h = `<label>Absätze Ø×Länge <input id="o-steps" value="${esc(opts.shaft.steps)}" class="txt" style="width:17em"> mm</label>
       <label>Werkstoff ${optSelect('o-smat', Object.entries(MATS).map(([k, m]) => [k, m.name]), opts.shaft.mat)}</label>`;
@@ -1048,6 +1144,11 @@ $('#toolopts').addEventListener('change', e => {
   if (id === 'o-len') opts.screw.len = +v;
   if (id === 'o-view') opts.screw.view = v;
   if (id === 'o-style') opts.line.style = v;
+  if (id === 'o-blegs'){ if (parseNums(v)) opts.bend.legs = v; else { e.target.style.borderColor = '#dc2626'; return; } }
+  if (id === 'o-bang'){ if (parseNums(v, true)) opts.bend.angles = v; else { e.target.style.borderColor = '#dc2626'; return; } }
+  if (id === 'o-bt'){ const t = parseLen(v); if (t > 0) opts.bend.t = t; }
+  if (id === 'o-br'){ const t = parseLen(v); if (t >= 0) opts.bend.r = t; }
+  if (id === 'o-bw'){ const t = parseLen(v); if (t > 0) opts.bend.w = t; }
   if (id === 'o-steps'){ if (parseSteps(v)) opts.shaft.steps = v; else { e.target.style.borderColor = '#dc2626'; return; } }
   if (id === 'o-smat') opts.shaft.mat = v;
   if (id === 'o-pkind'){ opts.profile.kind = v; opts.profile.size = Object.keys(PROFILES[v].sizes)[0]; }
@@ -1105,6 +1206,7 @@ svg.addEventListener('pointerdown', e => {
   else if (tool === 'line'){ s = {type:'line', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, style:opts.line.style}; drag = {mode:'create', shape:s, start:sp, created:true}; }
   else if (tool === 'dim'){ s = {type:'dim', x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y, off:Math.round(20 / view.z)}; drag = {mode:'create', shape:s, start:sp, created:true}; }
   else if (tool === 'weld'){ const o = opts.weld; s = {type:'weld', kind:o.kind, a:o.a, around:o.around, x1:sp.x, y1:sp.y, x2:sp.x, y2:sp.y}; drag = {mode:'create', shape:s, start:sp, created:true}; }
+  else if (tool === 'bend'){ const o = opts.bend; s = {type:'bend', name:'Biegeteil', x:sp.x, y:sp.y, rot:0, legs:parseNums(o.legs), angles:parseNums(o.angles, true), t:o.t, r:o.r, w:o.w, mat:o.mat}; }
   else if (tool === 'shaft'){ s = {type:'shaft', x:sp.x, y:sp.y, rot:0, mat:opts.shaft.mat, chamfer:1, keyStep:-1, keyLen:0, steps:parseSteps(opts.shaft.steps)}; }
   else if (tool === 'profile'){
     const o = opts.profile;
@@ -1242,6 +1344,14 @@ function fieldsFor(s){
     {k:'view', l:'Ansicht', kind:'select', o:[['top','von oben'],['side','von der Seite']]},
     {k:'rot', l:'Drehung', kind:'select', o:[[0,'0°'],[90,'90°'],[180,'180°'],[270,'270°']]},
     len('x', 'X'), len('y', 'Y')];
+  if (s.type === 'bend') return [
+    {k:'name', l:'Benennung', kind:'text'},
+    {k:'legsTxt', l:'Schenkel (außen)', kind:'text'},
+    {k:'anglesTxt', l:'Biegewinkel °', kind:'text'},
+    len('t', 'Dicke'), len('r', 'Radius innen'), len('w', 'Breite'),
+    {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
+    {k:'rot', l:'Drehung', kind:'select', o:[[0,'0°'],[90,'90°'],[180,'180°'],[270,'270°']]},
+    len('x', 'X'), len('y', 'Y')];
   if (s.type === 'shaft') return [
     {k:'stepsTxt', l:'Absätze Ø×L', kind:'text'},
     {k:'mat', l:'Werkstoff', kind:'select', o:Object.entries(MATS).map(([k, m]) => [k, m.name])},
@@ -1277,10 +1387,12 @@ function getVal(s, k){
   if (k === '_len') return Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
   if (k === 'around') return s.around ? '1' : '0';
   if (k === 'stepsTxt') return stepsText(s);
+  if (k === 'legsTxt') return s.legs.map(dec).join('; ');
+  if (k === 'anglesTxt') return s.angles.map(dec).join('; ');
   if (k === '_ang') return Math.round(Math.atan2(s.y2 - s.y1, s.x2 - s.x1) * 1800 / Math.PI) / 10;
   return s[k];
 }
-const TYPENAMES = {rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht', shaft:'Welle'};
+const TYPENAMES = {bend:'Biegeteil', rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht', shaft:'Welle'};
 function renderProps(){
   const s = byId(selId), el = $('#props');
   if (!s){
@@ -1305,6 +1417,12 @@ function renderProps(){
   if (s.type === 'profile'){
     const q = section(s), pr = PROFILES[s.kind], kgm = q.area / 1e6 * 1000 * MATS[s.mat].rho;
     h += `<p class="note">${pr.name} ${esc(s.size)} · ${pr.norm} · Querschnitt ${dec(q.area.toFixed(0))} mm² · ${dec(kgm.toFixed(2))} kg/m · Masse ca. <b>${dec(profileMass(s).toFixed(2))} kg</b></p>`;
+  }
+  if (s.type === 'bend'){
+    const c = bendCalc(s);
+    h += `<p class="note">Gestreckte Länge (Zuschnitt) nach DIN 6935: <b>${num(c.L, 'mm')} mm</b> × ${num(s.w, 'mm')} × ${num(s.t, 'mm')} mm<br>
+      = Σ Schenkel ${num(s.legs.reduce((a, b) => a + b, 0), 'mm')} + Σ v ${num(c.vs.reduce((a, b) => a + b, 0), 'mm')} · Ausgleichswert v je Biegung: ${c.vs.map(v => dec(v.toFixed(2))).join('; ')} mm · Korrekturfaktor k = ${dec(c.k.toFixed(2))}<br>
+      Schenkel sind Außenmaße. Winkel positiv = nach oben, negativ = nach unten. Masse ca. <b>${dec(bendMass(s).toFixed(2))} kg</b></p>`;
   }
   if (s.type === 'shaft'){
     const k = shaftKey(s);
@@ -1343,6 +1461,11 @@ $('#props').addEventListener('change', e => {
     if (k === 'kind' && s.type === 'profile') s.size = Object.keys(PROFILES[v].sizes)[0];
     if (k === 'fit' && v !== 'frei'){ const g = NORM[v.slice(2)]; s.d = v[0] === 'G' ? g.kl : g.dh; }
     if (k === 'kind' && s.type === 'screw' && !GRADES[v].includes(s.grade)) s.grade = GRADES[v][0];
+  } else if (k === 'legsTxt' || k === 'anglesTxt'){
+    const arr = parseNums(v, k === 'anglesTxt');
+    if (!arr){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
+    if (k === 'legsTxt') s.legs = arr; else s.angles = arr;
+    while (s.angles.length < s.legs.length - 1) s.angles.push(90);
   } else if (k === 'stepsTxt'){
     const st = parseSteps(v);
     if (!st){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
@@ -1388,6 +1511,10 @@ function bomRows(){
   state.shapes.filter(s => s.type === 'rect').forEach(s => {
     const m = rectMass(s);
     add(`r|${s.name}|${s.w}|${s.h}|${s.t}|${s.mat}|${m.toFixed(3)}`, {name:s.name || 'Blech', dim:`${num(s.w)} × ${num(s.h)} × ${num(s.t)} ${state.unit}`, mat:MATS[s.mat].name, mass:m});
+  });
+  state.shapes.filter(s => s.type === 'bend').forEach(s => {
+    const L = bendCalc(s).L;
+    add(`g|${s.name}|${s.legs}|${s.angles}|${s.t}|${s.r}|${s.w}|${s.mat}`, {name:s.name || 'Biegeteil', dim:`Zuschnitt ${num(L)} × ${num(s.w)} × ${num(s.t)} ${state.unit} · Schenkel ${s.legs.map(l => num(l)).join('/')}`, mat:MATS[s.mat].name, mass:bendMass(s)});
   });
   state.shapes.filter(s => s.type === 'shaft').forEach(s => {
     add(`w|${stepsText(s)}|${s.mat}|${s.keyStep}|${s.keyLen}`, {name:'Welle', dim:`Rohteil Ø${num(shaftDmax(s))} × ${num(shaftLen(s))} ${state.unit}`, mat:MATS[s.mat].name, mass:shaftMass(s)});
@@ -1440,6 +1567,87 @@ function renderBom(){
   }
   $('#bom').innerHTML = h;
 }
+/* ---------- Zuschnitt: Stangen und Blechtafeln belegen ---------- */
+function cutPieces(){
+  const bars = new Map(), sheets = new Map(), push = (m, k, v) => { if (!m.has(k)) m.set(k, []); m.get(k).push(v); };
+  state.shapes.forEach(s => {
+    if (s.type === 'profile') push(bars, `${PROFILES[s.kind].name} ${s.size} · ${MATS[s.mat].name}`, {l:s.len, n:'Profil'});
+    if (s.type === 'shaft') push(bars, `Rundstahl Ø${num(shaftDmax(s), 'mm')} · ${MATS[s.mat].name}`, {l:shaftLen(s) + 2, n:'Welle (+2 mm Aufmaß)'});
+    if (s.type === 'rect') push(sheets, `Blech ${num(s.t, 'mm')} mm · ${MATS[s.mat].name}`, {w:s.w, h:s.h, n:s.name || 'Blech'});
+    if (s.type === 'bend') push(sheets, `Blech ${num(s.t, 'mm')} mm · ${MATS[s.mat].name}`, {w:bendCalc(s).L, h:s.w, n:s.name || 'Biegeteil'});
+  });
+  return {bars, sheets};
+}
+// Stangen: größte Teile zuerst in die erste Stange, in die sie noch passen
+function packBars(items, stock, kerf){
+  const out = [], over = [];
+  items.slice().sort((a, b) => b.l - a.l).forEach(it => {
+    if (it.l > stock){ over.push(it); return; }
+    let b = out.find(b => b.rest >= it.l + (b.cuts.length ? kerf : 0));
+    if (!b){ b = {cuts:[], rest:stock}; out.push(b); }
+    b.rest -= it.l + (b.cuts.length ? kerf : 0); b.cuts.push(it);
+  });
+  return {bars:out, over};
+}
+// Tafeln: Regal-Verfahren (Reihen), Teile dürfen gedreht werden
+function packSheets(items, SW, SH, gap){
+  const sheets = [], over = [];
+  const list = items.map(it => ({...it, w:Math.max(it.w, it.h), h:Math.min(it.w, it.h)})).sort((a, b) => b.h - a.h || b.w - a.w);
+  list.forEach(it => {
+    const opts = [[it.w, it.h], [it.h, it.w]].filter(([w, h]) => w <= SW && h <= SH);
+    if (!opts.length){ over.push(it); return; }
+    for (const sh of sheets){
+      for (const row of sh.rows) for (const [w, h] of opts) if (h <= row.h && row.x + w <= SW){ sh.parts.push({...it, x:row.x, y:row.y, w, h}); row.x += w + gap; return; }
+      for (const [w, h] of opts) if (sh.y + h <= SH){ const row = {y:sh.y, h, x:w + gap}; sh.rows.push(row); sh.y += h + gap; sh.parts.push({...it, x:0, y:row.y, w, h}); return; }
+    }
+    const [w, h] = opts[0], sh = {rows:[{y:0, h, x:w + gap}], y:h + gap, parts:[{...it, x:0, y:0, w, h}]};
+    sheets.push(sh);
+  });
+  return {sheets, over};
+}
+let cutText = '';
+function renderCut(){
+  const stock = parseLen(($('#cutBar').value || '') + 'mm') || 6000, kerf = Math.max(0, parseFloat(($('#cutKerf').value || '0').replace(',', '.')) || 0);
+  const [SW, SH] = $('#cutSheet').value.split('x').map(Number);
+  const {bars, sheets} = cutPieces();
+  let h = '', t = `Zuschnitt – ${state.title.name}\n`;
+  if (!bars.size && !sheets.size){ $('#cutOut').innerHTML = '<p class="empty">Noch keine Profile, Wellen, Bleche oder Biegeteile im Projekt.</p>'; cutText = ''; return; }
+  bars.forEach((items, key) => {
+    const r = packBars(items, stock, kerf), used = items.reduce((a, i) => a + i.l, 0), total = r.bars.length * stock;
+    const loss = r.bars.reduce((a, b) => a + Math.max(0, b.cuts.length - 1) * kerf, 0), rest = r.bars.reduce((a, b) => a + b.rest, 0);
+    const pct = total ? used / total * 100 : 0;
+    h += `<div class="cutgroup"><h4>${esc(key)}</h4><div class="cutsum">${items.length} Teile · <b>${r.bars.length} Stange${r.bars.length === 1 ? '' : 'n'} à ${num(stock, 'mm')} mm</b> · Ausnutzung ${dec(pct.toFixed(1))} % · Reststücke ${num(rest, 'mm')} mm · Schnittverlust ${num(loss, 'mm')} mm</div>`;
+    r.bars.forEach((b, i) => {
+      h += `<div class="barrow"><span>Stange ${i + 1}</span><div class="barvis">${b.cuts.map(c => `<span style="width:${c.l / stock * 100}%" title="${num(c.l, 'mm')} mm">${num(c.l, 'mm')}</span>`).join('')}</div><span>Rest ${num(b.rest, 'mm')}</span></div>`;
+    });
+    if (r.over.length) h += `<div class="cutwarn">Länger als die Stange: ${r.over.map(o => num(o.l, 'mm') + ' mm').join(', ')}</div>`;
+    h += '</div>';
+    t += `\n${key}: ${items.length} Teile, ${r.bars.length} Stangen à ${num(stock, 'mm')} mm, Ausnutzung ${dec(pct.toFixed(1))} %, Reststücke ${num(rest, 'mm')} mm\n`;
+    r.bars.forEach((b, i) => { t += `  Stange ${i + 1}: ${b.cuts.map(c => num(c.l, 'mm')).join(' + ')} (Rest ${num(b.rest, 'mm')})\n`; });
+  });
+  sheets.forEach((items, key) => {
+    const r = packSheets(items, SW, SH, kerf), area = items.reduce((a, i) => a + i.w * i.h, 0), total = r.sheets.length * SW * SH;
+    const pct = total ? area / total * 100 : 0, sc = 230 / SW;
+    h += `<div class="cutgroup"><h4>${esc(key)}</h4><div class="cutsum">${items.length} Teile · <b>${r.sheets.length} Tafel${r.sheets.length === 1 ? '' : 'n'} ${SW} × ${SH} mm</b> · Ausnutzung ${dec(pct.toFixed(1))} %</div><div class="sheets">`;
+    r.sheets.forEach(sh => {
+      h += `<svg width="${Math.round(SW*sc)}" height="${Math.round(SH*sc)}" viewBox="0 0 ${SW} ${SH}">${sh.parts.map(p => `<rect class="pc" x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}"><title>${esc(p.n)} ${num(p.w, 'mm')} × ${num(p.h, 'mm')}</title></rect>${p.w*sc > 40 && p.h*sc > 12 ? `<text x="${p.x + 8/sc}" y="${p.y + 14/sc}" transform="scale(1)" style="font-size:${10/sc}px">${num(p.w, 'mm')}×${num(p.h, 'mm')}</text>` : ''}`).join('')}</svg>`;
+    });
+    h += '</div>';
+    if (r.over.length) h += `<div class="cutwarn">Größer als die Tafel: ${r.over.map(o => num(o.w, 'mm') + ' × ' + num(o.h, 'mm')).join(', ')}</div>`;
+    h += '</div>';
+    t += `\n${key}: ${items.length} Teile, ${r.sheets.length} Tafeln ${SW} × ${SH} mm, Ausnutzung ${dec(pct.toFixed(1))} %\n`;
+  });
+  $('#cutOut').innerHTML = h; cutText = t;
+}
+$('#bCut').onclick = () => { renderCut(); $('#cutDlg').hidden = false; };
+$('#cutClose').onclick = () => { $('#cutDlg').hidden = true; };
+$('#cutDlg').addEventListener('click', e => { if (e.target.id === 'cutDlg') $('#cutDlg').hidden = true; });
+['#cutBar', '#cutKerf', '#cutSheet'].forEach(q => $(q).addEventListener('change', renderCut));
+$('#cutCopy').onclick = async () => {
+  const b = $('#cutCopy');
+  try { await navigator.clipboard.writeText(cutText); b.textContent = 'Kopiert'; } catch(e){ b.textContent = 'Nicht möglich'; }
+  setTimeout(() => b.textContent = 'Als Text kopieren', 1600);
+};
 $('#bCopyBom').onclick = async () => {
   const rows = bomRows();
   let t = `Stückliste – ${state.title.name}\nPos\tStk\tBenennung\tAbmessung\tWerkstoff\tkg/Stk\n`;
@@ -1455,7 +1663,7 @@ $('#bCopyBom').onclick = async () => {
 /* ---------- Schriftfeld ---------- */
 function renderTitle(){
   const t = state.title;
-  const mats = [...new Set(state.shapes.filter(s => s.type === 'rect' || s.type === 'profile' || s.type === 'shaft').map(s => MATS[s.mat].name))].join(', ') || '–';
+  const mats = [...new Set(state.shapes.filter(s => s.type === 'rect' || s.type === 'profile' || s.type === 'shaft' || s.type === 'bend').map(s => MATS[s.mat].name))].join(', ') || '–';
   $('#tblock').innerHTML = `<div class="big">${esc(t.name || 'Ohne Namen')}</div>
     <div>Gezeichnet</div><div>${esc(t.by || '–')}</div>
     <div>Datum</div><div>${esc(t.date)}</div>
@@ -1693,6 +1901,7 @@ document.addEventListener('keydown', e => {
   const tag = (e.target.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
   if (!$('#start').hidden) return;
+  if (!$('#cutDlg').hidden){ if (e.key === 'Escape') $('#cutDlg').hidden = true; return; }
   if (!$('#expDlg').hidden){ if (e.key === 'Escape') $('#expDlg').hidden = true; return; }
   const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   if (ctrl && k === 'z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
@@ -1718,7 +1927,7 @@ $('#bUndo').onclick = undo;
 $('#bRedo').onclick = redo;
 
 /* ---------- 3D-Ansicht ---------- */
-let mode = '2d', three = null, refit3d = false, cad = null, cadSel = -1, dims3d = false;
+let mode = '2d', three = null, refit3d = false, cad = null, cadSel = -1, dims3d = false, measureOn = false, mPts = [];
 const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
 function loadThree(){
   return new Promise((res, rej) => {
@@ -1732,7 +1941,7 @@ async function setMode(m){
   mode = m; renderModeSeg();
   $('#v3').hidden = m !== '3d'; svg.style.visibility = m === '3d' ? 'hidden' : '';
   if (m === '2d' && cad){ requestAnimationFrame(() => { fit(); render(); }); }
-  $('#zDims').hidden = m !== '3d';
+  $('#zDims').hidden = m !== '3d'; $('#zMeasure').hidden = m !== '3d';
   renderToolOpts();
   if (m === '3d'){
     $('#hint').textContent = '3D wird geladen …';
@@ -1782,7 +1991,15 @@ function placeCam(c){
   c.position.set(o.t.x + o.r*ce*Math.cos(o.az), o.t.y + o.r*ce*Math.sin(o.az), o.t.z + o.r*Math.sin(o.el));
   c.lookAt(o.t); c.near = o.r / 200; c.far = o.r * 200; c.updateProjectionMatrix();
 }
+function placeMeasureLabel(){
+  const el = $('#m3d');
+  if (!measureOn || mPts.length < 2){ el.hidden = true; return; }
+  const [a, b] = mPts, c = three.renderer.domElement, m = a.clone().add(b).multiplyScalar(.5).project(three.camera);
+  el.innerHTML = `${fmt(a.distanceTo(b))}<small>ΔX ${num(Math.abs(b.x - a.x))} · ΔY ${num(Math.abs(b.y - a.y))} · ΔZ ${num(Math.abs(b.z - a.z))}</small>`;
+  el.hidden = m.z > 1; el.style.left = ((m.x + 1) / 2 * c.clientWidth) + 'px'; el.style.top = ((1 - m.y) / 2 * c.clientHeight) + 'px';
+}
 function placeDims3d(){
+  placeMeasureLabel();
   const els = ['#m3x', '#m3y', '#m3z'].map(q => $(q)), b = three && three.mbox;
   if (!b){ els.forEach(e => e.hidden = true); return; }
   const el = three.renderer.domElement, w = el.clientWidth, h = el.clientHeight, sz = b.getSize(new THREE.Vector3());
@@ -1908,6 +2125,12 @@ function build3d(){
   });
   // höchste Auflage entlang einer Linie im lokalen System (für Profile und Wellen)
   const topAlong = (s, y, len) => { let m = 0; for (let i = 0; i <= 12; i++){ const w = localToWorld(s, len*i/12, y); m = Math.max(m, topAt(w.x, w.y)); } return m; };
+  // Biegeteile: Querschnitt über die Breite extrudiert (steht aufrecht)
+  state.shapes.filter(s => s.type === 'bend').forEach(s => {
+    const sh = new THREE.Shape(bendOutline(s).map(([x, y]) => new THREE.Vector2(x, y)));
+    const g = extrude(sh, s.w); g.rotateZ((s.rot || 0) * Math.PI / 180); g.translate(s.x, s.y, topAt(s.x, s.y));
+    dg.add(mesh(g, s, 'plate'));
+  });
   // Wellen: Zylinder je Absatz, Passfeder als dunkler Einsatz
   state.shapes.filter(s => s.type === 'shaft').forEach(s => {
     const grp = new THREE.Group(); let x = 0;
@@ -2022,7 +2245,42 @@ function bind3d(el){
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   el.addEventListener('wheel', e => { e.preventDefault(); zoom3d(Math.exp(e.deltaY * .0015)); draw3d(); }, {passive:false});
 }
+// Messen: Punkt auf einer Fläche treffen, nahe Eckpunkte fangen
+function measurePick(e){
+  const r = three.renderer.domElement.getBoundingClientRect();
+  const ray = new THREE.Raycaster();
+  ray.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), three.camera);
+  const h = ray.intersectObjects(three.root.children, true).find(x => x.object.isMesh);
+  if (!h) return;
+  let p = h.point.clone();
+  if (h.face){
+    const pos = h.object.geometry.attributes.position; let best = 14;
+    [h.face.a, h.face.b, h.face.c].forEach(i => {
+      const v = new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(h.object.matrixWorld), q = v.clone().project(three.camera);
+      const d = Math.hypot((q.x + 1) / 2 * r.width - (e.clientX - r.left), (1 - q.y) / 2 * r.height - (e.clientY - r.top));
+      if (d < best){ best = d; p = v; }
+    });
+  }
+  if (mPts.length >= 2) mPts = [];
+  mPts.push(p);
+  updateMeasure();
+}
+function updateMeasure(){
+  if (!three) return;
+  if (three.mg){ three.scene.remove(three.mg); three.mg.traverse(o => { if (o.geometry) o.geometry.dispose(); }); three.mg = null; }
+  if (measureOn && mPts.length){
+    const col = new THREE.Color(cssVar('--sel') || '#2563eb'), g = new THREE.Group();
+    const pts = new THREE.Points(new THREE.BufferGeometry().setFromPoints(mPts), new THREE.PointsMaterial({color:col, size:9, sizeAttenuation:false, depthTest:false}));
+    pts.renderOrder = 10; g.add(pts);
+    if (mPts.length === 2){ const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(mPts), new THREE.LineBasicMaterial({color:col, depthTest:false})); l.renderOrder = 10; g.add(l); }
+    three.scene.add(g); three.mg = g;
+  }
+  $('#hint').textContent = !measureOn ? 'Ziehen = drehen · Rechte Maustaste oder Shift = verschieben · Mausrad = zoomen'
+    : mPts.length === 1 ? 'Messen: zweiten Punkt anklicken.' : mPts.length === 2 ? 'Gemessen. Nächster Klick startet eine neue Messung.' : 'Messen: ersten Punkt anklicken. Ecken rasten ein.';
+  draw3d();
+}
 function pick3d(e){
+  if (measureOn){ measurePick(e); return; }
   const r = three.renderer.domElement.getBoundingClientRect();
   const ray = new THREE.Raycaster(); ray.params.Line.threshold = 2;
   ray.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), three.camera);
@@ -2148,7 +2406,7 @@ $('#cadSnap').onchange = e => { if (cad) cad.snap = e.target.checked; };
 function closeCad(silent){
   if (!cad) return;
   cad.parts.forEach(p => { p.geo.dispose(); if (p.edges) p.edges.dispose(); if (p.mat) p.mat.dispose(); });
-  cad = null; cadSel = -1; $('#cadBar').hidden = true; drawCadBg();
+  cad = null; cadSel = -1; $('#cadBar').hidden = true; drawCadBg(); mPts = []; if (three && three.mg) updateMeasure();
   if (silent) return;
   renderToolOpts(); renderProps();
   if (three){ build3d(); fit3d(); draw3d(); }
@@ -2176,6 +2434,10 @@ function renderCadInfo(){
 $('#bCad').onclick = () => $('#cadIn').click();
 $('#cadIn').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) openCad(f); };
 $('#cadClose').onclick = () => closeCad();
+$('#zMeasure').onclick = () => {
+  measureOn = !measureOn; mPts = []; $('#zMeasure').setAttribute('aria-pressed', measureOn);
+  updateMeasure();
+};
 $('#zDims').onclick = () => {
   dims3d = !dims3d; $('#zDims').setAttribute('aria-pressed', dims3d);
   if (three && mode === '3d'){ build3d(); draw3d(); }
@@ -2276,7 +2538,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 function renderProjectName(){ $('#projName').textContent = project ? project.name : 'Kein Projekt'; }
 
 function loadProject(rec){
-  closeCad(true);
+  closeCad(true); mPts = []; if (three) updateMeasure();
   project = {id:rec.id, name:rec.name, by:rec.by || ''};
   state = Object.assign(freshState(false), rec.data);
   state.title = Object.assign({name:rec.name, by:rec.by || '', date:today}, state.title);
