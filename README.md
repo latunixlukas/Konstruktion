@@ -24,6 +24,7 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 - **CAD-Modelle** (STEP, .stp/.step): werden nur im Browser gelesen, nicht hochgeladen und nicht gespeichert. In 2D als grauer Hintergrund (Draufsicht/Vorderansicht/Seitenansicht) mit Kantenfang, in 3D zusammen mit den eigenen Teilen
 - Einheiten mm / cm / m umschaltbar, Eingaben wie `25cm` oder `0,3m` möglich
 - Automatische Stückliste mit Masse (kg) und Nahtlängen, Schriftfeld
+- **Technische Zeichnung** als PDF: Vorder-, Drauf- und Seitenansicht nach Projektionsmethode 1 (europäisch), automatisch aus dem 3D-Modell mit sichtbaren und verdeckten Kanten, Mittellinien, Gesamtmaßen, Rahmen, Schriftfeld (Werkstoff, Allgemeintoleranz, Maßstab, Benennung, Gezeichnet, Datum, Projektionssymbol), A4 oder A3 quer, Maßstab automatisch oder fest (20:1 bis 1:200), Stückliste als zweite Seite
 - **Export** als PDF (A4 quer, je eine Seite 2D-Zeichnung, 3D-Ansicht, Stückliste) oder als ein PNG-Bild; Inhalte frei wählbar; **DXF** als Laser-Zuschnitt (Bleche, Ronden, Abwicklungen mit Biegelinien, 1:1) oder ganze Zeichnung; außerdem SVG
 
 ## Speichern
