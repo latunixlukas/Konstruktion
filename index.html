@@ -163,6 +163,7 @@ html.locked,html.locked body{overflow:hidden}
 .lsform input,.lsform select{width:100%}
 
 /* Spiegeln & Muster */
+.tilt{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px}.tilt span{font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:4px}
 .tblock{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .tblock summary{cursor:pointer;font:600 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
 .tblock .props{margin-top:10px}
@@ -184,6 +185,10 @@ html.locked,html.locked body{overflow:hidden}
 /* Zuschnitt */
 .cutpanel{width:min(860px,100%);max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:14px}
 .cuthead{display:flex;align-items:center;justify-content:space-between}
+.keysgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:22px 32px}
+.keysgrid h4{margin:0 0 8px;font:600 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.keysgrid dl{display:grid;grid-template-columns:minmax(0,46%) minmax(0,1fr);gap:7px 14px;margin:0;font-size:.85rem;align-items:baseline}
+.keysgrid dt{min-width:0}.keysgrid dt kbd{white-space:nowrap;display:inline-block;margin:1px 0}.keysgrid dd{margin:0;color:var(--ink);min-width:0}
 .cutset{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.85rem;color:var(--muted)}
 .cutset label{display:flex;align-items:center;gap:6px}
 .cutset input{width:6em}
@@ -348,6 +353,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       <button class="btn icon" id="bUndo" type="button" title="Rückgängig (Strg+Z)" aria-label="Rückgängig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
       <button class="btn icon" id="bRedo" type="button" title="Wiederholen (Strg+Y)" aria-label="Wiederholen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/></svg></button>
       <button class="btn icon" id="bTheme" type="button" title="Hell / Dunkel umschalten" aria-label="Hell oder Dunkel"></button>
+      <button class="btn icon" id="bKeys" type="button" title="Tastenkürzel und Bedienung (?)" aria-label="Tastenkürzel und Bedienung"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 15h10"/></svg></button>
       <button class="btn" id="bLib" type="button" title="Teile-Bibliothek: Teile speichern und einfügen"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4v16H4zM10 4h4v16h-4z"/><path d="M16.5 4.5l3.5 1-4 15-3.5-1"/></svg><span>Bibliothek</span></button>
       <button class="btn" id="bProjects" type="button" title="Projekte öffnen oder neu anlegen"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Projekte</span></button>
       <details class="menu" id="fileMenu">
@@ -432,6 +438,12 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       <div class="btnrow"><button type="button" class="btn" id="lsCancel">Abbrechen</button><button type="submit" class="btn primary">Speichern</button></div>
     </form>
   </div>
+  <div class="modal" id="keysDlg" hidden>
+    <div class="panel cutpanel" role="dialog" aria-labelledby="keysTitle">
+      <div class="cuthead"><h3 id="keysTitle">Tastenkürzel &amp; Bedienung</h3><button class="btn icon" type="button" id="keysClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="keysgrid" id="keysBody"></div>
+    </div>
+  </div>
   <div class="modal" id="cutDlg" hidden>
     <div class="panel cutpanel" role="dialog" aria-labelledby="cutTitle">
       <div class="cuthead"><h3 id="cutTitle">Zuschnitt</h3><button class="btn icon" type="button" id="cutClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -453,11 +465,17 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <label class="opt"><input type="radio" name="expFmt" value="sheet"> <span><b>Technische Zeichnung</b> · Vorder-, Drauf- und Seitenansicht mit Rahmen, Schriftfeld und Maßstab (PDF)</span></label>
         <label class="opt"><input type="radio" name="expFmt" value="png"> <span><b>PNG-Bild</b> · alles untereinander in einem Bild</span></label>
         <label class="opt"><input type="radio" name="expFmt" value="dxf"> <span><b>DXF</b> · für CAD, Laser, Plasma, Wasserstrahl</span></label>
+        <label class="opt"><input type="radio" name="expFmt" value="step"> <span><b>STEP</b> · 3D-Modell für CATIA, SolidWorks, Inventor, Fusion, FreeCAD</span></label>
       </fieldset>
       <fieldset id="dxfSet" hidden>
         <legend>DXF-Inhalt</legend>
         <label class="opt"><input type="radio" name="dxfMode" value="laser" checked> <span><b>Laser-Zuschnitt</b> · nur Bleche, Ronden und Abwicklungen der Biegeteile mit Bohrungen, Maßstab 1:1</span></label>
         <label class="opt"><input type="radio" name="dxfMode" value="draw"> <span><b>Ganze Zeichnung</b> · alle Linien, Mittellinien, Maße und Texte</span></label>
+      </fieldset>
+      <fieldset id="stepSet" hidden>
+        <legend>STEP</legend>
+        <label class="opt" id="stSelRow" hidden><input type="checkbox" id="stSel"> <span id="stSelTxt">Nur die Auswahl</span></label>
+        <p class="note">Alle eigenen Teile als Körper in Millimetern, so wie sie in 3D stehen (auch gekippt und angehoben). Runde Flächen werden in viele ebene Flächen zerlegt. Ein geladenes CAD-Modell kommt nie mit in die Datei.</p>
       </fieldset>
       <fieldset id="sheetSet" hidden>
         <legend>Zeichnung</legend>
@@ -467,6 +485,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         </div>
         <label class="opt"><input type="checkbox" id="shHidden" checked> Verdeckte Kanten gestrichelt</label>
         <label class="opt"><input type="checkbox" id="shBom" checked> Stückliste als zweite Seite</label>
+        <label class="opt" id="shSelRow" hidden><input type="checkbox" id="shSel"> <span id="shSelTxt">Nur die Auswahl zeichnen</span></label>
         <label class="opt" id="shCadRow" hidden><input type="checkbox" id="shCad"> CAD-Modell mitzeichnen</label>
         <p class="note">Ansichten nach Projektionsmethode 1 (europäisch): Draufsicht unter der Vorderansicht, Seitenansicht von links rechts daneben. Ausgeblendete Ebenen fehlen.</p>
       </fieldset>
@@ -540,6 +559,10 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Maß</b>: von Punkt zu Punkt ziehen. Der Abstand wird automatisch beschriftet.</li>
             <li><b>Text</b>: Text antippen und rechts eintippen. <b>Positionsnummer</b> und <b>Hinweispfeil</b> vom Teil nach außen ziehen – die Nummern zählen automatisch hoch.</li>
             <li><b>Spiegeln &amp; Muster</b>: Teil(e) auswählen, rechts unter den Eigenschaften „Spiegeln &amp; Muster“ aufklappen. Muster = Anzahl × Abstand in X und Y.</li>
+            <li><b>Aufstellen</b>: Teil auswählen, rechts unter „3D-Lage“ auf „Aufstellen ↥ X“ oder „↥ Y“ (Tasten <kbd>X</kbd> <kbd>Y</kbd>). „Flach legen“ macht es rückgängig.</li>
+            <li><b>Einzelteil-Zeichnung</b>: Teil auswählen, rechts „Zeichnung“. Bohrungen, Durchmesser und Längen werden automatisch bemaßt.</li>
+            <li><b>STEP</b>: Datei → Exportieren → STEP. Öffnet sich in CATIA, SolidWorks, Inventor usw.</li>
+            <li>Alle Tastenkürzel: <kbd>?</kbd> drücken. Am Tablet lange auf ein Teil drücken = mehrere auswählen.</li>
             <li><b>Technische Zeichnung</b>: Datei → Exportieren → „Technische Zeichnung“. Erzeugt Vorder-, Drauf- und Seitenansicht mit Rahmen, Schriftfeld und Maßstab als PDF.</li>
             <li><b>Ebenen</b>: rechts „+ Neue Ebene“. Punkt = aktive Ebene (neue Teile landen dort), Auge = aus-/einblenden, Schloss = sperren. Teile über das Feld „Ebene“ verschieben.</li>
             <li><b>Auswahl</b>: Teil anklicken, verschieben, an den Ecken ziehen. Werte rechts genau eintippen, z.&nbsp;B. <kbd>25cm</kbd> oder <kbd>0,3m</kbd>.</li>
@@ -1218,7 +1241,7 @@ function shapeMarkupInner(s, T, showDims){
       o += dimMarkup(T, c[0].x, c[0].y, c[3].x, c[3].y, 22, num(s.h));
     }
     if (!s.rot && s.w*T.z > 70 && s.h*T.z > 26){
-      o += `<text class="lbl" x="${f1(T.x(s.x) + 6)}" y="${f1(T.y(s.y + s.h) + 15)}">${esc(s.name)} · t=${num(s.t)}</text>`;
+      o += `<text class="lbl" x="${f1(T.x(s.x) + 6)}" y="${f1(T.y(s.y + s.h) + 15)}">${esc(s.name)} · t=${num(s.t)}${tilted(s) ? ' · gekippt' : ''}</text>`;
     }
   } else if (s.type === 'hole'){
     const cx = T.x(s.x), cy = T.y(s.y), R = s.d/2*T.z, ex = R + 6;
@@ -1526,6 +1549,7 @@ svg.addEventListener('pointerdown', e => {
   svg.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
   if (pointers.size === 2){
+    cancelLongPress();
     if (drag && drag.created) { state.shapes = state.shapes.filter(s => s !== drag.shape); undoStack.pop(); }
     drag = null; preview = '';
     const [a, b] = [...pointers.values()];
@@ -1552,7 +1576,9 @@ svg.addEventListener('pointerdown', e => {
       renderProps(); render(); return;
     }
     if (s){
+      const prev = selShapes().map(x => x.id);
       if (!isSel(s.id)) setSel([s.id]);
+      if (e.pointerType !== 'mouse') longPress(e, p, prev);
       snapshot();
       const shapes = selShapes();
       drag = {mode:'move', shape:s, shapes, origs:shapes.map(x => JSON.parse(JSON.stringify(x))), start:p, moved:false, excl:new Set(shapes.map(x => x.id))};
@@ -1565,8 +1591,10 @@ svg.addEventListener('pointerdown', e => {
       drag = {mode:'box', start:p, cur:null, add:e.shiftKey};
       renderProps(); render(); return;
     }
+    const prev = selShapes().map(x => x.id);
     if (selId || multi.size){ clearSel(); renderProps(); render(); }
     drag = {mode:'pan', sx:e.clientX, sy:e.clientY, cx:view.cx, cy:view.cy};
+    longPress(e, p, prev);
     return;
   }
   snapshot();
@@ -1619,8 +1647,29 @@ svg.addEventListener('pointerdown', e => {
   if (s.type === 'text') setTimeout(() => { const i = $('#p-text'); if (i){ i.focus(); i.select(); } }, 30);
 });
 
+// Tablet: lange drücken auf ein Teil = zur Auswahl dazu/heraus, auf leerer Fläche = Rahmen aufziehen
+let lp = null;
+function cancelLongPress(){ if (lp){ clearTimeout(lp.t); lp = null; } }
+function longPress(e, p, prev){
+  cancelLongPress();
+  lp = {x:e.clientX, y:e.clientY, t:setTimeout(() => {
+    lp = null; if (!drag || pointers.size !== 1) return;
+    try { navigator.vibrate && navigator.vibrate(25); } catch(err){}
+    if (drag.mode === 'move'){
+      drag.shapes.forEach((sh, i) => Object.assign(sh, drag.origs[i])); undoStack.pop();
+      const id = drag.shape.id, had = prev.includes(id); drag = null;
+      setSel(had ? prev.filter(i => i !== id) : [...prev, id]); renderProps(); render();
+      $('#hint').textContent = had ? 'Teil aus der Auswahl genommen.' : `Teil zur Auswahl dazu (${selShapes().length} ausgewählt). Lange drücken auf weitere Teile.`;
+    } else if (drag.mode === 'pan'){
+      view.cx = drag.cx; view.cy = drag.cy;
+      setSel(prev); drag = {mode:'box', start:p, cur:null, add:true}; render();
+      $('#hint').textContent = 'Jetzt ziehen: Rahmen um die Teile aufziehen.';
+    }
+  }, 550)};
+}
 svg.addEventListener('pointermove', e => {
   if (pointers.has(e.pointerId)) pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if (lp && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > 9) cancelLongPress();
   if (pinch && pointers.size === 2){
     const [a, b] = [...pointers.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x)/2, my = (a.y + b.y)/2;
@@ -1690,6 +1739,7 @@ svg.addEventListener('pointermove', e => {
 });
 
 function endPointer(e){
+  cancelLongPress();
   pointers.delete(e.pointerId);
   if (pinch){ if (pointers.size < 2) pinch = null; return; }
   if (!drag) return;
@@ -1755,7 +1805,16 @@ const Z_TYPES = ['rect','disc','profile','shaft','bend','screw'];
 function fieldsFor(s){
   const f = fieldsForBase(s);
   const lay = {k:'layer', l:'Ebene', kind:'select', o:(state.layers || []).map(l => [l.id, l.name])};
-  return Z_TYPES.includes(s.type) ? [...f, {k:'z', l:'Höhe Z (3D)', kind:'len'}, lay] : [...f, lay];
+  return Z_TYPES.includes(s.type) ? [...f, {k:'z', l:'Höhe Z (3D)', kind:'len'}, {k:'tx', l:'Kippen um X (3D)', kind:'deg'}, {k:'ty', l:'Kippen um Y (3D)', kind:'deg'}, lay] : [...f, lay];
+}
+const tilted = s => !!(s.tx || s.ty);
+// Teile in 3D kippen (um die X- oder Y-Achse), z. B. Blech aufstellen
+function tiltSel(ax, a){
+  const list = selShapes().filter(s => Z_TYPES.includes(s.type)); if (!list.length) return;
+  snapshot();
+  list.forEach(s => { if (ax === 0){ s.tx = 0; s.ty = 0; } else { const k = ax === 'x' ? 'tx' : 'ty'; s[k] = (((s[k] || 0) + a) % 360 + 360) % 360; } });
+  changed();
+  $('#hint').textContent = ax === 0 ? 'Flach gelegt.' : `Um ${ax.toUpperCase()} um ${a}° gekippt. In der 3D-Ansicht sichtbar, in 2D bleibt das Teil als Grundriss.`;
 }
 function fieldsForBase(s){
   const len = (k, l) => ({k, l, kind:'len'});
@@ -1840,6 +1899,7 @@ function getVal(s, k){
   if (k === 'rot') return s.rot || 0;
   if (k === 'layer') return s.layer || 'L1';
   if (k === 'z') return s.z || 0;
+  if (k === 'tx' || k === 'ty') return s[k] || 0;
   if (k === 'a0') return s.a0 ?? 0;
   if (k === 'a1') return s.a1 ?? 360;
   if (k === 'stepsTxt') return stepsText(s);
@@ -1943,10 +2003,10 @@ $('#props').addEventListener('change', e => {
     if (isNaN(a)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
     s[k] = a; if (s.a0 == null) s.a0 = 0; if (s.a1 == null) s.a1 = 360; changed(); return;
   }
-  if (k === 'rot'){
+  if (k === 'rot' || k === 'tx' || k === 'ty'){
     const a = parseFloat(v.replace(',', '.'));
     if (isNaN(a)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
-    s.rot = ((Math.round(a * 100) / 100) % 360 + 360) % 360; changed(); return;
+    s[k] = ((Math.round(a * 100) / 100) % 360 + 360) % 360; changed(); return;
   }
   if (f.kind === 'select'){
     s[k] = (k === 'len' || k === 'rot' || k === 'a' || k === 'keyStep') ? +v : (k === 'around' ? v === '1' : v);
@@ -2026,8 +2086,13 @@ function renderMultiProps(){
 }
 /* ---------- Spiegeln und Muster ---------- */
 function toolsBlock(){
-  const o = state.pattern || {nx:3, dx:50, ny:1, dy:50};
-  return `<details class="tblock" id="tbBox"${state.tbOpen ? ' open' : ''}><summary>Spiegeln &amp; Muster</summary>
+  const o = state.pattern || {nx:3, dx:50, ny:1, dy:50}, z3 = selShapes().some(s => Z_TYPES.includes(s.type));
+  return (z3 ? `<div class="tilt"><span>3D-Lage</span>
+      <button class="btn" type="button" id="tiltX" title="Um die X-Achse kippen (Taste X)">Aufstellen ↥ X</button>
+      <button class="btn" type="button" id="tiltY" title="Um die Y-Achse kippen (Taste Y)">Aufstellen ↥ Y</button>
+      <button class="btn" type="button" id="tilt0" title="Wieder flach hinlegen">Flach legen</button>
+      <button class="btn" type="button" id="aSheet" title="Technische Zeichnung nur von der Auswahl">Zeichnung</button>
+    </div>` : '') + `<details class="tblock" id="tbBox"${state.tbOpen ? ' open' : ''}><summary>Spiegeln &amp; Muster</summary>
     <div class="btnrow">
       <button class="btn" type="button" id="mirV" title="An einer senkrechten Achse spiegeln (links ↔ rechts)">Spiegeln ↔</button>
       <button class="btn" type="button" id="mirH" title="An einer waagerechten Achse spiegeln (oben ↕ unten)">Spiegeln ↕</button>
@@ -2044,6 +2109,7 @@ function toolsBlock(){
   </details>`;
 }
 function bindToolsBlock(){
+  if ($('#tiltX')){ $('#tiltX').onclick = () => tiltSel('x', 90); $('#tiltY').onclick = () => tiltSel('y', 90); $('#tilt0').onclick = () => tiltSel(0); $('#aSheet').onclick = () => openExport('sheet'); }
   $('#tbBox').addEventListener('toggle', e => { state.tbOpen = e.target.open; });
   $('#mirCopy').onchange = e => { state.mirCopy = e.target.checked; };
   $('#mirV').onclick = () => mirrorSel(true);
@@ -2068,6 +2134,8 @@ function bindToolsBlock(){
 }
 // Spiegeln an senkrechter (vertical = true) oder waagerechter Achse
 function mirrorShape(o, vertical, ax){
+  if (vertical && o.ty) o.ty = (360 - o.ty) % 360;
+  if (!vertical && o.tx) o.tx = (360 - o.tx) % 360;
   const M = (x, y) => vertical ? {x:r2(2*ax - x), y} : {x, y:r2(2*ax - y)};
   if ('x1' in o){
     const a = M(o.x1, o.y1), b = M(o.x2, o.y2); o.x1 = a.x; o.y1 = a.y; o.x2 = b.x; o.y2 = b.y;
@@ -2413,6 +2481,21 @@ function renderCut(){
 }
 $('#bCut').onclick = () => { renderCut(); $('#cutDlg').hidden = false; };
 $('#cutClose').onclick = () => { $('#cutDlg').hidden = true; };
+/* ---------- Tastenkürzel-Übersicht ---------- */
+function openKeys(){
+  const K = (...a) => a.map(x => `<kbd>${x}</kbd>`).join(' + ');
+  const sec = (t, rows) => `<section><h4>${t}</h4><dl>${rows.map(([k, d]) => `<dt>${k}</dt><dd>${d}</dd>`).join('')}</dl></section>`;
+  $('#keysBody').innerHTML =
+    sec('Werkzeuge', TOOLS.map(t => [K(t.key), t.n])) +
+    sec('Bearbeiten', [[K('Strg', 'Z'), 'Rückgängig'], [K('Strg', 'Y'), 'Wiederholen'], [K('Strg', 'C') + ' ' + K('Strg', 'V'), 'Kopieren, an der Maus einfügen'], [K('Strg', 'X'), 'Ausschneiden'], [K('Strg', 'D'), 'Duplizieren'], [K('Strg', 'A'), 'Alles auswählen'], [K('Entf'), 'Löschen'], [K('Esc'), 'Auswahl aufheben'], [K('←') + ' ' + K('→') + ' ' + K('↑') + ' ' + K('↓'), 'Verschieben um ein Rasterkästchen (mit Shift: 1 mm)'], [K('Bild↑') + ' ' + K('Bild↓'), 'Höhe Z in 3D ändern'], [K('X') + ' ' + K('Y'), 'Teil um X bzw. Y um 90° kippen (mit Shift zurück)'], [K('?'), 'Diese Übersicht']]) +
+    sec('Maus', [['Klick', 'Teil auswählen'], [K('Shift') + ' + Klick', 'Teil dazu oder heraus'], ['Rahmen nach rechts', 'nur Teile ganz drin'], ['Rahmen nach links', 'alle berührten Teile'], ['Rechte Maustaste ziehen', 'Ansicht verschieben (auch ' + K('Leertaste') + ' + ziehen)'], ['Mausrad', 'Zoomen'], [K('Shift') + ' beim Zeichnen', 'ohne Raster und Fang']]) +
+    sec('Tablet / Handy', [['Tippen', 'Teil auswählen bzw. setzen'], ['Leere Fläche ziehen', 'Ansicht verschieben'], ['Zwei Finger', 'Zoomen'], ['Lange drücken auf Teil', 'Teil zur Auswahl dazu oder heraus'], ['Lange drücken auf leerer Fläche, dann ziehen', 'Rahmen aufziehen, mehrere Teile wählen']]) +
+    sec('3D-Ansicht', [['Ziehen', 'Drehen'], ['Rechte Maustaste ziehen', 'Ansicht verschieben'], ['Ausgewähltes Teil ziehen', 'Verschieben'], [K('Shift') + ' + ziehen', 'Teil anheben'], ['3D-Lage', 'rechts „Aufstellen ↥ X / Y“ oder „Flach legen“']]);
+  $('#keysDlg').hidden = false; $('#keysClose').focus();
+}
+$('#bKeys').onclick = openKeys;
+$('#keysClose').onclick = () => { $('#keysDlg').hidden = true; };
+$('#keysDlg').addEventListener('click', e => { if (e.target.id === 'keysDlg') $('#keysDlg').hidden = true; });
 $('#cutDlg').addEventListener('click', e => { if (e.target.id === 'cutDlg') $('#cutDlg').hidden = true; });
 ['#cutBar', '#cutKerf', '#cutSheet'].forEach(q => $(q).addEventListener('change', renderCut));
 $('#cutCopy').onclick = async () => {
@@ -2737,34 +2820,75 @@ const mmTxt = v => String(Math.round(v * 10) / 10).replace('.', ',');
 async function exportSheet(o){
   await loadScript(JSPDF_URL, () => window.jspdf);
   await loadThree();
-  const savedCad = cad, savedCut = cut3d.on, sideCad = o.cad && savedCad && savedCad.view !== 'top';
-  init3d(); if (!o.cad) cad = null; cut3d.on = false;
+  // ids: nur diese Teile zeichnen; ein einzelnes Teil wird gerade und flach hingelegt und genauer bemaßt
+  const ids = o.ids && o.ids.length ? new Set(o.ids) : null;
+  const part = ids && ids.size === 1 ? byId([...ids][0]) : null;
+  const savedCad = cad, savedCut = cut3d.on, sideCad = o.cad && !ids && savedCad && savedCad.view !== 'top';
+  const keep = part ? {tx:part.tx, ty:part.ty, z:part.z} : null;
+  init3d(); if (!o.cad || ids) cad = null; cut3d.on = false;
+  if (part){ part.tx = 0; part.ty = 0; part.z = 0; }
   let views, box;
   try {
     build3d(); three.root.updateMatrixWorld(true);
-    const meshes = [];
-    if (three.dg) three.dg.traverse(m => { if (m.isMesh) meshes.push(m); });
-    if (cad) three.root.children.forEach(m => { if (m.isMesh && m.userData.cad != null) meshes.push(m); });
-    if (!meshes.length) throw new Error('leer');
-    box = new THREE.Box3(); meshes.forEach(m => box.expandByObject(m));
-    const edges = edgeList(meshes);
+    const N = part && part.rot ? new THREE.Matrix4().makeTranslation(part.x, part.y, 0).multiply(new THREE.Matrix4().makeRotationZ(-part.rot * Math.PI / 180)).multiply(new THREE.Matrix4().makeTranslation(-part.x, -part.y, 0)) : null;
+    const rootId = ch => ch.userData.id != null ? ch.userData.id : (ch.children.find(c => c.userData.id != null) || {userData:{}}).userData.id;
+    const items = [];
+    if (three.dg) three.dg.children.forEach(ch => {
+      if (ids && !ids.has(rootId(ch))) return;
+      ch.traverse(m => { if (m.isMesh) items.push({geometry:m.geometry, matrixWorld:N ? N.clone().multiply(m.matrixWorld) : m.matrixWorld.clone()}); });
+    });
+    if (cad) three.root.children.forEach(m => { if (m.isMesh && m.userData.cad != null) items.push({geometry:m.geometry, matrixWorld:m.matrixWorld.clone()}); });
+    if (!items.length) throw new Error('leer');
+    box = new THREE.Box3(); const q = new THREE.Vector3();
+    items.forEach(m => { const pos = m.geometry.attributes.position; for (let i = 0; i < pos.count; i++) box.expandByPoint(q.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld)); });
+    const edges = edgeList(items);
     const r = new THREE.WebGLRenderer({antialias:false}); r.setPixelRatio(1); r.setSize(16, 16, false);
-    try { views = VIEWS.map(v => Object.assign({}, v, viewLines(r, meshes, edges, box, v))); }
+    try { views = VIEWS.map(v => Object.assign({}, v, viewLines(r, items, edges, box, v))); }
     finally { r.dispose(); if (r.forceContextLoss) r.forceContextLoss(); }
-  } finally { cad = savedCad; cut3d.on = savedCut; build3d(); draw3d(); }
+  } finally {
+    if (part) ['tx', 'ty', 'z'].forEach(kk => { if (keep[kk] == null) delete part[kk]; else part[kk] = keep[kk]; });
+    cad = savedCad; cut3d.on = savedCut; build3d(); draw3d();
+  }
+  // Merkmale des Einzelteils (Bohrungen usw.) in seinem geraden Koordinatensystem
+  const feats = [], notes = [];
+  const pt = part && part.type;
+  if (pt === 'rect' || pt === 'disc'){
+    state.shapes.filter(c => isCut(c) && inRect(part, c.x, c.y)).forEach(c => {
+      const l = pt === 'rect' ? worldToLocal(part, c) : {x:c.x - part.x, y:c.y - part.y};
+      const lab = c.type === 'slot' ? `Langloch ${mmTxt(c.l)}×${mmTxt(c.b)}` : c.type === 'cutout' ? `Ausschnitt ${mmTxt(c.w)}×${mmTxt(c.h)}${c.r ? ' R' + mmTxt(c.r) : ''}`
+        : c.fit && c.fit.startsWith('G-') ? c.fit.slice(2) : 'Ø' + mmTxt(c.d) + (c.tol ? ' ' + c.tol : '');
+      feats.push({x:part.x + l.x, y:part.y + l.y, lx:l.x, ly:l.y, r:c.type === 'hole' ? c.d/2 : 0, lab, hole:c.type === 'hole'});
+    });
+  }
+  if (pt === 'rect'){
+    notes.push(`Zuschnitt ${mmTxt(part.w)} × ${mmTxt(part.h)} × ${mmTxt(part.t)} mm`);
+    if (part.cornerType === 'fase' && part.corner) notes.push(`Ecken: Fase ${mmTxt(part.corner)} × 45°`);
+    if (part.cornerType === 'radius' && part.corner) notes.push(`Ecken: Radius R${mmTxt(part.corner)}`);
+  }
+  if (pt === 'disc') notes.push(`Ronde Ø${mmTxt(part.d)}${part.di ? ' / Ø' + mmTxt(part.di) : ''} × ${mmTxt(part.t)} mm`);
+  if (pt === 'shaft'){
+    notes.push(`Rohteil Rundstahl Ø${mmTxt(shaftDmax(part))} × ${mmTxt(shaftLen(part) + 2)} mm (2 mm Aufmaß)`);
+    const kk = shaftKey(part); if (kk) notes.push(`Passfedernut für DIN 6885 A ${kk.b}×${kk.h}×${mmTxt(kk.l)}, Nuttiefe t1 = ${mmTxt(kk.t1)} mm`);
+  }
+  if (pt === 'profile'){ const pr = PROFILES[part.kind]; notes.push(`${pr.name} ${part.size} · ${pr.norm} · Länge ${mmTxt(part.len)} mm`); }
+  if (pt === 'bend'){ const c = bendCalc(part); notes.push(`Gestreckte Länge ${mmTxt(c.L)} mm (DIN 6935) · Breite ${mmTxt(part.w)} · t = ${mmTxt(part.t)} · r innen ${mmTxt(part.r)}`, `Schenkel außen ${part.legs.map(mmTxt).join(' / ')} mm · Biegewinkel ${part.angles.map(a => dec(a) + '°').join(' / ')}`); }
+  if (part && part.ra) notes.push(`Oberfläche Ra ${part.ra}`);
+  if (ids && !part) notes.push(`Ausschnitt aus „${state.title.name || 'Projekt'}“: ${ids.size} Teile`);
 
   const a3 = o.paper === 'a3', PW = a3 ? 420 : 297, PH = a3 ? 297 : 210;
   const fx0 = 20, fy0 = 10, fx1 = PW - 10, fy1 = PH - 10, TBW = 180, TBH = 32, tbx = fx1 - TBW, tby = fy1 - TBH;
   const [F, T, S] = views, X = F.hmax - F.hmin, Z = F.vmax - F.vmin, Y = T.vmax - T.vmin;
-  const G = 22, DL = 16, DT = 12, LB = 6;   // Abstand, Platz für Maße links/oben, Beschriftung unten
+  const G = 22, DL = 16, DT = pt === 'shaft' ? 20 : 12, LB = 6;   // Abstand, Platz für Maße links/oben, Beschriftung unten
+  const DB = feats.length && pt === 'rect' ? 12 : 0, DR = feats.length && pt === 'rect' ? 14 : 0;   // Kettenmaße unter/rechts der Draufsicht
+  const NH = notes.length ? notes.length * 4.2 + 6 : 0;   // Hinweise über dem Schriftfeld
   const over = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
   const place = k => {
-    const gw = DL + X*k + G + Y*k, gh = DT + Z*k + G + Y*k + LB;
+    const gw = DL + Math.max(X*k + G + Y*k, X*k + DR), gh = DT + Z*k + G + Y*k + DB + LB;
     if (gw > fx1 - fx0 - 8 || gh > fy1 - fy0 - 8) return null;
     for (const [gx, gy] of [[fx0 + (fx1 - fx0 - gw)/2, fy0 + (fy1 - fy0 - gh)/2], [fx0 + 4, fy0 + 4]]){
       const ox = gx + DL, oy = gy + DT, tyo = oy + Z*k + G, sxo = ox + X*k + G;
-      const rects = [[ox - DL, oy - DT, ox + X*k, oy + Z*k + LB], [ox - DL, tyo, ox + X*k, tyo + Y*k + LB], [sxo, oy, sxo + Y*k, oy + Z*k + LB]];
-      if (!rects.some(r => over(r, [tbx - 2, tby - 2, fx1, fy1]))) return {ox, oy, tyo, sxo};
+      const rects = [[ox - DL, oy - DT, ox + X*k, oy + Z*k + LB], [ox - DL, tyo, ox + X*k + DR, tyo + Y*k + DB + LB], [sxo, oy, sxo + Y*k, oy + Z*k + LB]];
+      if (!rects.some(r => over(r, [tbx - 2, tby - 2 - NH, fx1, fy1]))) return {ox, oy, tyo, sxo};
     }
     return null;
   };
@@ -2775,7 +2899,8 @@ async function exportSheet(o){
   const org = {front:[pos.ox, pos.oy], top:[pos.ox, pos.tyo], side:[pos.sxo, pos.oy]};
 
   const doc = new window.jspdf.jsPDF({orientation:'landscape', unit:'mm', format:o.paper});
-  const mats = [...new Set(state.shapes.filter(s => isVis(s) && ['rect','disc','profile','shaft','bend'].includes(s.type)).map(s => MATS[s.mat].name))].join(', ') || '–';
+  const mats = [...new Set(state.shapes.filter(s => (ids ? ids.has(s.id) : isVis(s)) && ['rect','disc','profile','shaft','bend'].includes(s.type)).map(s => MATS[s.mat].name))].join(', ') || '–';
+  const partName = part ? (part.name || (pt === 'shaft' ? `Welle Ø${mmTxt(shaftDmax(part))} × ${mmTxt(shaftLen(part))}` : pt === 'profile' ? `${PROFILES[part.kind].name} ${part.size}` : TYPENAMES[pt])) : '';
   const sheetFrame = (blatt) => {
     doc.setDrawColor(0); doc.setTextColor(0); doc.setLineDashPattern([], 0);
     doc.setLineWidth(.7); doc.rect(fx0, fy0, fx1 - fx0, fy1 - fy0);
@@ -2791,10 +2916,11 @@ async function exportSheet(o){
     lab('WERKSTOFF', tbx, tby); val(mats, tbx, tby, 100);
     lab('ALLGEMEINTOLERANZ', tbx + 100, tby); val(state.title.gt === '-' ? '–' : 'ISO 2768-' + (state.title.gt || 'm'), tbx + 100, tby, 40);
     lab('MASSSTAB', tbx + 140, tby); val(scTxt, tbx + 140, tby, 40);
-    lab('BENENNUNG', tbx, tby + 8); doc.setFont('helvetica', 'bold'); val(state.title.name || 'Ohne Namen', tbx, tby + 13, 120, 15); doc.setFont('helvetica', 'normal');
+    lab('BENENNUNG', tbx, tby + 8); doc.setFont('helvetica', 'bold'); val(partName || state.title.name || 'Ohne Namen', tbx, tby + 13, 120, 15); doc.setFont('helvetica', 'normal');
     lab('GEZEICHNET', tbx + 120, tby + 8); val(state.title.by || '–', tbx + 120, tby + 8, 60);
     lab('DATUM', tbx + 120, tby + 16); val(state.title.date || '', tbx + 120, tby + 16, 60);
-    lab('MASSE IN MM', tbx + 30, tby + 24); val('Werkstatt-Zeichenbrett', tbx + 30, tby + 24, 90);
+    if (ids){ lab('PROJEKT · MASSE IN MM', tbx + 30, tby + 24); val(state.title.name || '–', tbx + 30, tby + 24, 90); }
+    else { lab('MASSE IN MM', tbx + 30, tby + 24); val('Werkstatt-Zeichenbrett', tbx + 30, tby + 24, 90); }
     lab('BLATT', tbx + 120, tby + 24); val(blatt + ' · ' + o.paper.toUpperCase(), tbx + 120, tby + 24, 60);
     // Symbol Projektionsmethode 1: Kreise links, Kegelstumpf rechts
     const cx = tbx + 8, cy = tby + 28.6;
@@ -2802,7 +2928,7 @@ async function exportSheet(o){
     doc.lines([[7, 1.3], [0, 2.6], [-7, 1.3], [0, -5.2]], cx + 5, cy - 2.6, [1, 1], 'S', true);
     doc.setLineWidth(.13); doc.setLineDashPattern([2, .6, .4, .6], 0); doc.line(cx - 3.6, cy, cx + 13, cy); doc.line(cx, cy - 3.4, cx, cy + 3.4); doc.setLineDashPattern([], 0);
   };
-  const pages = o.bom && bomRows().length ? 2 : 1;
+  const pages = o.bom && !ids && bomRows().length ? 2 : 1;
   sheetFrame('1 / ' + pages);
 
   const P = (vw, h, v) => [org[vw.k][0] + (h - vw.hmin)*k, org[vw.k][1] + (vw.vmax - v)*k];
@@ -2814,19 +2940,21 @@ async function exportSheet(o){
   doc.setLineWidth(.5); doc.setDrawColor(0); doc.setLineCap && doc.setLineCap('round');
   views.forEach(vw => vw.segs.forEach(g => { if (g.hid) return; const a = P(vw, g.h1, g.v1), b = P(vw, g.h2, g.v2); doc.line(a[0], a[1], b[0], b[1]); }));
   // Mittellinien der Bohrungen und Ronden in der Draufsicht
-  if (!sideCad){
-    doc.setLineWidth(.18); doc.setLineDashPattern([5, 1, 1, 1], 0);
-    state.shapes.filter(s => isVis(s) && (s.type === 'hole' || s.type === 'disc')).forEach(s => {
-      const [x, y] = P(T, s.x, s.y), r = s.d/2*k + 2;
-      doc.line(x - r, y, x + r, y); doc.line(x, y - r, x, y + r);
-    });
-    doc.setLineDashPattern([], 0);
+  const cross = (x0, y0, r) => { const [x, y] = P(T, x0, y0), e = r*k + 2; doc.line(x - e, y, x + e, y); doc.line(x, y - e, x, y + e); };
+  doc.setLineWidth(.18); doc.setLineDashPattern([5, 1, 1, 1], 0);
+  if (part){
+    feats.forEach(f => cross(f.x, f.y, f.r || 3));
+    if (pt === 'disc') cross(part.x, part.y, part.d/2);
+  } else if (!ids && !sideCad){
+    const tiltedPlates = state.shapes.filter(p => (p.type === 'rect' || p.type === 'disc') && tilted(p));
+    state.shapes.filter(s => isVis(s) && (s.type === 'hole' || s.type === 'disc') && !tilted(s) && !tiltedPlates.some(p => inRect(p, s.x, s.y))).forEach(s => cross(s.x, s.y, s.d/2));
   }
+  doc.setLineDashPattern([], 0);
   // Gesamtmaße
   const arrow = (x, y, dx, dy) => { const L = 2.6, w = .9, nx = -dy, ny = dx; doc.triangle(x, y, x + dx*L + nx*w, y + dy*L + ny*w, x + dx*L - nx*w, y + dy*L - ny*w, 'F'); };
   doc.setFillColor(0); doc.setDrawColor(0); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
   const dimH = (x1, x2, yRef, yD, txt) => {
-    doc.setLineWidth(.18); doc.line(x1, yRef - 1, x1, yD - 1.5); doc.line(x2, yRef - 1, x2, yD - 1.5); doc.line(x1, yD, x2, yD);
+    doc.setLineWidth(.18); if (yRef > -1e8){ doc.line(x1, yRef - 1, x1, yD - 1.5); doc.line(x2, yRef - 1, x2, yD - 1.5); } doc.line(x1, yD, x2, yD);
     arrow(x1, yD, 1, 0); arrow(x2, yD, -1, 0); doc.text(txt, (x1 + x2)/2, yD - 1.2, {align:'center'});
   };
   const dimV = (y1, y2, xRef, xD, txt) => {
@@ -2834,13 +2962,84 @@ async function exportSheet(o){
     arrow(xD, y1, 0, 1); arrow(xD, y2, 0, -1); doc.text(txt, xD - 1.2, (y1 + y2)/2, {align:'center', angle:90});
   };
   const [fx, fy] = org.front, [tx, ty] = org.top, [sx, sy] = org.side;
-  if (X > .05) dimH(fx, fx + X*k, fy, fy - 8, mmTxt(X));
+  if (X > .05) dimH(fx, fx + X*k, fy, fy - (pt === 'shaft' ? 16 : 8), mmTxt(X));
   if (Z > .05) dimV(fy, fy + Z*k, fx, fx - 9, mmTxt(Z));
-  if (Y > .05) dimV(ty, ty + Y*k, tx, tx - 9, mmTxt(Y));
+  if (Y > .05 && pt !== 'disc') dimV(ty, ty + Y*k, tx, tx - 9, mmTxt(Y));
+  // Hinweislinie mit Text, Pfeil zeigt auf den Kreis
+  const callout = (x, y, r, txt) => {
+    const sx0 = x + r*.7071, sy0 = y - r*.7071, ex = sx0 + 6, ey = sy0 - 6, tw = doc.getTextWidth(txt);
+    doc.setLineWidth(.18); doc.line(sx0, sy0, ex, ey); doc.line(ex, ey, ex + tw + 1.5, ey); arrow(sx0, sy0, .7071, -.7071);
+    doc.text(txt, ex + .8, ey - 1);
+  };
+  const uniq = arr => [...new Set(arr.map(v => Math.round(v * 10) / 10))].sort((a, b) => a - b);
+  if (pt === 'rect' && feats.length){
+    // Kettenmaße der Bohrungsmitten: X unter der Draufsicht, Y rechts daneben (von der linken bzw. unteren Kante)
+    const xs = [0, ...uniq(feats.map(f => f.lx)).filter(v => v > .05 && v < part.w - .05)];
+    const ys = [0, ...uniq(feats.map(f => f.ly)).filter(v => v > .05 && v < part.h - .05)];
+    const yD = ty + Y*k + 8, xD = tx + X*k + 9;
+    const yOf = lx => Math.max(...feats.filter(f => Math.abs(f.lx - lx) < .06).map(f => P(T, 0, f.y)[1]));
+    const xOf = ly => Math.max(...feats.filter(f => Math.abs(f.ly - ly) < .06).map(f => P(T, f.x, 0)[0]));
+    for (let i = 1; i < xs.length; i++){
+      const a = P(T, part.x + xs[i - 1], part.y), b = P(T, part.x + xs[i], part.y);
+      dimH(a[0], b[0], -1e9, yD, mmTxt(xs[i] - xs[i - 1]));
+      doc.setLineWidth(.18); doc.line(a[0], (i === 1 ? a[1] : yOf(xs[i - 1])) + 1, a[0], yD + 1.5); doc.line(b[0], yOf(xs[i]) + 1, b[0], yD + 1.5);
+    }
+    for (let i = 1; i < ys.length; i++){
+      const a = P(T, part.x + part.w, part.y + ys[i - 1]), b = P(T, part.x + part.w, part.y + ys[i]);
+      doc.setLineWidth(.18); doc.line(xD, a[1], xD, b[1]); arrow(xD, a[1], 0, -1); arrow(xD, b[1], 0, 1);
+      doc.text(mmTxt(ys[i] - ys[i - 1]), xD - 1.2, (a[1] + b[1])/2, {align:'center', angle:90});
+      doc.line((i === 1 ? a[0] : xOf(ys[i - 1])) + 1, a[1], xD + 1.5, a[1]); doc.line(xOf(ys[i]) + 1, b[1], xD + 1.5, b[1]);
+    }
+  }
+  if (pt === 'disc'){
+    const [cx, cy] = P(T, part.x, part.y), R = part.d/2*k;
+    doc.setLineWidth(.18); doc.line(cx - R, cy, cx + R, cy); arrow(cx - R, cy, 1, 0); arrow(cx + R, cy, -1, 0);
+    doc.text('Ø' + mmTxt(part.d), cx + R/2, cy - 1.2, {align:'center'});
+    if (part.di > 0){ const ri = part.di/2*k; doc.line(cx, cy - ri, cx, cy + ri); arrow(cx, cy - ri, 0, 1); arrow(cx, cy + ri, 0, -1); doc.text('Ø' + mmTxt(part.di), cx - 1.2, cy - ri/2, {align:'center', angle:90}); }
+    const hs = feats.filter(f => f.hole), rr = hs.map(f => Math.hypot(f.lx, f.ly));
+    if (hs.length > 1 && rr.every(v => Math.abs(v - rr[0]) < .05)){
+      doc.setLineDashPattern([5, 1, 1, 1], 0); doc.circle(cx, cy, rr[0]*k); doc.setLineDashPattern([], 0);
+      const a = -2.356, px = cx + rr[0]*k*Math.cos(a), py = cy + rr[0]*k*Math.sin(a), txt = 'Lochkreis Ø' + mmTxt(2*rr[0]), tw = doc.getTextWidth(txt);
+      doc.line(px, py, px - 6, py - 6); doc.line(px - 6, py - 6, px - 7.5 - tw, py - 6); arrow(px, py, -.7071, -.7071); doc.text(txt, px - 6.8 - tw, py - 7);
+    }
+  }
+  if (feats.length){
+    // gleiche Merkmale zusammenfassen: „4× Ø11“
+    const groups = new Map(); feats.forEach(f => { if (!groups.has(f.lab)) groups.set(f.lab, []); groups.get(f.lab).push(f); });
+    groups.forEach((list, lab) => { const f = list.reduce((a, b) => (b.y > a.y || (b.y === a.y && b.x > a.x)) ? b : a); const [x, y] = P(T, f.x, f.y); callout(x, y, Math.max(f.r*k, .8), (list.length > 1 ? list.length + '× ' : '') + lab); });
+  }
+  if (pt === 'shaft'){
+    // Durchmesser je Absatz in der Vorderansicht, Absatzlängen als Kette darüber
+    const zA = F.vmin + shaftDmax(part)/2; let x0 = part.x;
+    // Mittellinie (Achse) in Vorder- und Draufsicht
+    doc.setLineWidth(.18); doc.setLineDashPattern([5, 1, 1, 1], 0);
+    const L0 = P(F, part.x, zA), L1 = P(F, part.x + shaftLen(part), zA); doc.line(L0[0] - 3, L0[1], L1[0] + 3, L1[1]);
+    const T0 = P(T, part.x, part.y), T1 = P(T, part.x + shaftLen(part), part.y); doc.line(T0[0] - 3, T0[1], T1[0] + 3, T1[1]);
+    doc.setLineDashPattern([], 0);
+    const cuts = [part.x];
+    part.steps.forEach(st => {
+      const xm = P(F, x0 + st.l/2, zA)[0], [, y1] = P(F, 0, zA + st.d/2), [, y2] = P(F, 0, zA - st.d/2);
+      doc.setLineWidth(.18); doc.line(xm, y1, xm, y2); arrow(xm, y1, 0, 1); arrow(xm, y2, 0, -1);
+      doc.text('Ø' + mmTxt(st.d) + (st.tol ? ' ' + st.tol : ''), xm - 1.2, (y1 + y2)/2, {align:'center', angle:90});
+      x0 += st.l; cuts.push(x0);
+    });
+    const topAtX = x => Math.max(...part.steps.map((st, i) => (x >= cuts[i] - .01 && x <= cuts[i + 1] + .01) ? st.d : 0));
+    for (let i = 1; i < cuts.length; i++){
+      const a = P(F, cuts[i - 1], zA + topAtX(cuts[i - 1])/2), b = P(F, cuts[i], zA + topAtX(cuts[i])/2);
+      dimH(a[0], b[0], Math.min(a[1], b[1]), fy - 8, mmTxt(cuts[i] - cuts[i - 1]));
+      doc.setLineWidth(.18); doc.line(a[0], a[1] - 1, a[0], fy - 9.5); doc.line(b[0], b[1] - 1, b[0], fy - 9.5);
+    }
+  }
+  if (notes.length){
+    doc.setFontSize(8.5); let yN = tby - 3 - (notes.length - 1) * 4.2;
+    doc.setFont('helvetica', 'bold'); doc.text('Hinweise', tbx, yN - 4.6); doc.setFont('helvetica', 'normal');
+    notes.forEach(n => { let v = n; while (v.length > 3 && doc.getTextWidth(v) > TBW) v = v.slice(0, -1); doc.text(v, tbx, yN); yN += 4.2; });
+    doc.setFontSize(10);
+  }
   // Namen der Ansichten
   doc.setFontSize(7); doc.setTextColor(120);
   doc.text(F.name, fx + X*k/2, fy + Z*k + 5, {align:'center'});
-  doc.text(T.name, tx + X*k/2, ty + Y*k + 5, {align:'center'});
+  doc.text(T.name, tx + X*k/2, ty + Y*k + DB + 5, {align:'center'});
   doc.text(S.name, sx + Y*k/2, sy + Z*k + 5, {align:'center'});
   doc.setTextColor(0);
   if (pages > 1){
@@ -2848,20 +3047,144 @@ async function exportSheet(o){
     doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('Stückliste', fx0 + 8, fy0 + 10); doc.setFont('helvetica', 'normal');
     pdfBom(doc, fx0 + 8, fx1 - 8, fy0 + 20, tby - 8, () => { doc.addPage(o.paper, 'landscape'); sheetFrame('2 / 2'); return fy0 + 14; });
   }
-  doc.save(fileBase() + '_zeichnung.pdf');
+  doc.save(fileBase() + (part ? '_' + partName.replace(/[^\wäöüÄÖÜß-]+/g, '_') : ids ? '_auswahl' : '') + '_zeichnung.pdf');
   return scTxt;
 }
 
-function openExport(){
+/* ---------- STEP-Export (ISO 10303-21, AP214): eigene Teile als Volumenkörper mit ebenen Flächen ---------- */
+// Ein geladenes CAD-Modell wird nie mit exportiert.
+function stepStr(t){
+  return "'" + String(t).replace(/\\/g, '\\\\').replace(/'/g, "''").replace(/[^\x20-\x7e]/g, c => '\\X2\\' + c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0') + '\\X0\\') + "'";
+}
+function stepNum(v, dg = 6){ let t = (Math.abs(v) < 10 ** -dg ? 0 : v).toFixed(dg).replace(/0+$/, ''); if (t === '-0.') t = '0.'; return t; }
+// Dreiecke eines Körpers zu ebenen Flächen mit Randschleifen zusammenfassen
+function meshToFaces(tris){
+  const vk = new Map(), V = [], T = [];
+  const vid = p => { const k = Math.round(p.x*1e3) + ',' + Math.round(p.y*1e3) + ',' + Math.round(p.z*1e3); let i = vk.get(k); if (i == null){ i = V.length; V.push(p.clone()); vk.set(k, i); } return i; };
+  tris.forEach(([a, b, c]) => { const t = [vid(a), vid(b), vid(c)]; if (t[0] !== t[1] && t[1] !== t[2] && t[0] !== t[2]) T.push(t); });
+  const nrm = T.map(([a, b, c]) => { const n = new THREE.Vector3().subVectors(V[b], V[a]).cross(new THREE.Vector3().subVectors(V[c], V[a])); return n.lengthSq() > 1e-14 ? n.normalize() : null; });
+  const keep = T.map((t, i) => !!nrm[i]);
+  // geschlossen? jede Kante genau einmal in jede Richtung
+  const dir = new Map(); let closed = true;
+  T.forEach((t, i) => { if (!keep[i]) return; for (let j = 0; j < 3; j++){ const k = t[j] + '>' + t[(j + 1) % 3]; if (dir.has(k)) closed = false; dir.set(k, i); } });
+  if (closed) dir.forEach((i, k) => { const [a, b] = k.split('>'); if (!dir.has(b + '>' + a)) closed = false; });
+  // nach außen zeigen lassen
+  if (closed){
+    let vol = 0; T.forEach((t, i) => { if (keep[i]) vol += V[t[0]].dot(new THREE.Vector3().crossVectors(V[t[1]], V[t[2]])); });
+    if (vol < 0){ T.forEach((t, i) => { t.reverse(); if (nrm[i]) nrm[i].negate(); }); dir.clear(); T.forEach((t, i) => { if (keep[i]) for (let j = 0; j < 3; j++) dir.set(t[j] + '>' + t[(j + 1) % 3], i); }); }
+  }
+  // benachbarte Dreiecke in derselben Ebene vereinen
+  const par = T.map((t, i) => i), find = i => { while (par[i] !== i){ par[i] = par[par[i]]; i = par[i]; } return i; };
+  const coplanar = (i, j) => nrm[i].dot(nrm[j]) > 1 - 1e-7 && Math.abs(nrm[i].dot(V[T[i][0]]) - nrm[i].dot(V[T[j][0]])) < 1e-3;
+  dir.forEach((i, k) => { const [a, b] = k.split('>'), j = dir.get(b + '>' + a); if (j != null && j !== i && coplanar(i, j)) par[find(i)] = find(j); });
+  const groups = new Map();
+  T.forEach((t, i) => { if (!keep[i]) return; const r = find(i); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(i); });
+  const faces = [];
+  groups.forEach(list => {
+    const mine = new Set(list), out = new Map();
+    list.forEach(i => { const t = T[i]; for (let j = 0; j < 3; j++){ const a = t[j], b = t[(j + 1) % 3], tw = dir.get(b + '>' + a); if (tw == null || !mine.has(tw)){ if (!out.has(a)) out.set(a, []); out.get(a).push(b); } } });
+    const loops = [];
+    out.forEach((ends, a0) => {
+      while (ends.length){
+        const loop = [a0]; let cur = ends.pop(), guard = 0;
+        while (cur !== a0 && guard++ < 100000){ loop.push(cur); const nx = out.get(cur); if (!nx || !nx.length) break; cur = nx.pop(); }
+        if (cur === a0 && loop.length >= 3) loops.push(loop);
+      }
+    });
+    if (!loops.length) return;
+    const n = nrm[list[0]], area = l => { const c = new THREE.Vector3(); for (let i = 0; i < l.length; i++) c.add(new THREE.Vector3().crossVectors(V[l[i]], V[l[(i + 1) % l.length]])); return c.dot(n) / 2; };
+    loops.sort((a, b) => area(b) - area(a));
+    faces.push({n, loops});
+  });
+  return {V, faces, closed};
+}
+async function exportStep(ids){
+  await loadThree();
+  const savedCad = cad, savedCut = cut3d.on, bodies = [];
+  init3d(); cad = null; cut3d.on = false;
+  try {
+    build3d(); three.root.updateMatrixWorld(true);
+    const rootId = ch => ch.userData.id != null ? ch.userData.id : (ch.children.find(c => c.userData.id != null) || {userData:{}}).userData.id;
+    if (three.dg) three.dg.children.forEach(ch => {
+      const id = rootId(ch); if (id == null || (ids && !ids.includes(id))) return;
+      const sh = byId(id), nm = sh ? (sh.name || (sh.type === 'screw' ? KINDS[sh.kind].name + ' ' + sh.size : sh.type === 'profile' ? PROFILES[sh.kind].name + ' ' + sh.size : TYPENAMES[sh.type])) : 'Teil';
+      let part = 0;
+      ch.traverse(m => {
+        if (!m.isMesh) return;
+        const g = m.geometry, pos = g.attributes.position, idx = g.index, n = idx ? idx.count : pos.count, tris = [];
+        const P = i => new THREE.Vector3().fromBufferAttribute(pos, idx ? idx.getX(i) : i).applyMatrix4(m.matrixWorld);
+        for (let i = 0; i + 2 < n; i += 3) tris.push([P(i), P(i + 1), P(i + 2)]);
+        bodies.push({name:nm + (part++ ? ' ' + part : ''), ...meshToFaces(tris)});
+      });
+    });
+  } finally { cad = savedCad; cut3d.on = savedCut; build3d(); draw3d(); }
+  if (!bodies.length) throw new Error('leer');
+  const L = []; let nid = 0; const E = txt => { L.push(`#${++nid}=${txt};`); return '#' + nid; };
+  const P3 = v => E(`CARTESIAN_POINT('',(${stepNum(v.x)},${stepNum(v.y)},${stepNum(v.z)}))`);
+  const D3 = v => E(`DIRECTION('',(${stepNum(v.x, 10)},${stepNum(v.y, 10)},${stepNum(v.z, 10)}))`);
+  const ac = E(`APPLICATION_CONTEXT('core data for automotive mechanical design processes')`);
+  E(`APPLICATION_PROTOCOL_DEFINITION('international standard','automotive_design',2000,${ac})`);
+  const pc = E(`PRODUCT_CONTEXT('',${ac},'mechanical')`);
+  const pname = state.title.name || 'Teil';
+  const pr = E(`PRODUCT(${stepStr(pname)},${stepStr(pname)},'',(${pc}))`);
+  E(`PRODUCT_RELATED_PRODUCT_CATEGORY('part',$,(${pr}))`);
+  const pdf = E(`PRODUCT_DEFINITION_FORMATION('','',${pr})`);
+  const pdc = E(`PRODUCT_DEFINITION_CONTEXT('part definition',${ac},'design')`);
+  const pd = E(`PRODUCT_DEFINITION('design','',${pdf},${pdc})`);
+  const pds = E(`PRODUCT_DEFINITION_SHAPE('','',${pd})`);
+  const lu = E(`(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.))`);
+  const au = E(`(NAMED_UNIT(*)PLANE_ANGLE_UNIT()SI_UNIT($,.RADIAN.))`);
+  const su = E(`(NAMED_UNIT(*)SI_UNIT($,.STERADIAN.)SOLID_ANGLE_UNIT())`);
+  const unc = E(`UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.E-03),${lu},'distance_accuracy_value','confusion accuracy')`);
+  const ctx = E(`(GEOMETRIC_REPRESENTATION_CONTEXT(3)GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((${unc}))GLOBAL_UNIT_ASSIGNED_CONTEXT((${lu},${au},${su}))REPRESENTATION_CONTEXT('Context #1','3D Context with UNIT and UNCERTAINTY'))`);
+  const ax0 = E(`AXIS2_PLACEMENT_3D('',${P3(new THREE.Vector3())},${D3(new THREE.Vector3(0, 0, 1))},${D3(new THREE.Vector3(1, 0, 0))})`);
+  const items = [];
+  bodies.forEach(b => {
+    const vp = new Map(), ed = new Map();
+    const vert = i => { if (!vp.has(i)) vp.set(i, E(`VERTEX_POINT('',${P3(b.V[i])})`)); return vp.get(i); };
+    const edge = (a, c) => {
+      const k = a < c ? a + '_' + c : c + '_' + a;
+      if (!ed.has(k)){
+        const [i, j] = a < c ? [a, c] : [c, a], d = new THREE.Vector3().subVectors(b.V[j], b.V[i]), len = d.length();
+        const ln = E(`LINE('',${P3(b.V[i])},${E(`VECTOR('',${D3(d.normalize())},${stepNum(len)})`)})`);
+        ed.set(k, {id:E(`EDGE_CURVE('',${vert(i)},${vert(j)},${ln},.T.)`), from:i});
+      }
+      const e = ed.get(k); return E(`ORIENTED_EDGE('',*,*,${e.id},${e.from === a ? '.T.' : '.F.'})`);
+    };
+    const faces = b.faces.map(f => {
+      const bounds = f.loops.map((l, li) => { const oes = l.map((a, i) => edge(a, l[(i + 1) % l.length])); const lp = E(`EDGE_LOOP('',(${oes.join(',')}))`); return E(`${li ? 'FACE_BOUND' : 'FACE_OUTER_BOUND'}('',${lp},.T.)`); });
+      const o = f.loops[0], p0 = b.V[o[0]], rd = new THREE.Vector3().subVectors(b.V[o[1]], p0); rd.addScaledVector(f.n, -rd.dot(f.n)).normalize();
+      const pl = E(`PLANE('',${E(`AXIS2_PLACEMENT_3D('',${P3(p0)},${D3(f.n)},${D3(rd)})`)})`);
+      return E(`ADVANCED_FACE('',(${bounds.join(',')}),${pl},.T.)`);
+    });
+    if (!faces.length) return;
+    if (b.closed) items.push(E(`MANIFOLD_SOLID_BREP(${stepStr(b.name)},${E(`CLOSED_SHELL('',(${faces.join(',')}))`)})`));
+    else items.push(E(`SHELL_BASED_SURFACE_MODEL(${stepStr(b.name)},(${E(`OPEN_SHELL('',(${faces.join(',')}))`)}))`));
+  });
+  const allClosed = bodies.every(b => b.closed);
+  const rep = E(`${allClosed ? 'ADVANCED_BREP_SHAPE_REPRESENTATION' : 'SHAPE_REPRESENTATION'}(${stepStr(pname)},(${[ax0, ...items].join(',')}),${ctx})`);
+  E(`SHAPE_DEFINITION_REPRESENTATION(${pds},${rep})`);
+  const now = new Date().toISOString().slice(0, 19), fn = fileBase() + (ids ? '_auswahl' : '') + '.stp';
+  const txt = `ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('Werkstatt-Zeichenbrett'),'2;1');\nFILE_NAME(${stepStr(fn)},'${now}',(${stepStr(state.title.by || '')}),(''),'Werkstatt-Zeichenbrett','Werkstatt-Zeichenbrett','');\nFILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));\nENDSEC;\nDATA;\n${L.join('\n')}\nENDSEC;\nEND-ISO-10303-21;\n`;
+  download(fn, new Blob([txt], {type:'application/step'}));
+  return {bodies:bodies.length, open:bodies.filter(b => !b.closed).length};
+}
+
+function openExport(fmtPick){
   $('#fileMenu').open = false;
+  const sel = selShapes().filter(s => Z_TYPES.includes(s.type));
+  $('#shSelRow').hidden = !sel.length; $('#shSel').checked = fmtPick === 'sheet' && sel.length > 0;
+  $('#shSelTxt').textContent = sel.length === 1 ? `Nur dieses Teil als Einzelteil-Zeichnung (${sel[0].name || TYPENAMES[sel[0].type]}), mit Bohrungsmaßen` : `Nur die ${sel.length} ausgewählten Teile zeichnen`;
+  $('#stSelRow').hidden = !sel.length; $('#stSel').checked = false; $('#stSelTxt').textContent = `Nur die Auswahl (${sel.length} Teil${sel.length === 1 ? '' : 'e'})`;
+  if (fmtPick){ const r = document.querySelector(`input[name="expFmt"][value="${fmtPick}"]`); r.checked = true; r.dispatchEvent(new Event('change')); }
   $('#exCadRow').hidden = !cad; $('#exCad').checked = false; $('#shCadRow').hidden = !cad; $('#shCad').checked = false;
   $('#expErr').textContent = ''; $('#expDlg').hidden = false;
   $('#expGo').focus();
 }
-$('#bExport').onclick = openExport;
+$('#bExport').onclick = () => openExport();
 document.querySelectorAll('input[name="expFmt"]').forEach(r => r.addEventListener('change', () => {
-  const f = document.querySelector('input[name="expFmt"]:checked').value, dxf = f === 'dxf', sheet = f === 'sheet';
-  $('#dxfSet').hidden = !dxf; $('#sheetSet').hidden = !sheet; $('#expContent').hidden = dxf || sheet; $('#expNote').hidden = dxf || sheet;
+  const f = document.querySelector('input[name="expFmt"]:checked').value, dxf = f === 'dxf', sheet = f === 'sheet', step = f === 'step';
+  $('#dxfSet').hidden = !dxf; $('#sheetSet').hidden = !sheet; $('#stepSet').hidden = !step; $('#expContent').hidden = dxf || sheet || step; $('#expNote').hidden = dxf || sheet || step;
 }));
 
 /* ---------- DXF (R12, Millimeter) ---------- */
@@ -2979,10 +3302,19 @@ $('#expForm').addEventListener('submit', async e => {
     catch(err){ $('#expErr').textContent = 'DXF-Export hat nicht geklappt.'; }
     return;
   }
+  if (opt.fmt === 'step'){
+    const btn = $('#expGo'); btn.disabled = true; btn.textContent = 'Wird erstellt …'; $('#expErr').textContent = '';
+    try {
+      const r = await exportStep($('#stSel').checked ? selShapes().filter(s => Z_TYPES.includes(s.type)).map(s => s.id) : null);
+      $('#expDlg').hidden = true; $('#hint').textContent = `STEP-Datei mit ${r.bodies} Körper${r.bodies === 1 ? '' : 'n'} gespeichert${r.open ? ` (${r.open} davon als Flächen, weil nicht ganz geschlossen)` : ''}.`;
+    } catch(err){ console.error(err); $('#expErr').textContent = err.message === 'leer' ? 'Noch keine Teile für das 3D-Modell da.' : 'STEP-Export hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.'; }
+    finally { btn.disabled = false; btn.textContent = 'Exportieren'; }
+    return;
+  }
   if (opt.fmt === 'sheet'){
     const btn = $('#expGo'); btn.disabled = true; btn.textContent = 'Wird erstellt …'; $('#expErr').textContent = '';
     try {
-      const m = await exportSheet({paper:$('#shPaper').value, scale:$('#shScale').value, hidden:$('#shHidden').checked, bom:$('#shBom').checked, cad:$('#shCad').checked});
+      const m = await exportSheet({paper:$('#shPaper').value, scale:$('#shScale').value, hidden:$('#shHidden').checked, bom:$('#shBom').checked, cad:$('#shCad').checked, ids:$('#shSel').checked ? selShapes().filter(s => Z_TYPES.includes(s.type)).map(s => s.id) : null});
       $('#expDlg').hidden = true; $('#hint').textContent = `Technische Zeichnung im Maßstab ${m} gespeichert.`;
     } catch(err){
       $('#expErr').textContent = err.message === 'leer' ? 'Noch keine Teile für die Zeichnung da.' : err.fit ? `Passt im Maßstab ${$('#shScale').value.replace(':', ' : ')} nicht auf das Blatt. Bitte „automatisch“, einen kleineren Maßstab oder A3 wählen.` : 'Zeichnung hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.';
@@ -3011,6 +3343,8 @@ document.addEventListener('keydown', e => {
   if (!$('#libDlg').hidden){ if (e.key === 'Escape') $('#libDlg').hidden = true; return; }
   if (!$('#cutDlg').hidden){ if (e.key === 'Escape') $('#cutDlg').hidden = true; return; }
   if (!$('#expDlg').hidden){ if (e.key === 'Escape') $('#expDlg').hidden = true; return; }
+  if (!$('#keysDlg').hidden){ if (e.key === 'Escape' || e.key === '?') $('#keysDlg').hidden = true; return; }
+  if (e.key === '?'){ e.preventDefault(); openKeys(); return; }
   const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   if (ctrl && k === 'z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
   if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))){ e.preventDefault(); redo(); return; }
@@ -3023,6 +3357,7 @@ document.addEventListener('keydown', e => {
   if (e.key === ' '){ spaceDown = true; svg.style.cursor = 'grab'; e.preventDefault(); return; }
   if (e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); del(); return; }
   if (e.key === 'Escape'){ clearSel(); setTool('select'); renderProps(); return; }
+  if ((k === 'x' || k === 'y') && (selId || multi.size)){ e.preventDefault(); tiltSel(k, e.shiftKey ? -90 : 90); return; }
   const t = TOOLS.find(t => t.key.toLowerCase() === k);
   if (t){ setTool(t.k); return; }
   if ((e.key === 'PageUp' || e.key === 'PageDown') && (selId || multi.size)){
@@ -3180,7 +3515,7 @@ function build3d(){
   const over = (a, b) => { const p = bbox(a), q = bbox(b); return p.x0 < q.x1 && q.x0 < p.x1 && p.y0 < q.y1 && q.y0 < p.y1; };
   const holes = SH.filter(s => s.type === 'hole'), cuts = SH.filter(s => s.type === 'slot' || s.type === 'cutout');
   rects.forEach((r, i) => {
-    let z = 0; rects.slice(0, i).forEach(q => { if (over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });
+    let z = 0; if (!tilted(r)) rects.slice(0, i).forEach(q => { if (!tilted(q) && over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });
     base.set(r.id, z);
     if (r.type === 'disc'){
       const sh = new THREE.Shape(); sh.absarc(0, 0, r.d/2, 0, Math.PI*2, false);
@@ -3205,7 +3540,7 @@ function build3d(){
     const g = extrude(sh, r.t); g.rotateZ((r.rot || 0) * Math.PI / 180); g.translate(r.x, r.y, z);
     dg.add(mesh(g, r, 'plate'));
   });
-  const inR = (r, x, y) => inRect(r, x, y);
+  const inR = (r, x, y) => !tilted(r) && inRect(r, x, y);
   const topAt = (x, y) => rects.reduce((m, r) => inR(r, x, y) ? Math.max(m, base.get(r.id) + r.t) : m, 0);
   const botAt = (x, y) => rects.reduce((m, r) => inR(r, x, y) ? Math.min(m, base.get(r.id)) : m, Infinity);
   // ausgewählte Bohrung als Ring markieren
@@ -3349,7 +3684,18 @@ function build3d(){
   // eigene Höhe (Z) je Teil
   dg.children.forEach(ch => {
     const id = ch.userData.id != null ? ch.userData.id : (ch.children.find(c => c.userData.id != null) || {userData:{}}).userData.id;
-    const sh = id != null && byId(id); if (sh && sh.z) ch.position.z += sh.z;
+    const sh = id != null && byId(id); if (!sh) return;
+    if (sh.z) ch.position.z += sh.z;
+    if (tilted(sh)){
+      // um die Mitte drehen und wieder auf die alte Unterkante stellen
+      const b0 = new THREE.Box3().setFromObject(ch), c = b0.getCenter(new THREE.Vector3());
+      const m = new THREE.Matrix4().makeTranslation(c.x, c.y, c.z)
+        .multiply(new THREE.Matrix4().makeRotationX((sh.tx || 0) * Math.PI / 180))
+        .multiply(new THREE.Matrix4().makeRotationY((sh.ty || 0) * Math.PI / 180))
+        .multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z));
+      ch.applyMatrix4(m); ch.updateMatrixWorld(true);
+      const b1 = new THREE.Box3().setFromObject(ch); ch.position.z += b0.min.z - b1.min.z;
+    }
   });
   if (cad && cad.view !== 'top'){ dg.matrixAutoUpdate = false; dg.matrix.copy(drawPlaneMatrix()); }
   root.add(dg);
