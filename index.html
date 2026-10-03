@@ -14,6 +14,7 @@
   --fg:#0a0a0a; --muted:#737373; --invert:#ffffff;
   --paper:#ffffff; --grid:#f3f3f3; --grid-major:#e3e3e3; --axis:#c4c4c4;
   --ink:#0a0a0a; --part:#f4f4f5; --metal:#e4e4e7; --dimc:#525252; --sel:#2563eb; --sel-soft:#dbe6fd; --cadline:rgba(30,30,30,.32);
+  --p3d:#f1f2f4; --m3d:#dcdfe4; --e3d:#16181d; --sel3d:#b9cdfb; --demo-top:#f7f9fc; --demo-bot:#dde3ec;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.06);
   --f-body:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"Geist Mono",ui-monospace,"SF Mono",Consolas,monospace;
@@ -21,19 +22,21 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0a0a0a; --surface:#111111; --raised:#161616; --line:#222222; --line-strong:#333333;
-    --fg:#fafafa; --muted:#8f8f8f; --invert:#0a0a0a;
-    --paper:#0d0d0d; --grid:#161616; --grid-major:#222222; --axis:#3a3a3a;
-    --ink:#f5f5f5; --part:#1a1a1a; --metal:#2b2b2b; --dimc:#b5b5b5; --sel:#60a5fa; --sel-soft:#14243b; --cadline:rgba(235,235,235,.3);
+    --bg:#0f1115; --surface:#151820; --raised:#1b1f28; --line:#252a34; --line-strong:#353b47;
+    --fg:#e9ebef; --muted:#9299a5; --invert:#0f1115;
+    --paper:#12151b; --grid:#171b22; --grid-major:#20252e; --axis:#363d4a;
+    --ink:#d5dae1; --part:#222934; --metal:#2c3441; --dimc:#97a1af; --sel:#6ea8ff; --sel-soft:#1c2c45; --cadline:rgba(215,220,228,.28);
+    --p3d:#9ea8b6; --m3d:#bcc4ce; --e3d:#0d1015; --sel3d:#5b8def; --demo-top:#232a36; --demo-bot:#0e1116;
     --shadow:0 1px 2px rgba(0,0,0,.5),0 6px 20px rgba(0,0,0,.45);
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0a0a0a; --surface:#111111; --raised:#161616; --line:#222222; --line-strong:#333333;
-  --fg:#fafafa; --muted:#8f8f8f; --invert:#0a0a0a;
-  --paper:#0d0d0d; --grid:#161616; --grid-major:#222222; --axis:#3a3a3a;
-  --ink:#f5f5f5; --part:#1a1a1a; --metal:#2b2b2b; --dimc:#b5b5b5; --sel:#60a5fa; --sel-soft:#14243b; --cadline:rgba(235,235,235,.3);
+  --bg:#0f1115; --surface:#151820; --raised:#1b1f28; --line:#252a34; --line-strong:#353b47;
+  --fg:#e9ebef; --muted:#9299a5; --invert:#0f1115;
+  --paper:#12151b; --grid:#171b22; --grid-major:#20252e; --axis:#363d4a;
+  --ink:#d5dae1; --part:#222934; --metal:#2c3441; --dimc:#97a1af; --sel:#6ea8ff; --sel-soft:#1c2c45; --cadline:rgba(215,220,228,.28);
+  --p3d:#9ea8b6; --m3d:#bcc4ce; --e3d:#0d1015; --sel3d:#5b8def; --demo-top:#232a36; --demo-bot:#0e1116;
   --shadow:0 1px 2px rgba(0,0,0,.5),0 6px 20px rgba(0,0,0,.45);
   color-scheme:dark;
 }
@@ -163,6 +166,10 @@ html.locked,html.locked body{overflow:hidden}
 .lsform input,.lsform select{width:100%}
 
 /* Spiegeln & Muster */
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:28px;height:28px;border-radius:50%;border:2px solid var(--line-strong);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{outline:2px solid var(--sel);outline-offset:2px}
+input[type="color"]{width:100%;height:34px;padding:2px;border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--raised);cursor:pointer}
 .tilt{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px}.tilt span{font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:4px}
 .tblock{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .tblock summary{cursor:pointer;font:600 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
@@ -346,7 +353,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
     </div>
     <div class="tools" id="tools" role="toolbar" aria-label="Werkzeuge"></div>
     <div class="actions">
-      <div class="seg" id="viewmode" aria-label="Ansicht"><button type="button" data-m="2d" aria-pressed="true">2D</button><button type="button" data-m="3d">3D</button></div>
+      <div class="seg" id="viewmode" aria-label="Ansicht"><button type="button" data-m="2d" aria-pressed="true">2D</button><button type="button" data-m="3d">3D</button><button type="button" data-m="demo" title="Bunte 3D-Ansicht zum Vorzeigen – hier nur Farben einstellen">Demo</button></div>
       <div class="seg" id="units" aria-label="Einheit">
         <button type="button" data-u="mm">mm</button><button type="button" data-u="cm">cm</button><button type="button" data-u="m">m</button>
       </div>
@@ -480,7 +487,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       <fieldset id="sheetSet" hidden>
         <legend>Zeichnung</legend>
         <div class="row">
-          <label>Blatt <select id="shPaper"><option value="a4">A4 quer</option><option value="a3">A3 quer</option></select></label>
+          <label>Blatt <select id="shPaper"><option value="auto">automatisch</option><option value="a4">A4 quer</option><option value="a3">A3 quer</option></select></label>
           <label>Maßstab <select id="shScale"><option value="auto">automatisch</option><option value="20:1">20 : 1</option><option value="10:1">10 : 1</option><option value="5:1">5 : 1</option><option value="2:1">2 : 1</option><option value="1:1">1 : 1</option><option value="1:2">1 : 2</option><option value="1:5">1 : 5</option><option value="1:10">1 : 10</option><option value="1:20">1 : 20</option><option value="1:50">1 : 50</option><option value="1:100">1 : 100</option><option value="1:200">1 : 200</option></select></label>
         </div>
         <label class="opt"><input type="checkbox" id="shHidden" checked> Verdeckte Kanten gestrichelt</label>
@@ -559,6 +566,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Maß</b>: von Punkt zu Punkt ziehen. Der Abstand wird automatisch beschriftet.</li>
             <li><b>Text</b>: Text antippen und rechts eintippen. <b>Positionsnummer</b> und <b>Hinweispfeil</b> vom Teil nach außen ziehen – die Nummern zählen automatisch hoch.</li>
             <li><b>Spiegeln &amp; Muster</b>: Teil(e) auswählen, rechts unter den Eigenschaften „Spiegeln &amp; Muster“ aufklappen. Muster = Anzahl × Abstand in X und Y.</li>
+            <li><b>Demo</b>: oben neben 2D/3D. Bunte 3D-Ansicht zum Vorzeigen. Teil antippen und rechts eine Farbe wählen, „Bild speichern“ für ein PNG.</li>
             <li><b>Aufstellen</b>: Teil auswählen, rechts unter „3D-Lage“ auf „Aufstellen ↥ X“ oder „↥ Y“ (Tasten <kbd>X</kbd> <kbd>Y</kbd>). „Flach legen“ macht es rückgängig.</li>
             <li><b>Einzelteil-Zeichnung</b>: Teil auswählen, rechts „Zeichnung“. Bohrungen, Durchmesser und Längen werden automatisch bemaßt.</li>
             <li><b>STEP</b>: Datei → Exportieren → STEP. Öffnet sich in CATIA, SolidWorks, Inventor usw.</li>
@@ -794,7 +802,7 @@ const isSel = id => id != null && (id === selId || multi.has(id));
 const selShapes = () => state.shapes.filter(s => isSel(s.id));
 function setSel(ids){ ids = [...ids]; selId = ids.length ? ids[0] : null; multi = new Set(ids.slice(1)); }
 function clearSel(){ selId = null; multi.clear(); }
-function changed(full = true){ save(); render(); if (full){ renderProps(); renderBom(); renderTitle(); renderLayers(); } if (mode === '3d' && three){ build3d(); draw3d(); } }
+function changed(full = true){ save(); render(); if (full){ renderProps(); renderBom(); renderTitle(); renderLayers(); } if (is3() && three){ build3d(); draw3d(); } }
 
 /* ---------- Ansicht ---------- */
 let W = 800, H = 500;
@@ -1417,13 +1425,15 @@ function renderTools(){
   $('#hint').textContent = TOOLS.find(t => t.k === tool).hint;
   renderToolOpts();
 }
-function setTool(t){ if (mode === '3d') setMode('2d'); tool = t; preview = ''; renderTools(); render(); }
+function setTool(t){ if (is3()) setMode('2d'); tool = t; preview = ''; renderTools(); render(); }
 $('#tools').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); });
 
 function optSelect(id, entries, val){ return `<select id="${id}">${entries.map(([v, l]) => `<option value="${esc(v)}"${String(v) === String(val) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`; }
 function renderToolOpts(){
   const el = $('#toolopts'); let h = '';
-  if (typeof mode !== 'undefined' && mode === '3d'){
+  if (typeof mode !== 'undefined' && mode === 'demo'){
+    h = `<span class="unitlbl"><b>Demo</b>: deine Teile in Farbe zum Vorzeigen. Teil antippen und rechts die Farbe wählen. Hier wird nur eingefärbt, gebaut wird in <b>2D</b>.</span>`;
+  } else if (typeof mode !== 'undefined' && mode === '3d'){
     h = cad ? `<span class="unitlbl">CAD-Modell + deine Teile. Das Modell wird nicht gespeichert und nirgends hochgeladen. Teil antippen = Name und Maße. Gezeichnet wird in <b>2D</b>.</span>` : `<span class="unitlbl">3D-Ansicht zum Anschauen: Bleche bekommen ihre Dicke, Profile und Schrauben ihre Länge. Teil antippen = auswählen und rechts ändern. Gezeichnet wird in <b>2D</b>.</span>`;
   } else if (tool === 'select'){
     h = `<label>Raster ${optSelect('o-snap', [1,2,5,10,25,50,100].map(v => [v, fmt(v)]), state.snap)}</label>
@@ -1784,9 +1794,9 @@ function zoomAt(cx, cy, f){
 }
 svg.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * .0015)); render(); }, {passive:false});
 function zoomCenter(f){ const r = svg.getBoundingClientRect(); zoomAt(r.left + W/2, r.top + H/2, f); render(); }
-$('#zIn').onclick = () => { if (mode === '3d' && three){ zoom3d(1/1.4); draw3d(); } else zoomCenter(1.4); };
-$('#zOut').onclick = () => { if (mode === '3d' && three){ zoom3d(1.4); draw3d(); } else zoomCenter(1/1.4); };
-$('#zFit').onclick = () => { if (mode === '3d' && three){ fit3d(); draw3d(); } else { fit(); render(); } };
+$('#zIn').onclick = () => { if (is3() && three){ zoom3d(1/1.4); draw3d(); } else zoomCenter(1.4); };
+$('#zOut').onclick = () => { if (is3() && three){ zoom3d(1.4); draw3d(); } else zoomCenter(1/1.4); };
+$('#zFit').onclick = () => { if (is3() && three){ fit3d(); draw3d(); } else { fit(); render(); } };
 function allBox(withCad = true){
   const boxes = state.shapes.map(bbox);
   if (withCad && cad && cad.box2d && mode === '2d') boxes.push(cad.box2d);
@@ -1910,6 +1920,7 @@ function getVal(s, k){
 }
 const TYPENAMES = {text:'Text', balloon:'Positionsnummer', leader:'Hinweispfeil', slot:'Langloch', cutout:'Ausschnitt', disc:'Ronde / Flansch', circle:'Kreis / Bogen', bend:'Biegeteil', rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht', shaft:'Welle'};
 function renderProps(){
+  if (mode === 'demo'){ renderDemoPanel(); return; }
   const s = byId(selId), el = $('#props');
   if (s && multi.size){ renderMultiProps(); return; }
   if (!s){
@@ -2490,7 +2501,7 @@ function openKeys(){
     sec('Bearbeiten', [[K('Strg', 'Z'), 'Rückgängig'], [K('Strg', 'Y'), 'Wiederholen'], [K('Strg', 'C') + ' ' + K('Strg', 'V'), 'Kopieren, an der Maus einfügen'], [K('Strg', 'X'), 'Ausschneiden'], [K('Strg', 'D'), 'Duplizieren'], [K('Strg', 'A'), 'Alles auswählen'], [K('Entf'), 'Löschen'], [K('Esc'), 'Auswahl aufheben'], [K('←') + ' ' + K('→') + ' ' + K('↑') + ' ' + K('↓'), 'Verschieben um ein Rasterkästchen (mit Shift: 1 mm)'], [K('Bild↑') + ' ' + K('Bild↓'), 'Höhe Z in 3D ändern'], [K('X') + ' ' + K('Y'), 'Teil um X bzw. Y um 90° kippen (mit Shift zurück)'], [K('?'), 'Diese Übersicht']]) +
     sec('Maus', [['Klick', 'Teil auswählen'], [K('Shift') + ' + Klick', 'Teil dazu oder heraus'], ['Rahmen nach rechts', 'nur Teile ganz drin'], ['Rahmen nach links', 'alle berührten Teile'], ['Rechte Maustaste ziehen', 'Ansicht verschieben (auch ' + K('Leertaste') + ' + ziehen)'], ['Mausrad', 'Zoomen'], [K('Shift') + ' beim Zeichnen', 'ohne Raster und Fang']]) +
     sec('Tablet / Handy', [['Tippen', 'Teil auswählen bzw. setzen'], ['Leere Fläche ziehen', 'Ansicht verschieben'], ['Zwei Finger', 'Zoomen'], ['Lange drücken auf Teil', 'Teil zur Auswahl dazu oder heraus'], ['Lange drücken auf leerer Fläche, dann ziehen', 'Rahmen aufziehen, mehrere Teile wählen']]) +
-    sec('3D-Ansicht', [['Ziehen', 'Drehen'], ['Rechte Maustaste ziehen', 'Ansicht verschieben'], ['Ausgewähltes Teil ziehen', 'Verschieben'], [K('Shift') + ' + ziehen', 'Teil anheben'], ['3D-Lage', 'rechts „Aufstellen ↥ X / Y“ oder „Flach legen“']]);
+    sec('3D-Ansicht', [['Ziehen', 'Drehen'], ['Rechte Maustaste ziehen', 'Ansicht verschieben'], ['Ausgewähltes Teil ziehen', 'Verschieben'], [K('Shift') + ' + ziehen', 'Teil anheben'], ['3D-Lage', 'rechts „Aufstellen ↥ X / Y“ oder „Flach legen“'], ['Demo', 'bunte Ansicht, Teil antippen = Farbe wählen']]);
   $('#keysDlg').hidden = false; $('#keysClose').focus();
 }
 $('#bKeys').onclick = openKeys;
@@ -2604,7 +2615,7 @@ function image2d(){
 }
 async function image3d(withCad){
   await loadThree();
-  const root = document.documentElement, prevTheme = root.dataset.theme, savedCad = cad, wasOpen = mode === '3d' && three;
+  const root = document.documentElement, prevTheme = root.dataset.theme, savedCad = cad, wasOpen = is3() && three;
   init3d();
   root.dataset.theme = 'light';              // fürs Drucken immer hell
   if (!withCad) cad = null;
@@ -2875,30 +2886,56 @@ async function exportSheet(o){
   if (part && part.ra) notes.push(`Oberfläche Ra ${part.ra}`);
   if (ids && !part) notes.push(`Ausschnitt aus „${state.title.name || 'Projekt'}“: ${ids.size} Teile`);
 
-  const a3 = o.paper === 'a3', PW = a3 ? 420 : 297, PH = a3 ? 297 : 210;
-  const fx0 = 20, fy0 = 10, fx1 = PW - 10, fy1 = PH - 10, TBW = 180, TBH = 32, tbx = fx1 - TBW, tby = fy1 - TBH;
   const [F, T, S] = views, X = F.hmax - F.hmin, Z = F.vmax - F.vmin, Y = T.vmax - T.vmin;
-  const G = 22, DL = 16, DT = pt === 'shaft' ? 20 : 12, LB = 6;   // Abstand, Platz für Maße links/oben, Beschriftung unten
-  const DB = feats.length && pt === 'rect' ? 12 : 0, DR = feats.length && pt === 'rect' ? 14 : 0;   // Kettenmaße unter/rechts der Draufsicht
-  const NH = notes.length ? notes.length * 4.2 + 6 : 0;   // Hinweise über dem Schriftfeld
+  const TBW = 180, TBH = 32, G = 15, DL = 16, DT = pt === 'shaft' ? 20 : 12, LB = 6;   // Schriftfeld, Abstand, Platz für Maße links/oben, Beschriftung unten
+  const DB = (feats.length && pt === 'rect') || pt === 'disc' ? 12 : 0, DR = feats.length && pt === 'rect' ? 14 : 0;   // Maße unter/rechts der Draufsicht
+  const md = new window.jspdf.jsPDF({unit:'mm'}); md.setFontSize(8.5);
+  const noteLines = w => notes.flatMap(n => md.splitTextToSize(n, w));
   const over = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
-  const place = k => {
+  // Ansichten und Hinweise so verteilen, dass nichts das Schriftfeld oder einander überdeckt
+  const layout = (paper, k, force) => {
+    const PW = paper === 'a3' ? 420 : 297, PH = paper === 'a3' ? 297 : 210;
+    const fx0 = 20, fy0 = 10, fx1 = PW - 10, fy1 = PH - 10, tbx = fx1 - TBW, tby = fy1 - TBH, tbR = [tbx - 2, tby - 2, fx1, fy1];
     const gw = DL + Math.max(X*k + G + Y*k, X*k + DR), gh = DT + Z*k + G + Y*k + DB + LB;
-    if (gw > fx1 - fx0 - 8 || gh > fy1 - fy0 - 8) return null;
-    for (const [gx, gy] of [[fx0 + (fx1 - fx0 - gw)/2, fy0 + (fy1 - fy0 - gh)/2], [fx0 + 4, fy0 + 4]]){
+    if (!force && (gw > fx1 - fx0 - 8 || gh > fy1 - fy0 - 8)) return null;
+    const spots = [[fx0 + (fx1 - fx0 - gw)/2, fy0 + (fy1 - fy0 - gh)/2], [fx0 + 4, fy0 + 4], [fx0 + 4, fy0 + (fy1 - fy0 - gh)/2], [fx0 + (fx1 - fx0 - gw)/2, fy0 + 4]];
+    for (const [gx, gy] of spots){
       const ox = gx + DL, oy = gy + DT, tyo = oy + Z*k + G, sxo = ox + X*k + G;
       const rects = [[ox - DL, oy - DT, ox + X*k, oy + Z*k + LB], [ox - DL, tyo, ox + X*k + DR, tyo + Y*k + DB + LB], [sxo, oy, sxo + Y*k, oy + Z*k + LB]];
-      if (!rects.some(r => over(r, [tbx - 2, tby - 2 - NH, fx1, fy1]))) return {ox, oy, tyo, sxo};
+      if (!force && rects.some(r => over(r, tbR))) continue;
+      let nb = null;
+      if (notes.length){
+        const right = Math.max(...rects.map(r => r[2])) + 4;
+        const cands = [[tbx, TBW, tby - 3], [Math.max(tbx, right), 0, tby - 3], [fx0 + 4, tbx - fx0 - 10, fy1 - 3], [fx1 - 116, 112, 0]];
+        for (const [x, w0, yb] of cands){
+          const w = w0 || fx1 - 2 - x; if (w < 55) continue;
+          const L = noteLines(w), h = L.length * 4.2 + 5, yT = yb ? yb - h : fy0 + 4;
+          if (force || !rects.some(r => over(r, [x - 1, yT, x + w, yT + h]))){ nb = {x, yT, L, w}; break; }
+        }
+        if (!nb) continue;
+      }
+      return {paper, PW, PH, fx0, fy0, fx1, fy1, tbx, tby, ox, oy, tyo, sxo, nb};
     }
-    return null;
+    return force ? null : null;
   };
-  let sc = o.scale === 'auto' ? null : SCALES.find(([a, b]) => a + ':' + b === o.scale), pos;
-  if (sc){ pos = place(sc[0] / sc[1]); if (!pos){ const e = new Error('fit'); e.fit = true; throw e; } }
-  else { for (const c of SCALES){ pos = place(c[0] / c[1]); if (pos){ sc = c; break; } } if (!pos){ sc = SCALES[SCALES.length - 1]; pos = {ox:fx0 + 4 + DL, oy:fy0 + 4 + DT}; pos.tyo = pos.oy + Z*sc[0]/sc[1] + G; pos.sxo = pos.ox + X*sc[0]/sc[1] + G; } }
+  const scaleList = o.scale === 'auto' ? SCALES : SCALES.filter(([a, b]) => a + ':' + b === o.scale);
+  const best = paper => { for (const c of scaleList){ const L = layout(paper, c[0] / c[1]); if (L) return {sc:c, L}; } return null; };
+  let R;
+  if (o.paper === 'auto'){
+    // A4 reicht, solange der Maßstab mindestens 1 : 2 ist oder A3 nicht größer zeichnen kann
+    const r4 = best('a4'), r3 = best('a3'), k4 = r4 ? r4.sc[0] / r4.sc[1] : 0, k3 = r3 ? r3.sc[0] / r3.sc[1] : 0;
+    R = r4 && (k4 >= .5 || k4 >= k3) ? r4 : r3 || r4;
+  } else R = best(o.paper);
+  if (!R){
+    if (o.scale !== 'auto'){ const e = new Error('fit'); e.fit = true; throw e; }
+    const pp = o.paper === 'auto' ? 'a3' : o.paper, c = SCALES[SCALES.length - 1];
+    R = {sc:c, L:layout(pp, c[0] / c[1], true)};
+  }
+  const sc = R.sc, {paper, PW, PH, fx0, fy0, fx1, fy1, tbx, tby} = R.L, pos = R.L;
   const k = sc[0] / sc[1], scTxt = sc[0] + ' : ' + sc[1];
   const org = {front:[pos.ox, pos.oy], top:[pos.ox, pos.tyo], side:[pos.sxo, pos.oy]};
 
-  const doc = new window.jspdf.jsPDF({orientation:'landscape', unit:'mm', format:o.paper});
+  const doc = new window.jspdf.jsPDF({orientation:'landscape', unit:'mm', format:paper});
   const mats = [...new Set(state.shapes.filter(s => (ids ? ids.has(s.id) : isVis(s)) && ['rect','disc','profile','shaft','bend'].includes(s.type)).map(s => MATS[s.mat].name))].join(', ') || '–';
   const partName = part ? (part.name || (pt === 'shaft' ? `Welle Ø${mmTxt(shaftDmax(part))} × ${mmTxt(shaftLen(part))}` : pt === 'profile' ? `${PROFILES[part.kind].name} ${part.size}` : TYPENAMES[pt])) : '';
   const sheetFrame = (blatt) => {
@@ -2921,7 +2958,7 @@ async function exportSheet(o){
     lab('DATUM', tbx + 120, tby + 16); val(state.title.date || '', tbx + 120, tby + 16, 60);
     if (ids){ lab('PROJEKT · MASSE IN MM', tbx + 30, tby + 24); val(state.title.name || '–', tbx + 30, tby + 24, 90); }
     else { lab('MASSE IN MM', tbx + 30, tby + 24); val('Werkstatt-Zeichenbrett', tbx + 30, tby + 24, 90); }
-    lab('BLATT', tbx + 120, tby + 24); val(blatt + ' · ' + o.paper.toUpperCase(), tbx + 120, tby + 24, 60);
+    lab('BLATT', tbx + 120, tby + 24); val(blatt + ' · ' + paper.toUpperCase(), tbx + 120, tby + 24, 60);
     // Symbol Projektionsmethode 1: Kreise links, Kegelstumpf rechts
     const cx = tbx + 8, cy = tby + 28.6;
     doc.setLineWidth(.25); doc.circle(cx, cy, 2.6); doc.circle(cx, cy, 1.3);
@@ -2962,7 +2999,7 @@ async function exportSheet(o){
     arrow(xD, y1, 0, 1); arrow(xD, y2, 0, -1); doc.text(txt, xD - 1.2, (y1 + y2)/2, {align:'center', angle:90});
   };
   const [fx, fy] = org.front, [tx, ty] = org.top, [sx, sy] = org.side;
-  if (X > .05) dimH(fx, fx + X*k, fy, fy - (pt === 'shaft' ? 16 : 8), mmTxt(X));
+  if (X > .05 && pt !== 'disc') dimH(fx, fx + X*k, fy, fy - (pt === 'shaft' ? 16 : 8), mmTxt(X));
   if (Z > .05) dimV(fy, fy + Z*k, fx, fx - 9, mmTxt(Z));
   if (Y > .05 && pt !== 'disc') dimV(ty, ty + Y*k, tx, tx - 9, mmTxt(Y));
   // Hinweislinie mit Text, Pfeil zeigt auf den Kreis
@@ -2993,8 +3030,7 @@ async function exportSheet(o){
   }
   if (pt === 'disc'){
     const [cx, cy] = P(T, part.x, part.y), R = part.d/2*k;
-    doc.setLineWidth(.18); doc.line(cx - R, cy, cx + R, cy); arrow(cx - R, cy, 1, 0); arrow(cx + R, cy, -1, 0);
-    doc.text('Ø' + mmTxt(part.d), cx + R/2, cy - 1.2, {align:'center'});
+    dimH(cx - R, cx + R, cy, ty + Y*k + 8, 'Ø' + mmTxt(part.d));
     if (part.di > 0){ const ri = part.di/2*k; doc.line(cx, cy - ri, cx, cy + ri); arrow(cx, cy - ri, 0, 1); arrow(cx, cy + ri, 0, -1); doc.text('Ø' + mmTxt(part.di), cx - 1.2, cy - ri/2, {align:'center', angle:90}); }
     const hs = feats.filter(f => f.hole), rr = hs.map(f => Math.hypot(f.lx, f.ly));
     if (hs.length > 1 && rr.every(v => Math.abs(v - rr[0]) < .05)){
@@ -3030,10 +3066,10 @@ async function exportSheet(o){
       doc.setLineWidth(.18); doc.line(a[0], a[1] - 1, a[0], fy - 9.5); doc.line(b[0], b[1] - 1, b[0], fy - 9.5);
     }
   }
-  if (notes.length){
-    doc.setFontSize(8.5); let yN = tby - 3 - (notes.length - 1) * 4.2;
-    doc.setFont('helvetica', 'bold'); doc.text('Hinweise', tbx, yN - 4.6); doc.setFont('helvetica', 'normal');
-    notes.forEach(n => { let v = n; while (v.length > 3 && doc.getTextWidth(v) > TBW) v = v.slice(0, -1); doc.text(v, tbx, yN); yN += 4.2; });
+  if (pos.nb){
+    const nb = pos.nb; doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold'); doc.text('Hinweise', nb.x, nb.yT + 3); doc.setFont('helvetica', 'normal');
+    nb.L.forEach((n, i) => doc.text(n, nb.x, nb.yT + 7.6 + i * 4.2));
     doc.setFontSize(10);
   }
   // Namen der Ansichten
@@ -3043,9 +3079,9 @@ async function exportSheet(o){
   doc.text(S.name, sx + Y*k/2, sy + Z*k + 5, {align:'center'});
   doc.setTextColor(0);
   if (pages > 1){
-    doc.addPage(o.paper, 'landscape'); sheetFrame('2 / 2');
+    doc.addPage(paper, 'landscape'); sheetFrame('2 / 2');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('Stückliste', fx0 + 8, fy0 + 10); doc.setFont('helvetica', 'normal');
-    pdfBom(doc, fx0 + 8, fx1 - 8, fy0 + 20, tby - 8, () => { doc.addPage(o.paper, 'landscape'); sheetFrame('2 / 2'); return fy0 + 14; });
+    pdfBom(doc, fx0 + 8, fx1 - 8, fy0 + 20, tby - 8, () => { doc.addPage(paper, 'landscape'); sheetFrame('2 / 2'); return fy0 + 14; });
   }
   doc.save(fileBase() + (part ? '_' + partName.replace(/[^\wäöüÄÖÜß-]+/g, '_') : ids ? '_auswahl' : '') + '_zeichnung.pdf');
   return scTxt;
@@ -3346,6 +3382,7 @@ document.addEventListener('keydown', e => {
   if (!$('#keysDlg').hidden){ if (e.key === 'Escape' || e.key === '?') $('#keysDlg').hidden = true; return; }
   if (e.key === '?'){ e.preventDefault(); openKeys(); return; }
   const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+  if (mode === 'demo' && !(ctrl && (k === 'z' || k === 'y')) && e.key !== 'Escape') return;
   if (ctrl && k === 'z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
   if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))){ e.preventDefault(); redo(); return; }
   if (ctrl && k === 'd'){ e.preventDefault(); duplicate(); return; }
@@ -3356,7 +3393,7 @@ document.addEventListener('keydown', e => {
   if (ctrl) return;
   if (e.key === ' '){ spaceDown = true; svg.style.cursor = 'grab'; e.preventDefault(); return; }
   if (e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); del(); return; }
-  if (e.key === 'Escape'){ clearSel(); setTool('select'); renderProps(); return; }
+  if (e.key === 'Escape'){ clearSel(); if (is3()){ renderProps(); if (three){ build3d(); draw3d(); } return; } setTool('select'); renderProps(); return; }
   if ((k === 'x' || k === 'y') && (selId || multi.size)){ e.preventDefault(); tiltSel(k, e.shiftKey ? -90 : 90); return; }
   const t = TOOLS.find(t => t.key.toLowerCase() === k);
   if (t){ setTool(t.k); return; }
@@ -3376,6 +3413,7 @@ $('#bUndo').onclick = undo;
 $('#bRedo').onclick = redo;
 
 /* ---------- 3D-Ansicht ---------- */
+const is3 = () => mode === '3d' || mode === 'demo';
 let mode = '2d', three = null, refit3d = false, cad = null, cadSel = -1, dims3d = false, measureOn = false, mPts = [];
 const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
 function loadThree(){
@@ -3387,20 +3425,26 @@ function loadThree(){
 function renderModeSeg(){ document.querySelectorAll('#viewmode button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === mode)); }
 $('#viewmode').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b && b.dataset.m !== mode) setMode(b.dataset.m); });
 async function setMode(m){
-  mode = m; renderModeSeg();
-  $('#v3').hidden = m !== '3d'; svg.style.visibility = m === '3d' ? 'hidden' : '';
+  const was = mode; mode = m; renderModeSeg();
+  const m3 = m !== '2d';
+  $('#v3').hidden = !m3; svg.style.visibility = m3 ? 'hidden' : '';
   if (m === '2d' && cad){ requestAnimationFrame(() => { fit(); render(); }); }
   $('#zDims').hidden = m !== '3d'; $('#zMeasure').hidden = m !== '3d'; $('#zCut').hidden = m !== '3d';
+  $('#cutBar3').hidden = !(m === '3d' && cut3d.on);
+  if (m === 'demo' && measureOn){ measureOn = false; mPts = []; $('#zMeasure').setAttribute('aria-pressed', false); }
+  if (m !== 'demo') demoSpin(false);
   renderToolOpts();
-  if (m === '3d'){
+  if (m3){
     $('#hint').textContent = '3D wird geladen …';
     try { await loadThree(); } catch(e){ $('#hint').textContent = '3D konnte nicht geladen werden. Bitte die Internetverbindung prüfen.'; return; }
-    if (mode !== '3d') return;
+    if (mode !== m) return;
     const first = !three;
     init3d(); build3d(); if (first || refit3d){ fit3d(); refit3d = false; } draw3d();
-    $('#hint').textContent = 'Ziehen = drehen · Rechte Maustaste = Ansicht schieben · ausgewähltes Teil ziehen = verschieben, mit Shift = anheben';
-    if (cad && selId == null) renderCadInfo();
+    $('#hint').textContent = m === 'demo' ? 'Ziehen = drehen · Rechte Maustaste = Ansicht schieben · Teil antippen = Farbe wählen' : 'Ziehen = drehen · Rechte Maustaste = Ansicht schieben · ausgewähltes Teil ziehen = verschieben, mit Shift = anheben';
+    if (m === 'demo' || was === 'demo') renderProps();
+    if (m === '3d' && cad && selId == null) renderCadInfo();
   } else {
+    if (was === 'demo') renderProps();
     if (cad) renderProps();
     $('#hint').textContent = TOOLS.find(t => t.k === tool).hint; render();
   }
@@ -3419,9 +3463,10 @@ function init3d(){
   const d1 = new THREE.DirectionalLight(0xffffff, .75); d1.position.set(1, -1.6, 2.2); scene.add(d1);
   const d2 = new THREE.DirectionalLight(0xffffff, .3); d2.position.set(-1.2, 1, .8); scene.add(d2);
   const root = new THREE.Group(); scene.add(root);
-  three = {renderer, scene, camera, root, grid:null, orb:{t:new THREE.Vector3(), r:600, az:-1.15, el:.62}};
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  three = {renderer, scene, camera, root, grid:null, key:d1, orb:{t:new THREE.Vector3(), r:600, az:-1.15, el:.62}};
   bind3d(renderer.domElement);
-  new ResizeObserver(() => { if (mode === '3d'){ resize3d(); draw3d(); } }).observe(host);
+  new ResizeObserver(() => { if (is3()){ resize3d(); draw3d(); } }).observe(host);
   resize3d();
 }
 function resize3d(){
@@ -3430,7 +3475,7 @@ function resize3d(){
   three.camera.aspect = r.width / Math.max(1, r.height); three.camera.updateProjectionMatrix();
 }
 function draw3d(){
-  if (!three || mode !== '3d') return;
+  if (!three || !is3()) return;
   const c = three.camera; placeCam(c);
   three.renderer.render(three.scene, c);
   placeDims3d();
@@ -3475,23 +3520,104 @@ function ringShape(ro, ri){
   return sh;
 }
 const extrude = (sh, h) => new THREE.ExtrudeGeometry(sh, {depth:h, bevelEnabled:false, curveSegments:32});
+/* ---------- Demo: bunte 3D-Ansicht, nur Farben einstellen ---------- */
+const DEMO_DEF = {rect:'#4f7cff', disc:'#7c5cff', profile:'#ff8a3d', shaft:'#b8c2cc', bend:'#22b07d', screw:'#5c6670', weld:'#e5484d'};
+const DEMO_SW = ['#4f7cff','#38bdf8','#14b8a6','#22b07d','#a3e635','#f5c518','#ff8a3d','#e5484d','#ec4899','#7c5cff','#b8c2cc','#5c6670','#f4f4f5','#1f2937'];
+// ohne eigene Farbe: jedes verschiedene Bauteil (Art + Benennung + Maß) bekommt automatisch eine eigene Farbe
+const DEMO_AUTO = ['#4f7cff','#ff8a3d','#22b07d','#7c5cff','#f5c518','#14b8a6','#ec4899','#38bdf8','#a3e635','#e5484d'];
+const demoKey = s => [s.type, s.name || '', s.kind || '', s.size || '', s.w || '', s.h || '', s.t || '', s.d || '', s.len || ''].join('|');
+function demoColor(s){
+  if (s.color) return s.color;
+  if (state.demoCols && state.demoCols[s.type]) return state.demoCols[s.type];
+  if (s.type === 'screw' || s.type === 'shaft' || s.type === 'weld') return DEMO_DEF[s.type];
+  const keys = []; state.shapes.forEach(o => { if (['rect','disc','profile','bend'].includes(o.type) && !o.color){ const k = demoKey(o); if (!keys.includes(k)) keys.push(k); } });
+  const i = keys.indexOf(demoKey(s)); return i >= 0 ? DEMO_AUTO[i % DEMO_AUTO.length] : (DEMO_DEF[s.type] || '#9aa4b1');
+}
+let demoBgTex = null, demoBgKey = '';
+function demoBg(){
+  const top = cssVar('--demo-top') || '#f7f9fc', bot = cssVar('--demo-bot') || '#dde3ec', k = top + bot;
+  if (demoBgTex && demoBgKey === k) return demoBgTex;
+  const c = document.createElement('canvas'); c.width = 4; c.height = 256;
+  const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, top); gr.addColorStop(1, bot);
+  g.fillStyle = gr; g.fillRect(0, 0, 4, 256);
+  if (demoBgTex) demoBgTex.dispose();
+  demoBgTex = new THREE.CanvasTexture(c); demoBgKey = k; return demoBgTex;
+}
+let spinOn = false;
+function demoSpin(on){
+  spinOn = on; const b = document.getElementById('dSpin'); if (b) b.setAttribute('aria-pressed', on);
+  if (!on) return;
+  const step = () => { if (!spinOn || mode !== 'demo' || !three) { spinOn = false; return; } three.orb.az += .004; draw3d(); requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+const DEMO_TYPES = Object.keys(DEMO_DEF);
+function renderDemoPanel(){
+  const el = $('#props'), list = selShapes().filter(s => DEMO_TYPES.includes(s.type));
+  const sw = cur => `<div class="swatches">${DEMO_SW.map(c => `<button type="button" class="sw" data-col="${c}" style="background:${c}" aria-label="Farbe ${c}" aria-pressed="${cur === c}"></button>`).join('')}</div>`;
+  let h = '';
+  if (list.length){
+    const cur = demoColor(list[0]), one = list.length === 1 ? list[0] : null;
+    $('#selInfo').innerHTML = `<span class="badge">${one ? TYPENAMES[one.type] : list.length + ' Teile'}</span>`;
+    h += `<p class="note" style="margin:0 0 10px">${one ? esc(one.name || TYPENAMES[one.type]) : 'Farbe für alle ausgewählten Teile'}</p>${sw(cur)}
+      <div class="props" style="margin-top:12px"><label for="dCol">Eigene Farbe</label><input type="color" id="dCol" value="${cur}"></div>
+      <div class="btnrow">${one ? '<button class="btn" type="button" id="dSame">Gleiche Teile auch so färben</button>' : ''}<button class="btn" type="button" id="dReset1">Standardfarbe</button></div>`;
+  } else {
+    $('#selInfo').innerHTML = '<span class="badge">Demo</span>';
+    const types = DEMO_TYPES.filter(t => state.shapes.some(s => s.type === t && isVis(s)));
+    h += `<p class="note" style="margin:0 0 12px">Jedes verschiedene Teil hat automatisch eine eigene Farbe. Teil antippen, um es einzeln zu färben – oder hier alle Teile einer Art gleich färben:</p>
+      <div class="props">${types.map(t => `<label for="dt-${t}">${TYPENAMES[t]}</label><input type="color" id="dt-${t}" data-type="${t}" value="${(state.demoCols && state.demoCols[t]) || DEMO_DEF[t]}" title="Setzt alle Teile dieser Art auf eine Farbe">`).join('') || '<p class="empty">Noch keine Teile.</p>'}</div>`;
+  }
+  h += `<div class="btnrow"><button class="btn" type="button" id="dSpin" aria-pressed="${spinOn}">Langsam drehen</button><button class="btn" type="button" id="dShot">Bild speichern</button>${list.length ? '' : '<button class="btn" type="button" id="dResetAll">Alle Farben zurücksetzen</button>'}</div>`;
+  el.innerHTML = h;
+}
+function demoApply(targets, hex){ if (!targets.length) return; snapshot(); targets.forEach(s => { if (hex) s.color = hex; else delete s.color; }); changed(); }
+$('#props').addEventListener('click', e => {
+  if (mode !== 'demo') return;
+  const t = e.target.closest('button'); if (!t) return;
+  const list = selShapes().filter(s => DEMO_TYPES.includes(s.type));
+  if (t.dataset.col) demoApply(list, t.dataset.col);
+  else if (t.id === 'dReset1') demoApply(list, null);
+  else if (t.id === 'dSame'){ const o = list[0]; demoApply(state.shapes.filter(s => s.type === o.type && (s.name || '') === (o.name || '') && (s.size || '') === (o.size || '') && (s.kind || '') === (o.kind || '')), demoColor(o)); }
+  else if (t.id === 'dResetAll'){ snapshot(); state.shapes.forEach(s => delete s.color); state.demoCols = {}; changed(); }
+  else if (t.id === 'dSpin') demoSpin(!spinOn);
+  else if (t.id === 'dShot'){ draw3d(); three.renderer.domElement.toBlob(b => { if (b) download(fileBase() + '_demo.png', b); }, 'image/png'); }
+});
+$('#props').addEventListener('input', e => {
+  if (mode !== 'demo') return;
+  if (e.target.id === 'dCol'){ selShapes().filter(s => DEMO_TYPES.includes(s.type)).forEach(s => s.color = e.target.value); build3d(); draw3d(); }
+  else if (e.target.dataset.type){ state.demoCols = state.demoCols || {}; state.demoCols[e.target.dataset.type] = e.target.value; build3d(); draw3d(); }
+});
+$('#props').addEventListener('change', e => { if (mode === 'demo' && (e.target.id === 'dCol' || e.target.dataset.type)) { save(); renderProps(); } });
 function build3d(){
   const SH = state.shapes.filter(isVis);
   const {root, scene} = three;
   [...root.children].forEach(ch => { root.remove(ch); ch.traverse(o => { if (o.geometry && !o.userData.keep) o.geometry.dispose(); }); });
   if (three.grid){ scene.remove(three.grid); three.grid.geometry.dispose(); three.grid = null; }
   const col = n => new THREE.Color(cssVar(n) || '#888');
-  scene.background = col('--paper');
-  const ink = col('--ink'), selC = col('--sel');
+  const demo = mode === 'demo';
+  if (three.ground){ scene.remove(three.ground); three.ground.geometry.dispose(); three.ground = null; }
+  scene.background = demo ? demoBg() : col('--paper');
+  const ink = col('--ink'), selC = col('--sel'), c3 = (n, fb) => cssVar(n) ? col(n) : col(fb);
   const mats = {
-    plate:new THREE.MeshStandardMaterial({color:col('--part'), metalness:.2, roughness:.65, side:THREE.DoubleSide}),
-    metal:new THREE.MeshStandardMaterial({color:col('--metal'), metalness:.45, roughness:.45, side:THREE.DoubleSide}),
-    sel:new THREE.MeshStandardMaterial({color:col('--sel-soft'), metalness:.1, roughness:.6, side:THREE.DoubleSide}),
-    weld:new THREE.MeshStandardMaterial({color:col('--metal').lerp(col('--ink'), .3), metalness:.3, roughness:.8}),
+    plate:new THREE.MeshStandardMaterial({color:c3('--p3d', '--part'), metalness:.2, roughness:.65, side:THREE.DoubleSide}),
+    metal:new THREE.MeshStandardMaterial({color:c3('--m3d', '--metal'), metalness:.45, roughness:.45, side:THREE.DoubleSide}),
+    sel:new THREE.MeshStandardMaterial({color:c3('--sel3d', '--sel-soft'), metalness:.1, roughness:.6, side:THREE.DoubleSide}),
+    weld:new THREE.MeshStandardMaterial({color:c3('--m3d', '--metal').lerp(c3('--e3d', '--ink'), .3), metalness:.3, roughness:.8}),
   };
-  const edgeMat = new THREE.LineBasicMaterial({color:ink}), edgeSel = new THREE.LineBasicMaterial({color:selC});
+  const edgeMat = new THREE.LineBasicMaterial({color:c3('--e3d', '--ink')}), edgeSel = new THREE.LineBasicMaterial({color:selC}), lineMat = new THREE.LineBasicMaterial({color:ink});
+  const demoEdge = new THREE.LineBasicMaterial({color:0x000000, transparent:true, opacity:isDark() ? .45 : .22});
+  const demoMats = new Map(), demoMat = (hex, on) => {
+    const k = hex + (on ? '*' : ''); if (!demoMats.has(k)){ const c = new THREE.Color(hex); demoMats.set(k, new THREE.MeshStandardMaterial({color:c, metalness:.25, roughness:.42, side:THREE.DoubleSide, emissive:on ? c.clone().multiplyScalar(.45) : 0x000000})); }
+    return demoMats.get(k);
+  };
   const mesh = (geo, s, kind) => {
     const on = isSel(s.id);
+    if (demo){
+      let hex = demoColor(s); if (kind === 'weld' && s.type !== 'weld') hex = '#' + new THREE.Color(hex).multiplyScalar(.6).getHexString();
+      const m = new THREE.Mesh(geo, demoMat(hex, on)); m.userData.id = s.id; m.castShadow = true; m.receiveShadow = true;
+      m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), on ? edgeSel : demoEdge));
+      return m;
+    }
     const m = new THREE.Mesh(geo, on ? mats.sel : mats[kind]);
     m.userData.id = s.id;
     m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), on ? edgeSel : edgeMat));
@@ -3515,7 +3641,7 @@ function build3d(){
   const over = (a, b) => { const p = bbox(a), q = bbox(b); return p.x0 < q.x1 && q.x0 < p.x1 && p.y0 < q.y1 && q.y0 < p.y1; };
   const holes = SH.filter(s => s.type === 'hole'), cuts = SH.filter(s => s.type === 'slot' || s.type === 'cutout');
   rects.forEach((r, i) => {
-    let z = 0; if (!tilted(r)) rects.slice(0, i).forEach(q => { if (!tilted(q) && over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });
+    let z = 0; rects.slice(0, i).forEach(q => { if (over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });
     base.set(r.id, z);
     if (r.type === 'disc'){
       const sh = new THREE.Shape(); sh.absarc(0, 0, r.d/2, 0, Math.PI*2, false);
@@ -3540,7 +3666,7 @@ function build3d(){
     const g = extrude(sh, r.t); g.rotateZ((r.rot || 0) * Math.PI / 180); g.translate(r.x, r.y, z);
     dg.add(mesh(g, r, 'plate'));
   });
-  const inR = (r, x, y) => !tilted(r) && inRect(r, x, y);
+  const inR = (r, x, y) => inRect(r, x, y);
   const topAt = (x, y) => rects.reduce((m, r) => inR(r, x, y) ? Math.max(m, base.get(r.id) + r.t) : m, 0);
   const botAt = (x, y) => rects.reduce((m, r) => inR(r, x, y) ? Math.min(m, base.get(r.id)) : m, Infinity);
   // ausgewählte Bohrung als Ring markieren
@@ -3672,38 +3798,53 @@ function build3d(){
     const a0 = circleFull(s) ? 0 : s.a0, span = circleFull(s) ? 360 : ((s.a1 - s.a0) % 360 + 360) % 360, pts = [];
     for (let i = 0; i <= 64; i++){ const a = (a0 + span * i / 64) * Math.PI / 180; pts.push(new THREE.Vector3(s.x + s.d/2*Math.cos(a), s.y + s.d/2*Math.sin(a), .05)); }
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const m = s.style === 'center' ? new THREE.LineDashedMaterial({color:isSel(s.id) ? selC : ink, dashSize:8, gapSize:3}) : (isSel(s.id) ? edgeSel : edgeMat);
+    const m = s.style === 'center' ? new THREE.LineDashedMaterial({color:isSel(s.id) ? selC : ink, dashSize:8, gapSize:3}) : (isSel(s.id) ? edgeSel : lineMat);
     const l = new THREE.Line(geo, m); if (s.style === 'center') l.computeLineDistances(); l.userData.id = s.id; dg.add(l);
   });
   // Linien
   SH.filter(s => s.type === 'line').forEach(s => {
     const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(s.x1, s.y1, .05), new THREE.Vector3(s.x2, s.y2, .05)]);
-    const m = s.style === 'center' ? new THREE.LineDashedMaterial({color:s.id === selId ? selC : ink, dashSize:8, gapSize:3}) : (s.id === selId ? edgeSel : edgeMat);
+    const m = s.style === 'center' ? new THREE.LineDashedMaterial({color:s.id === selId ? selC : ink, dashSize:8, gapSize:3}) : (s.id === selId ? edgeSel : lineMat);
     const l = new THREE.Line(geo, m); if (s.style === 'center') l.computeLineDistances(); l.userData.id = s.id; dg.add(l);
   });
   // eigene Höhe (Z) je Teil
+  const ents = [];
   dg.children.forEach(ch => {
     const id = ch.userData.id != null ? ch.userData.id : (ch.children.find(c => c.userData.id != null) || {userData:{}}).userData.id;
     const sh = id != null && byId(id); if (!sh) return;
     if (sh.z) ch.position.z += sh.z;
-    if (tilted(sh)){
-      // um die Mitte drehen und wieder auf die alte Unterkante stellen
-      const b0 = new THREE.Box3().setFromObject(ch), c = b0.getCenter(new THREE.Vector3());
-      const m = new THREE.Matrix4().makeTranslation(c.x, c.y, c.z)
-        .multiply(new THREE.Matrix4().makeRotationX((sh.tx || 0) * Math.PI / 180))
-        .multiply(new THREE.Matrix4().makeRotationY((sh.ty || 0) * Math.PI / 180))
-        .multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z));
-      ch.applyMatrix4(m); ch.updateMatrixWorld(true);
-      const b1 = new THREE.Box3().setFromObject(ch); ch.position.z += b0.min.z - b1.min.z;
-    }
+    ents.push({ch, sh});
+  });
+  // Kippen: um die Mitte drehen und wieder auf die alte Unterkante stellen.
+  // Was auf einem gekippten Blech sitzt (Schrauben, aufliegende Teile), kippt mit.
+  const boxOf = o => { o.updateMatrixWorld(true); return new THREE.Box3().setFromObject(o); };
+  const carried = new Set();
+  ents.filter(e => tilted(e.sh)).sort((a, b) => (a.sh.type === 'rect' || a.sh.type === 'disc' ? 0 : 1) - (b.sh.type === 'rect' || b.sh.type === 'disc' ? 0 : 1)).forEach(e => {
+    if (carried.has(e)) return;
+    const sh = e.sh, b0 = boxOf(e.ch), c = b0.getCenter(new THREE.Vector3());
+    const m = new THREE.Matrix4().makeTranslation(c.x, c.y, c.z)
+      .multiply(new THREE.Matrix4().makeRotationX((sh.tx || 0) * Math.PI / 180))
+      .multiply(new THREE.Matrix4().makeRotationY((sh.ty || 0) * Math.PI / 180))
+      .multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z));
+    const group = [e];
+    if (sh.type === 'rect' || sh.type === 'disc') ents.forEach(o => {
+      if (o === e || tilted(o.sh) || carried.has(o) || !Z_TYPES.includes(o.sh.type)) return;
+      const bb = bbox(o.sh), cx = (bb.x0 + bb.x1) / 2, cy = (bb.y0 + bb.y1) / 2;
+      const px = o.sh.type === 'screw' ? o.sh.x : cx, py = o.sh.type === 'screw' ? o.sh.y : cy;
+      if (!inRect(sh, px, py)) return;
+      if (o.sh.type === 'screw' || boxOf(o.ch).min.z >= b0.max.z - .5){ group.push(o); carried.add(o); }
+    });
+    group.forEach(g => g.ch.applyMatrix4(m));
+    const dz = b0.min.z - boxOf(e.ch).min.z;
+    group.forEach(g => { g.ch.position.z += dz; });
   });
   if (cad && cad.view !== 'top'){ dg.matrixAutoUpdate = false; dg.matrix.copy(drawPlaneMatrix()); }
   root.add(dg);
   }
-  if (cut3d.on) applyCut(false);
+  if (cut3d.on && !demo) applyCut(false);
   // Maßrahmen um das ausgewählte Teil
   three.mbox = null;
-  if (dims3d){
+  if (dims3d && !demo){
     root.updateMatrixWorld(true);
     const box = new THREE.Box3();
     [...root.children, ...(three.dg ? three.dg.children : [])].forEach(ch => {
@@ -3720,9 +3861,21 @@ function build3d(){
     const span = Math.max(sz.x, sz.y, 50) * 1.8;
     const step = [1,2,5,10,20,50,100,200,500,1000].find(v => span / v <= 60) || 1000;
     const size = Math.ceil(span / step / 2) * 2 * step;
-    const grid = new THREE.GridHelper(size, size / step, col('--axis'), col('--grid-major'));
-    grid.rotateX(Math.PI/2); grid.position.set(Math.round(c.x/step)*step, Math.round(c.y/step)*step, Math.min(0, box.min.z) - .5);
-    scene.add(grid); three.grid = grid;
+    const key = three.key;
+    if (demo){
+      // Demo: kein Raster, dafür weicher Schatten auf dem Boden
+      const R = Math.max(sz.x, sz.y, sz.z, 50);
+      key.castShadow = true; key.position.set(c.x + R*.6, c.y - R*.9, c.z + R*1.6); key.target.position.copy(c); scene.add(key.target);
+      const sc = key.shadow.camera; sc.left = sc.bottom = -R*1.4; sc.right = sc.top = R*1.4; sc.near = R*.1; sc.far = R*5; sc.updateProjectionMatrix();
+      key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -.001; key.shadow.normalBias = R * .004; key.shadow.radius = 4;
+      const g = new THREE.Mesh(new THREE.PlaneGeometry(R*8, R*8), new THREE.ShadowMaterial({opacity:isDark() ? .5 : .16}));
+      g.position.set(c.x, c.y, Math.min(0, box.min.z) - .3); g.receiveShadow = true; scene.add(g); three.ground = g;
+    } else {
+      key.castShadow = false; key.position.set(1, -1.6, 2.2); key.target.position.set(0, 0, 0);
+      const grid = new THREE.GridHelper(size, size / step, col('--axis'), col('--grid-major'));
+      grid.rotateX(Math.PI/2); grid.position.set(Math.round(c.x/step)*step, Math.round(c.y/step)*step, Math.min(0, box.min.z) - .5);
+      scene.add(grid); three.grid = grid;
+    }
   }
 }
 function fit3d(){
@@ -3779,6 +3932,7 @@ function rayAt(e){
   return ray;
 }
 function start3dMove(e){
+  if (mode === 'demo') return false;
   if (cad && cad.view !== 'top') return false;
   const h = rayAt(e).intersectObjects(three.dg ? three.dg.children : [], true).find(x => x.object.isMesh);
   if (!h) return false;
@@ -4021,7 +4175,7 @@ $('#zMeasure').onclick = () => {
 };
 $('#zDims').onclick = () => {
   dims3d = !dims3d; $('#zDims').setAttribute('aria-pressed', dims3d);
-  if (three && mode === '3d'){ build3d(); draw3d(); }
+  if (three && is3()){ build3d(); draw3d(); }
 };
 
 /* ---------- Hell / Dunkel ---------- */
@@ -4029,7 +4183,7 @@ const THEME_KEY = 'werkstatt-zeichenbrett-theme';
 const SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 const MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>';
 const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
-function applyTheme(t){ if (t) document.documentElement.dataset.theme = t; if (typeof three !== 'undefined' && three && mode === '3d'){ build3d(); draw3d(); } $('#bTheme').innerHTML = isDark() ? SUN : MOON; $('#bTheme').title = isDark() ? 'Heller Modus' : 'Dunkler Modus'; }
+function applyTheme(t){ if (t) document.documentElement.dataset.theme = t; if (typeof three !== 'undefined' && three && is3()){ build3d(); draw3d(); } $('#bTheme').innerHTML = isDark() ? SUN : MOON; $('#bTheme').title = isDark() ? 'Heller Modus' : 'Dunkler Modus'; }
 try { applyTheme(localStorage.getItem(THEME_KEY)); } catch(e){ applyTheme(null); }
 $('#bTheme').onclick = () => { const t = isDark() ? 'light' : 'dark'; applyTheme(t); try { localStorage.setItem(THEME_KEY, t); } catch(e){} };
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(null));
@@ -4132,7 +4286,7 @@ function loadProject(rec){
   renderProjectName(); renderUnits(); renderTools(); setSaveState('saved');
   requestAnimationFrame(() => {
     fit(); render(); renderProps(); renderBom(); renderTitle(); renderLayers();
-    if (mode === '3d' && three){ build3d(); fit3d(); draw3d(); } else refit3d = true;
+    if (is3() && three){ build3d(); fit3d(); draw3d(); } else refit3d = true;
   });
 }
 async function openProject(id){
@@ -4345,7 +4499,7 @@ function renderLib(){
 }
 function insertLib(it){
   if (!project){ return; }
-  if (mode === '3d') setMode('2d');
+  if (is3()) setMode('2d');
   snapshot();
   const shapes = JSON.parse(JSON.stringify(it.shapes)), b = boxOf(shapes);
   const dx = snapV(view.cx - (b.x1 - b.x0)/2, false) - b.x0, dy = snapV(view.cy - (b.y1 - b.y0)/2, false) - b.y0;
