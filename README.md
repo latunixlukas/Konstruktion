@@ -25,6 +25,10 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 - Einheiten mm / cm / m umschaltbar, Eingaben wie `25cm` oder `0,3m` möglich
 - Automatische Stückliste mit Masse (kg) und Nahtlängen, Schriftfeld
 - **Technische Zeichnung** als PDF: Vorder-, Drauf- und Seitenansicht nach Projektionsmethode 1 (europäisch), automatisch aus dem 3D-Modell mit sichtbaren und verdeckten Kanten, Mittellinien, Gesamtmaßen, Rahmen, Schriftfeld (Werkstoff, Allgemeintoleranz, Maßstab, Benennung, Gezeichnet, Datum, Projektionssymbol), A4 oder A3 quer, Maßstab automatisch oder fest (20:1 bis 1:200), Stückliste als zweite Seite
+- **3D-Lage**: Teile um X oder Y kippen, z. B. ein Blech aufstellen (Knöpfe „Aufstellen ↥ X / Y“, „Flach legen“ oder Tasten X / Y)
+- **Einzelteil-Zeichnung**: Teil auswählen → „Zeichnung“. Das Teil wird gerade hingelegt und bemaßt: Kettenmaße der Bohrungsmitten, „4× Ø11“-Hinweise, Lochkreis, Durchmesser und Absatzlängen bei Wellen, Hinweise wie Zuschnitt, Rohteil, Passfedernut, gestreckte Länge
+- **STEP-Export** (AP214): alle oder nur ausgewählte Teile als Volumenkörper in mm für CATIA, SolidWorks, Inventor, Fusion, FreeCAD. Ein geladenes CAD-Modell wird nie mit exportiert
+- **Tastenkürzel-Übersicht** mit „?“ oder dem Tastatur-Knopf; am Tablet: lange drücken auf ein Teil = zur Auswahl dazu, auf leerer Fläche = Rahmen aufziehen
 - **Export** als PDF (A4 quer, je eine Seite 2D-Zeichnung, 3D-Ansicht, Stückliste) oder als ein PNG-Bild; Inhalte frei wählbar; **DXF** als Laser-Zuschnitt (Bleche, Ronden, Abwicklungen mit Biegelinien, 1:1) oder ganze Zeichnung; außerdem SVG
 
 ## Speichern
