@@ -235,6 +235,9 @@ input[type="color"]{width:100%;height:34px;padding:2px;border:1px solid var(--li
 .cmdout .ok{padding:4px 6px}.cmdout .ok b{color:var(--sel)}.cmdout .bad{padding:4px 6px;color:#dc2626}
 .cmdout .ex{display:flex;flex-wrap:wrap;gap:6px;padding:6px}.cmdout .ex button{font-size:.76rem;padding:3px 9px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);cursor:pointer;color:var(--fg)}
 .cmdout small{display:block;color:var(--muted);padding:2px 6px 0}
+.cmdout .ask{border-top:1px solid var(--line);margin-top:6px;padding-top:6px}.cmdout .ask .q{padding:2px 6px;font-weight:600}
+.cmdout .q0{padding:4px 6px;font-weight:600}
+.cmdout .ex button:hover{border-color:var(--sel);color:var(--sel)}
 .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--surface);min-height:50px}
 .toolopts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:.85rem}
 .toolopts label{display:flex;align-items:center;gap:7px;color:var(--muted)}
@@ -2942,6 +2945,13 @@ $('#wizForm').addEventListener('submit', e => {
 /* ---------- Eingabezeile: einfach tippen (oder sagen), was man braucht ---------- */
 const CMD_EX = ['Blech 200x100x10', 'Rechteck 3 cm', 'Flachstahl 40x10 Länge 500', '4 Bohrungen M10 Lochkreis 100', 'Bohrung Ø12', 'Gewinde M8', 'Langloch 30x11', 'Schraube M12x40', '3 Muttern M10', 'Rohr 40x40x3 1 m', 'Winkel 50x5 800', 'U 100 2 m', 'Rundstahl Ø20 300', 'Welle 25x40 35x100 25x40', 'Ronde 200 innen 60', 'Kreis 100', 'Kantteil 40 60 40 Dicke 3', 'Text Kanten entgraten', 'Rahmen 800x600', 'Geländer 3 m', 'Treppe 2,7 m', 'Podest 2000x1000', 'Tisch 1200x700', 'Regal 1000x400x1800', 'Leiter 3 m', 'Konsole 500'];
 const CMD_MATS = [[/edelstahl|v2a|v4a|1\.4301/, '1.4301'], [/alu/, 'AlMg3'], [/s355/, 'S355J2'], [/\bholz/, 'HOLZ'], [/\bc45\b/, 'C45'], [/42crmo4/, '42CrMo4']];
+// Rückfragen: Optionen sind fertige Eingaben, die man antippt
+const fN = v => String(r2(v)).replace('.', ',');
+const MATWORD = {'1.4301':'edelstahl', AlMg3:'alu', S355J2:'s355', HOLZ:'holz', C45:'c45', '42CrMo4':'42crmo4'};
+const CMD_KW = ['blech','platte','flachstahl','lasche','rechteck','bohrung','gewinde','langloch','ausschnitt','schraube','zylinderschraube','senkschraube','mutter','scheibe','stift','kugellager','sicherungsring','rohr','quadratrohr','rechteckrohr','rundrohr','rundstahl','winkel','welle','ronde','flansch','kreis','kantteil','text','rahmen','geländer','tor','treppe','podest','tisch','regal','leiter','konsole'];
+function lev(a, b){ const d = [...Array(b.length + 1).keys()]; for (let i = 1; i <= a.length; i++){ let p = d[0]; d[0] = i; for (let j = 1; j <= b.length; j++){ const t = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, p + (a[i - 1] === b[j - 1] ? 0 : 1)); p = t; } } return d[b.length]; }
+const PROFWORD = {QR:'Quadratrohr', RR:'Rechteckrohr', RO:'Rundrohr', RS:'Rundstahl', L:'Winkel', U:'U'};
+const profCmd = (k, key, L, pre = '') => `${pre}${PROFWORD[k]} ${key.replace(/^L |^U /, '').replace(/×/g, 'x')}${L ? ' Länge ' + fN(L) + ' mm' : ''}`;
 function cmdParse(raw){
   const U = {mm:1, cm:10, dm:100, m:1000}, defU = UNITS[state.unit] || 1;
   let t = ' ' + String(raw).toLowerCase().replace(/(\d),(\d)/g, '$1.$2').replace(/[×*]/g, 'x').replace(/\s+(mal|by)\s+/g, 'x').replace(/durchmesser\s*/g, 'ø').replace(/\s+/g, ' ').trim() + ' ';
@@ -2973,7 +2983,8 @@ function cmdParse(raw){
   const num1 = groups.filter(g => g.mm.length === 1).map(g => g.mm[0]);
   const near = (arr, v) => arr.reduce((a, b) => Math.abs(b - v) < Math.abs(a - v) ? b : a);
   const len = x => mmTxt(x) + ' mm';
-  const out = (d, f) => ({desc:d, make:f, n});
+  const out = (d, f, ask) => ({desc:d, make:f, n, ask:ask && ask.length ? ask : null});
+  const pre = n > 1 ? n + ' ' : '', mw = mat ? ' ' + MATWORD[mat] : '';
   // --- Baukasten ---
   const WZ = [['frame', /rahmen/], ['rail', /geländer|gelaender/], ['gate', /\btor\b|pforte/], ['stair', /treppe/], ['podest', /podest|bühne|buehne|plattform/], ['table', /tisch|werkbank/], ['shelf', /regal/], ['ladder', /leiter/], ['bracket', /konsole|wandhalter|kragarm/]];
   for (const [tab, re] of WZ) if (kw(re)){
@@ -2988,10 +2999,14 @@ function cmdParse(raw){
     if (tab === 'bracket'){ set('A', a[0]); set('H', named.H || a[1]); }
     if (named.B && !v.B && (tab === 'frame' || tab === 'gate' || tab === 'podest' || tab === 'table')) v.B = named.B;
     const names = {frame:'Rahmen', rail:'Geländer', gate:'Tor', stair:'Treppe', podest:'Podest', table:'Tischgestell', shelf:'Regal', ladder:'Leiter', bracket:'Konsole'};
+    const SUG = {frame:['800x600', '1000x1000', '2000x1000'], rail:['2 m', '3 m', '5 m'], gate:['1000x1200', '1200x1800', '3000x1600'], stair:['1 m', '2,7 m', '3 m'], podest:['1500x1000', '2000x1000', '3000x2000'],
+      table:['1200x700', '1600x800', '2000x1000'], shelf:['1000x400x1800', '1200x500x2000', '800x300x1000'], ladder:['2 m', '3 m', '4 m'], bracket:['300', '500', '800']};
+    if (!Object.keys(v).length) return {desc:`Baukasten <b>${names[tab]}</b>`, wiz:{tab, v}, n:1, ask:[{q:'Welche Größe ungefähr?', o:SUG[tab].map(x => [x, names[tab].replace('Tischgestell', 'Tisch') + ' ' + x])}]};
     return {desc:`Baukasten <b>${names[tab]}</b>${Object.keys(v).length ? ' – ' + Object.values(v).map(mmTxt).join(' × ') + ' mm' : ''} (öffnet das Formular)`, wiz:{tab, v}, n:1};
   }
   // --- Text ---
   if ((m = rawText.match(/^(?:\d+\s*)?(?:text|schrift|notiz|beschriftung)\s*:?\s*(.+)$/i))){ const tx = m[1].trim(); return out(`Text „<b>${esc(tx)}</b>“`, () => [{type:'text', x:0, y:0, text:tx, size:opts.text.size, rot:0}]); }
+  if (/^\s*(text|schrift|notiz|beschriftung)\s*:?\s*$/i.test(rawText)) return {desc:'Text – was soll da stehen?', n:1, make:null, ask:[{q:'Schreib den Text hinter „Text“, z. B.:', o:[['Kanten entgraten', 'Text Kanten entgraten'], ['Alle Maße in mm', 'Text Alle Maße in mm'], ['Nicht maßstäblich', 'Text Nicht maßstäblich']]}]};
   // --- Langloch / Ausschnitt ---
   if (kw(/langloch/)){ const a = (groups[0] || {mm:[30, 11]}).mm, l = a[0] || 30, b = a[1] || Math.min(11, l); return out(`Langloch <b>${mmTxt(Math.max(l, b))} × ${mmTxt(b)}</b> mm`, () => [{type:'slot', x:0, y:0, l:Math.max(l, b), b, rot:0}]); }
   if (kw(/ausschnitt|aussparung|durchbruch/)){ const a = (groups[0] || {mm:[60, 40]}).mm, w = a[0] || 60, h = a[1] || w; return out(`Rechteck-Ausschnitt <b>${mmTxt(w)} × ${mmTxt(h)}</b> mm${named.r ? ' R' + mmTxt(named.r) : ''}`, () => [{type:'cutout', x:0, y:0, w, h, r:named.r || 0, rot:0}]); }
@@ -3006,20 +3021,29 @@ function cmdParse(raw){
     else size = thread || 'M8';
     if (K.len){ L = L || tlen || (num1[0] > 0 ? num1[0] : opts.screw.len); L = near(LENGTHS, L); }
     const grade = GRADES[k].includes(opts.screw.grade) ? opts.screw.grade : GRADES[k][0];
-    return out(`${n > 1 ? n + ' × ' : ''}<b>${k === 'circlip' ? 'Sicherungsring' : K.name}</b> ${k === 'circlip' ? 'für Welle Ø' + size : k === 'pin' ? 'Ø' + size : size}${L ? ' × ' + L : ''} <small>${K.norm}</small>`, () => [{type:'screw', kind:k, size, len:L || 0, grade, view:opts.screw.view, rot:0, x:0, y:0}]);
+    const kw0 = {lock:'Sicherungsmutter', nut:'Mutter', circlip:'Sicherungsring', bearing:'Kugellager', set:'Gewindestift', pin:'Stift', csk:'Senkschraube', cyl:'Zylinderschraube', washer:'Scheibe', hex:'Schraube'}[k], ask = [];
+    if (!thread && !['bearing', 'circlip', 'pin'].includes(k)) ask.push({q:'Welche Größe (Gewinde)?', o:['M6', 'M8', 'M10', 'M12', 'M16'].map(z => [z, `${pre}${kw0} ${z}${K.len ? 'x' + Math.max(16, NORM[z].d * 3) : ''}`])});
+    else if (K.len && !tlen && !(num1[0] > 0) && k !== 'pin'){ const d = NORM[size].d; ask.push({q:'Welche Länge?', o:LENGTHS.filter(l => l >= d * 1.5 && l <= d * 8).slice(0, 7).map(l => [l + ' mm', `${pre}${kw0} ${size}x${l}`])}); }
+    else if (k === 'bearing' && !bearing) ask.push({q:'Welches Lager?', o:Object.entries(BEARINGS).slice(2, 8).map(([b, v]) => [`${b} (${v[0]}×${v[1]}×${v[2]})`, `${pre}Kugellager ${b}`])});
+    else if (k === 'pin' && !groups[0]) ask.push({q:'Welcher Stift?', o:[['Ø6 × 30', 'Stift 6x30'], ['Ø8 × 40', 'Stift 8x40'], ['Ø10 × 50', 'Stift 10x50']]});
+    return out(`${n > 1 ? n + ' × ' : ''}<b>${k === 'circlip' ? 'Sicherungsring' : K.name}</b> ${k === 'circlip' ? 'für Welle Ø' + size : k === 'pin' ? 'Ø' + size : size}${L ? ' × ' + L : ''} <small>${K.norm}</small>`, () => [{type:'screw', kind:k, size, len:L || 0, grade, view:opts.screw.view, rot:0, x:0, y:0}], ask);
   }
   // --- Bohrungen ---
   if (kw(/bohrung|bohrloch|\bloch|löcher|gewinde/)){
     const g = kw(/gewinde/) && thread, fit = thread ? (g ? 'G-' : 'D-') + thread : 'frei';
     const d = thread ? (g ? NORM[thread].kl : NORM[thread].dh) : ((groups.find(q => q.dia) || groups[0] || {mm:[10]}).mm[0]);
     const k = Math.max(n, ...groups.filter(q => !q.dia && q.mm.length === 1 && q.raw[0] <= 24 && Number.isInteger(q.raw[0]) && !thread).map(() => 1));
+    const hasSize = !!thread || groups.some(q => q.mm.length === 1), hw = kw(/gewinde/) ? 'Gewinde' : (cnt0 => cnt0 > 1 ? 'Bohrungen' : 'Bohrung')(n);
+    const askH = [];
+    if (!hasSize) askH.push({q:'Welche Größe?', o:[['M6 (Ø6,6)', `${pre}${hw} M6`], ['M8 (Ø9)', `${pre}${hw} M8`], ['M10 (Ø11)', `${pre}${hw} M10`], ['M12 (Ø13,5)', `${pre}${hw} M12`], ['M16 (Ø17,5)', `${pre}${hw} M16`], ['Ø10 frei', `${pre}Bohrung Ø10`]]});
+    else if (n > 1 && !named.D && !named.gap){ const z = thread || ('Ø' + fN(d)); askH.push({q:'Wie anordnen?', o:[['in einer Reihe, Abstand 50', `${n} Bohrungen ${z} Abstand 50`], ['in einer Reihe, Abstand 100', `${n} Bohrungen ${z} Abstand 100`], ['auf Lochkreis Ø100', `${n} Bohrungen ${z} Lochkreis 100`], ['auf Lochkreis Ø150', `${n} Bohrungen ${z} Lochkreis 150`]]}); }
     const cnt = n, lab = thread ? (g ? 'Gewinde ' + thread : 'Durchgang ' + thread + ' (Ø' + dec(d) + ')') : 'Ø' + mmTxt(d);
-    if (named.D && cnt > 1) return {desc:`<b>${cnt} Bohrungen</b> ${lab} auf Lochkreis Ø${mmTxt(named.D)}`, n:1, make:() => {
+    if (named.D && cnt > 1) return {desc:`<b>${cnt} Bohrungen</b> ${lab} auf Lochkreis Ø${mmTxt(named.D)}`, n:1, ask:askH.length ? askH : null, make:() => {
       const sh = [{type:'circle', x:0, y:0, d:named.D, a0:0, a1:360, style:'center'}];
       for (let i = 0; i < cnt; i++){ const a = i / cnt * Math.PI * 2; sh.push({type:'hole', x:r2(named.D / 2 * Math.cos(a)), y:r2(named.D / 2 * Math.sin(a)), d, fit}); }
       return sh; }};
     const gap = named.gap || Math.max(50, Math.ceil(d * 3 / 5) * 5);
-    return {desc:`${cnt > 1 ? `<b>${cnt} Bohrungen</b> ` : '<b>Bohrung</b> '}${lab}${cnt > 1 ? `, Abstand ${mmTxt(gap)} mm` : ''}`, n:1, make:() => [...Array(cnt)].map((_, i) => ({type:'hole', x:r2(i * gap), y:0, d, fit}))};
+    return {desc:`${cnt > 1 ? `<b>${cnt} Bohrungen</b> ` : '<b>Bohrung</b> '}${lab}${cnt > 1 ? `, Abstand ${mmTxt(gap)} mm` : ''}`, n:1, ask:askH.length ? askH : null, make:() => [...Array(cnt)].map((_, i) => ({type:'hole', x:r2(i * gap), y:0, d, fit}))};
   }
   // --- Profile ---
   const PK = [['QR', /quadratrohr|vierkantrohr|vierkant\b/], ['RR', /rechteckrohr/], ['RO', /rundrohr|rohr\s*ø/], ['RS', /rundstahl|rundeisen|\brundmaterial/], ['L', /winkel|l-profil|\bl\s/], ['U', /u-profil|u-stahl|unp|\bu\s/], ['RO', /\brohr/]];
@@ -3030,38 +3054,62 @@ function cmdParse(raw){
     const score = key => { const p = SZ[key]; const f = k === 'QR' || k === 'RR' ? [p.B, p.H, p.t] : k === 'L' ? [p.a, p.t] : k === 'U' ? [p.h] : k === 'RO' ? [p.D, p.t] : [p.D];
       return f.reduce((a, v, i) => a + (sec[i] != null ? Math.abs(v - sec[i]) * (i === f.length - 1 && f.length > 1 ? 3 : 1) : 0), 0); };
     const size = sec.length ? keys.reduce((a, b) => score(b) < score(a) ? b : a) : keys[Math.min(2, keys.length - 1)];
-    const L = named.len || (rest.find(q => q.mm.length === 1) || {}).mm?.[0] || opts.profile.len;
-    const exact = !sec.length || score(size) < .01;
-    return out(`${n > 1 ? n + ' × ' : ''}<b>${PROFILES[k].name} ${size}</b>, Länge ${len(L)}${exact ? '' : ' <small>(nächste Normgröße)</small>'}`, () => [{type:'profile', kind:k, size, len:L, view:'side', mat:mat || 'S235JR', rot:0, x:0, y:0}]);
+    const givenL = named.len || (rest.find(q => q.mm.length === 1) || {}).mm?.[0], L = givenL || opts.profile.len;
+    const exact = !sec.length || score(size) < .01, ask = [];
+    if (!sec.length && /\brohr/.test(words) && !/quadrat|vierkant|rechteck|rund/.test(words)) ask.push({q:'Welches Rohr?', o:[['Quadratrohr 40×40×3', profCmd('QR', '40×40×3', givenL, pre)], ['Rechteckrohr 60×40×3', profCmd('RR', '60×40×3', givenL, pre)], ['Rundrohr 42,4×2,6', profCmd('RO', '42,4×2,6', givenL, pre)], ['Rundrohr 33,7×2,6', profCmd('RO', '33,7×2,6', givenL, pre)]]});
+    else if (!sec.length) ask.push({q:'Welche Größe?', o:keys.slice(0, 8).map(z => [z, profCmd(k, z, givenL, pre)])});
+    else if (!exact) ask.push({q:'Diese Größe gibt es nicht genau als Normprofil – welche nehmen?', o:[...keys].sort((a, b) => score(a) - score(b)).slice(0, 4).map(z => [z, profCmd(k, z, givenL, pre)])});
+    else if (!givenL) ask.push({q:'Welche Länge?', o:[500, 1000, 2000, 3000, 6000].map(l => [fN(l) + ' mm', profCmd(k, size, l, pre)])});
+    return out(`${n > 1 ? n + ' × ' : ''}<b>${PROFILES[k].name} ${size}</b>, Länge ${len(L)}${exact ? '' : ' <small>(nächste Normgröße)</small>'}`, () => [{type:'profile', kind:k, size, len:L, view:'side', mat:mat || 'S235JR', rot:0, x:0, y:0}], ask);
   }
   // --- Welle ---
   if (kw(/welle|achse|bolzen/)){
     const st = groups.filter(q => q.mm.length >= 2).map(q => ({d:q.mm[0], l:q.mm[1]}));
+    const askW = st.length ? [] : [{q:'Welche Absätze (Ø × Länge)?', o:[['Ø30 × 100', 'Welle 30x100'], ['Ø25×40 · Ø35×100 · Ø25×40', 'Welle 25x40 35x100 25x40'], ['Ø20×30 · Ø25×80 · Ø20×30', 'Welle 20x30 25x80 20x30']]}];
     if (!st.length) st.push({d:num1[0] || 30, l:named.len || num1[1] || 100});
-    return out(`<b>Welle</b> ${st.map(q => 'Ø' + mmTxt(q.d) + '×' + mmTxt(q.l)).join(' · ')} mm`, () => [{type:'shaft', x:0, y:0, rot:0, mat:mat || opts.shaft.mat, chamfer:1, keyStep:-1, keyLen:0, steps:st}]);
+    return out(`<b>Welle</b> ${st.map(q => 'Ø' + mmTxt(q.d) + '×' + mmTxt(q.l)).join(' · ')} mm`, () => [{type:'shaft', x:0, y:0, rot:0, mat:mat || opts.shaft.mat, chamfer:1, keyStep:-1, keyLen:0, steps:st}], askW);
   }
   // --- Ronde / Flansch / Kreis ---
   if (kw(/ronde|flansch|scheibe/)){ const d = (groups[0] || {mm:[200]}).mm[0], di = named.di || (groups[1] && groups[1].mm[0] < d ? groups[1].mm[0] : 0), tt = named.t || opts.disc.t;
-    return out(`<b>${di ? 'Flansch' : 'Ronde'}</b> Ø${mmTxt(d)}${di ? ' / innen Ø' + mmTxt(di) : ''} × ${mmTxt(tt)} mm`, () => [{type:'disc', name:di ? 'Flansch' : 'Ronde', x:0, y:0, d, di, t:tt, mat:mat || 'S235JR'}]); }
-  if (kw(/kreis|bogen/)){ const d = (groups[0] || {mm:[100]}).mm[0]; return out(`<b>Kreis</b> Ø${mmTxt(d)} mm`, () => [{type:'circle', x:0, y:0, d, a0:0, a1:kw(/bogen/) ? 90 : 360, style:'solid'}]); }
+    const askR = !groups[0] ? [{q:'Welcher Durchmesser?', o:[100, 150, 200, 300].map(v => ['Ø' + v, `Ronde ${v}${named.t ? ' dicke ' + fN(named.t) : ''}${mw}`])}]
+      : !named.t ? [{q:'Welche Dicke?', o:[5, 8, 10, 15, 20].map(v => [v + ' mm', `${kw(/flansch/) || di ? 'Flansch' : 'Ronde'} ${fN(d)}${di ? ' innen ' + fN(di) : ''} dicke ${v}${mw}`])}] : [];
+    return out(`<b>${di ? 'Flansch' : 'Ronde'}</b> Ø${mmTxt(d)}${di ? ' / innen Ø' + mmTxt(di) : ''} × ${mmTxt(tt)} mm`, () => [{type:'disc', name:di ? 'Flansch' : 'Ronde', x:0, y:0, d, di, t:tt, mat:mat || 'S235JR'}], askR); }
+  if (kw(/kreis|bogen/)){ const d = (groups[0] || {mm:[100]}).mm[0]; return out(`<b>Kreis</b> Ø${mmTxt(d)} mm`, () => [{type:'circle', x:0, y:0, d, a0:0, a1:kw(/bogen/) ? 90 : 360, style:'solid'}], groups[0] ? null : [{q:'Welcher Durchmesser?', o:[50, 100, 200].map(v => ['Ø' + v, 'Kreis ' + v])}]); }
   // --- Kantteil ---
   if (kw(/kantteil|biegeteil|abkantung|kantblech|gekantet/)){
-    const legs = groups.flatMap(q => q.mm).filter(v => v > 0).slice(0, 8); if (legs.length < 2) legs.splice(0, legs.length, 40, 60, 40);
+    const legs = groups.flatMap(q => q.mm).filter(v => v > 0).slice(0, 8), noLegs = legs.length < 2; if (noLegs) legs.splice(0, legs.length, 40, 60, 40);
     const tt = named.t || opts.bend.t, w = named.B || opts.bend.w;
-    return out(`<b>Kantteil</b> Schenkel ${legs.map(mmTxt).join(' / ')} mm, 90°, t = ${mmTxt(tt)}, Breite ${mmTxt(w)}`, () => [{type:'bend', name:'Biegeteil', x:0, y:0, rot:0, legs, angles:legs.slice(1).map(() => 90), t:tt, r:Math.max(tt, opts.bend.r), w, mat:mat || 'S235JR'}]);
+    const askK = noLegs ? [{q:'Welche Form (Schenkel außen)?', o:[['Winkel 40 / 60', `Kantteil 40 60 Dicke ${fN(tt)}`], ['U 40 / 60 / 40', `Kantteil 40 60 40 Dicke ${fN(tt)}`], ['Hut 20 / 30 / 40 / 30 / 20', `Kantteil 20 30 40 30 20 Dicke ${fN(tt)}`]]}]
+      : !named.t ? [{q:'Welche Blechdicke?', o:[1.5, 2, 3, 4, 5].map(v => [fN(v) + ' mm', `Kantteil ${legs.map(fN).join(' ')} Dicke ${fN(v)}`])}] : [];
+    return out(`<b>Kantteil</b> Schenkel ${legs.map(mmTxt).join(' / ')} mm, 90°, t = ${mmTxt(tt)}, Breite ${mmTxt(w)}`, () => [{type:'bend', name:'Biegeteil', x:0, y:0, rot:0, legs, angles:legs.slice(1).map(() => 90), t:tt, r:Math.max(tt, opts.bend.r), w, mat:mat || 'S235JR'}], askK);
   }
   // --- Rechteck / Blech / Flachstahl ---
   const RN = [['Flachstahl', /flachstahl|flacheisen|\bflach\b|bandstahl/], ['Lasche', /lasche/], ['Platte', /platte/], ['Blech', /blech|tafel/], ['Blech', /rechteck|quadrat|viereck/]];
   let rn = RN.find(([, re]) => kw(re));
+  // nur eine Zahl ohne Wort: nachfragen, was gemeint ist
+  if (!rn && groups.length === 1 && groups[0].mm.length === 1){
+    const v = groups[0].mm[0], V = fN(v);
+    return {desc:`Was soll <b>${mmTxt(v)} mm</b> sein?`, n:1, make:null, ask:[{q:'Bitte auswählen:', o:[[`Blech ${V} × ${V}`, `Blech ${V}x${V} mm`], [`Ronde Ø${V}`, `Ronde ${V}`], [`Kreis Ø${V}`, `Kreis ${V}`], ...(v <= 40 ? [[`Bohrung Ø${V}`, `Bohrung Ø${V}`]] : []), [`Rohr 40×40×3, ${V} lang`, `Quadratrohr 40x40x3 Länge ${V} mm`], [`Flachstahl 40×10, ${V} lang`, `Flachstahl 40x10 Länge ${V} mm`]]}]};
+  }
   if (rn || (groups.length && groups[0].mm.length >= 2)){
     const nm = rn ? rn[0] : 'Blech', a = groups[0] ? groups[0].mm : [100, 50];
     let w = a[0], h = a.length > 1 ? a[1] : a[0], tt = named.t || (a[2] ? groups[0].raw[2] * (groups[0].unit ? groups[0].mm[2] / groups[0].raw[2] : 1) : opts.rect.t);
     if (a[2] && !named.t) tt = a[2];
-    if (nm === 'Flachstahl' && a.length === 2){ const L = named.len || num1[0] || (groups[1] && groups[1].mm[0]); if (L){ tt = named.t || a[1]; w = L; h = a[0]; } }
+    let flatNoLen = false;
+    if (nm === 'Flachstahl' && a.length === 2){ let L = named.len || num1[0] || (groups[1] && groups[1].mm[0]); if (!L){ L = 1000; flatNoLen = true; } tt = named.t || a[1]; w = L; h = a[0]; }
     if (named.len && nm !== 'Flachstahl') w = named.len;
     if (!(w > 0 && h > 0 && tt > 0)) return null;
-    return out(`${n > 1 ? n + ' × ' : ''}<b>${nm}</b> ${mmTxt(w)} × ${mmTxt(h)} × ${mmTxt(tt)} mm${a.length === 1 ? ' <small>(quadratisch)</small>' : ''}${mat ? ' · ' + MATS[mat].name : ''}`, () => [{type:'rect', name:nm, x:0, y:0, w, h, t:tt, mat:mat || opts.rect.mat}]);
+    const askB = [], base = `${pre}${nm}`;
+    if (!groups[0]) askB.push({q:'Welche Größe?', o:[[100, 50], [200, 100], [300, 200], [500, 500], [1000, 500]].map(([x, y]) => [`${x} × ${y}`, `${base} ${x}x${y}x${fN(tt)} mm${mw}`])});
+    else if (a.length === 1 && nm !== 'Flachstahl') askB.push({q:`Quadratisch ${mmTxt(w)} × ${mmTxt(w)} – oder anders?`, o:[[`${mmTxt(w)} × ${mmTxt(w)} quadratisch`, `${base} ${fN(w)}x${fN(w)}x${fN(tt)} mm${mw}`], [`${mmTxt(w)} × ${mmTxt(w / 2)}`, `${base} ${fN(w)}x${fN(w / 2)}x${fN(tt)} mm${mw}`], [`${mmTxt(w)} × ${mmTxt(w * 2)}`, `${base} ${fN(w)}x${fN(w * 2)}x${fN(tt)} mm${mw}`]]});
+    else if (flatNoLen) askB.push({q:'Flachstahl: Wie lang?', o:[300, 500, 1000, 2000, 6000].map(L => [fN(L) + ' mm', `${base} ${fN(a[0])}x${fN(a[1])} Länge ${fN(L)} mm${mw}`])});
+    else if (!named.t && !a[2] && !(nm === 'Flachstahl' && a.length === 2)) askB.push({q:'Welche Dicke?', o:[2, 3, 5, 8, 10, 15, 20].map(v => [v + ' mm', `${base} ${fN(w)}x${fN(h)}x${v} mm${mw}`])});
+    return out(`${n > 1 ? n + ' × ' : ''}<b>${nm}</b> ${mmTxt(w)} × ${mmTxt(h)} × ${mmTxt(tt)} mm${a.length === 1 ? ' <small>(quadratisch)</small>' : ''}${mat ? ' · ' + MATS[mat].name : ''}`, () => [{type:'rect', name:nm, x:0, y:0, w, h, t:tt, mat:mat || opts.rect.mat}], askB);
   }
+  // Tippfehler? Ähnliche Wörter vorschlagen
+  const ws = rawText.toLowerCase().split(/\s+/), sug = [];
+  ws.forEach((wd, i) => { if (wd.length < 3 || /\d/.test(wd)) return; let best = null, bd = 9; CMD_KW.forEach(k => { const dd = lev(wd, k); if (dd < bd){ bd = dd; best = k; } }); if (best && bd > 0 && bd <= Math.max(1, Math.floor(wd.length / 3))){ const c = [...rawText.split(/\s+/)]; c[i] = best.charAt(0).toUpperCase() + best.slice(1); const cmd = c.join(' '); if (!sug.includes(cmd)) sug.push(cmd); } });
+  if (sug.length) return {desc:'Nicht ganz verstanden.', n:1, make:null, ask:[{q:'Meintest du …?', o:sug.slice(0, 4).map(x => [x, x])}]};
   return null;
 }
 function cmdShow(msg){ const o = $('#cmdOut'); o.innerHTML = msg; o.hidden = !msg; }
@@ -3069,13 +3117,14 @@ function cmdPreview(){
   const v = $('#cmd').value;
   if (!v.trim()){ cmdShow(`<small>Beispiele – antippen zum Übernehmen:</small><div class="ex">${CMD_EX.map(x => `<button type="button" data-ex="${esc(x)}">${esc(x)}</button>`).join('')}</div>`); return; }
   const r = cmdParse(v);
-  cmdShow(r ? `<div class="ok">→ ${r.desc}${r.n > 1 && !r.wiz ? ` <small>${r.n} Stück nebeneinander</small>` : ''}</div><small>Enter = zeichnen</small>`
+  const askH = r && r.ask ? r.ask.map(a => `<div class="ask"><div class="q">${a.q}</div><div class="ex">${a.o.map(([l, c]) => `<button type="button" data-ex="${esc(c)}">${esc(String(l))}</button>`).join('')}</div></div>`).join('') : '';
+  cmdShow(r ? `<div class="${r.make || r.wiz ? 'ok' : 'q0'}">${r.make || r.wiz ? '→ ' : ''}${r.desc}${r.n > 1 && !r.wiz ? ` <small>${r.n} Stück nebeneinander</small>` : ''}</div>${askH}<small>${r.make || r.wiz ? (r.ask ? 'Antippen zum Ändern · Enter = so zeichnen' : 'Enter = zeichnen') : 'Bitte eine Option antippen oder weiter tippen'}</small>`
     : `<div class="bad">Nicht verstanden. Probier z. B.:</div><div class="ex">${CMD_EX.slice(0, 10).map(x => `<button type="button" data-ex="${esc(x)}">${esc(x)}</button>`).join('')}</div>`);
 }
 const cmdHist = []; let cmdHi = -1;
 function cmdRun(){
   const v = $('#cmd').value, r = cmdParse(v);
-  if (!r){ cmdPreview(); return; }
+  if (!r || (!r.make && !r.wiz)){ cmdPreview(); return; }
   if (!project) return;
   cmdHist.unshift(v); cmdHi = -1;
   if (r.wiz){ WIZ.tab = r.wiz.tab; Object.assign(WIZ[r.wiz.tab], r.wiz.v); $('#cmd').value = ''; cmdShow(''); $('#cmd').blur(); openWiz(); return; }
@@ -3120,7 +3169,7 @@ $('#cmdOut').addEventListener('mousedown', e => { const b = e.target.closest('[d
     if (rec){ rec.stop(); return; }
     rec = new SR(); rec.lang = 'de-DE'; rec.interimResults = true; rec.maxAlternatives = 1;
     btn.classList.add('rec'); $('#cmd').focus(); cmdShow('<div class="ok">Sprich jetzt, z. B. „Blech 200 mal 100 mal 10“ …</div>');
-    rec.onresult = ev => { $('#cmd').value = [...ev.results].map(x => x[0].transcript).join(' '); cmdPreview(); if (ev.results[ev.results.length - 1].isFinal && cmdParse($('#cmd').value)) setTimeout(cmdRun, 400); };
+    rec.onresult = ev => { $('#cmd').value = [...ev.results].map(x => x[0].transcript).join(' '); cmdPreview(); const fin = ev.results[ev.results.length - 1].isFinal, rr = fin && cmdParse($('#cmd').value); if (rr && (rr.make || rr.wiz) && !rr.ask) setTimeout(cmdRun, 400); };
     rec.onend = () => { btn.classList.remove('rec'); rec = null; };
     rec.onerror = () => { cmdShow('<div class="bad">Spracheingabe ging nicht – Mikrofon erlauben oder tippen.</div>'); };
     rec.start();
