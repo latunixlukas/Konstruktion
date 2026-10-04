@@ -113,6 +113,14 @@ html.locked,html.locked body{overflow:hidden}
 .codeform{display:grid;gap:8px}
 .codeform .row{flex-wrap:nowrap}
 .err{color:#dc2626;font-size:.84rem;margin:4px 0 0;min-height:1.2em}
+.scanpanel{display:grid;gap:10px;align-content:start}
+.scanbtns{display:grid;gap:8px}
+.scanbtns .btn{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;justify-content:flex-start}
+.scanbtns .btn span{display:grid}.scanbtns .btn small{color:var(--muted);font-size:.78rem}
+.scanpanel .note{margin:0}
+.start-grid{grid-template-areas:"new list" "scan list"}
+.newform{grid-area:new}.scanpanel{grid-area:scan}.plist-panel{grid-area:list}
+@media (max-width: 760px){ .start-grid{grid-template-areas:"new" "scan" "list"} }
 .plist-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
 .plist-head input{max-width:220px;width:100%}
 .plist{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
@@ -227,6 +235,8 @@ input[type="color"]{width:100%;height:34px;padding:2px;border:1px solid var(--li
 .sheets text{font:500 9px var(--f-mono);fill:var(--fg)}
 
 /* Optionsleiste */
+.photobar{top:58px}.photobar.low{top:104px}
+.photobar #phLen{width:6em;padding:3px 6px}.photobar #phOp{width:90px}
 .cmd{position:relative;display:flex;align-items:center;gap:6px;margin-left:auto;flex:1 1 320px;max-width:520px;padding:0 4px 0 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--raised);color:var(--muted)}
 .cmd:focus-within{border-color:var(--sel);color:var(--fg)}
 .cmd input{flex:1;min-width:0;border:0;background:none;padding:7px 0;font-size:.88rem;outline:none;color:var(--fg)}
@@ -355,6 +365,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
 .pins{display:grid;gap:6px}.prow2{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;background:var(--raised)}
 .prow2.sel{border-color:var(--sel)}.prow2 .no{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#f59e0b;color:#111;font:700 .72rem var(--f-body)}
 .prow2.done .no{background:#9ca3af}.prow2.done .tx{text-decoration:line-through;color:var(--muted)}.prow2 .tx{min-width:0;font-size:.85rem}.prow2 .tx small{display:block;color:var(--muted);font-size:.72rem}
+.calib{stroke:#f59e0b;stroke-width:2.5;stroke-dasharray:6 4}.calibpt{fill:#f59e0b;stroke:#fff;stroke-width:2}
 .grplbl{fill:var(--sel);font:600 12px var(--f-body)}
 .grpbox{border:1px solid var(--line-strong);border-radius:var(--r);padding:12px;margin:0 0 14px;background:var(--raised)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chips button{font-size:.75rem;padding:2px 8px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);cursor:pointer}
@@ -413,11 +424,13 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <button id="bExport" type="button">Exportieren (PDF / PNG) …</button>
           <button id="bSvg" type="button">Als Vektorgrafik (SVG)</button>
           <hr>
-          <button id="bCad" type="button">CAD-Modell ansehen (.stp / .step) …</button>
+          <button id="bCad" type="button">CAD-Modell oder 3D-Scan ansehen (.stp, .obj, .stl, .glb, .ply) …</button>
+          <button id="bPhoto" type="button">Foto als Vorlage zum Abzeichnen …</button>
         </div>
       </details>
-      <input type="file" id="fileIn" accept=".json,application/json,.stp,.step,.STP,.STEP" hidden>
-      <input type="file" id="cadIn" accept=".stp,.step,.STP,.STEP" hidden>
+      <input type="file" id="fileIn" accept=".json,application/json,.stp,.step,.STP,.STEP,.obj,.stl,.glb,.gltf,.ply,image/*" hidden>
+      <input type="file" id="cadIn" accept=".stp,.step,.STP,.STEP,.obj,.stl,.glb,.gltf,.ply,.OBJ,.STL,.GLB,.GLTF,.PLY" hidden>
+      <input type="file" id="photoIn" accept="image/*" hidden>
     </div>
   </header>
 
@@ -446,6 +459,19 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <p class="err" id="npErr"></p>
           <button class="btn primary" type="submit">Projekt anlegen</button>
         </form>
+        <div class="panel scanpanel">
+          <h3>Aus Foto oder 3D-Scan</h3>
+          <p class="note">Das Projekt wird automatisch angelegt (mit deinem Namen von links).</p>
+          <div class="scanbtns">
+            <button class="btn" type="button" id="spPhoto"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span><span><b>Foto</b> aufnehmen oder wählen</span><small>als Vorlage zum Abzeichnen</small></span></button>
+            <button class="btn" type="button" id="spScan"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span><span><b>3D-Scan</b> laden</span><small>OBJ, STL, GLB, PLY vom Handy</small></span></button>
+          </div>
+          <label class="chk"><input type="checkbox" id="spKeep" checked> Scan auf diesem Gerät merken (wird nicht hochgeladen)</label>
+          <p class="note">Scan-Apps fürs Handy: z. B. Polycam, Scaniverse, RealityScan – dort als OBJ, GLB oder STL exportieren.</p>
+          <p class="err" id="spErr"></p>
+          <input type="file" id="spPhotoIn" accept="image/*" hidden>
+          <input type="file" id="spScanIn" accept=".obj,.stl,.glb,.gltf,.ply,.OBJ,.STL,.GLB,.GLTF,.PLY" hidden>
+        </div>
         <div class="panel plist-panel">
           <div class="plist-head"><h3>Projekte</h3><input id="pSearch" class="txt" placeholder="Suchen …" autocomplete="off"></div>
           <div class="plist" id="plist"><p class="empty">Wird geladen …</p></div>
@@ -600,6 +626,16 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <select id="cadView" title="Ansicht für 2D und Lage der Zeichenebene"><option value="top">Draufsicht</option><option value="front">Vorderansicht</option><option value="side">Seitenansicht</option></select>
         <label class="chk" title="Beim Zeichnen an Eckpunkten des Modells einrasten"><input type="checkbox" id="cadSnap" checked> Kanten fangen</label>
         <button type="button" id="cadClose">Schließen</button>
+      </div>
+      <div class="cadbar pill photobar" id="photoBar" hidden>
+        <span class="cadtag">Foto</span>
+        <button type="button" id="phCal" title="Zwei Punkte mit bekanntem Abstand antippen">Maßstab festlegen</button>
+        <span id="phCalBox" hidden><input id="phLen" inputmode="decimal" placeholder="Länge" aria-label="Länge der Strecke"> <span id="phUnit">mm</span> <button type="button" id="phOk">OK</button></span>
+        <label class="chk"><input type="checkbox" id="phMove"> verschieben</label>
+        <button type="button" id="phRot" title="Foto um 90° drehen">↻ 90°</button>
+        <input type="range" id="phOp" min="10" max="100" value="60" title="Deckkraft" aria-label="Deckkraft">
+        <button type="button" id="phHide">Ausblenden</button>
+        <button type="button" id="phDel">Entfernen</button>
       </div>
       <div class="titleblock" id="tblock"></div>
     </div>
@@ -1503,6 +1539,10 @@ function render(){
     handles(sel).forEach(h => { o += `<rect class="handle" x="${f1(T.x(h.x) - 5)}" y="${f1(T.y(h.y) - 5)}" width="10" height="10"/>`; });
   }
   o += preview;
+  if (photoCalib && photoCalib.pts.length){
+    const a = photoCalib.pts[0], b = photoCalib.pts[1] || cursor || a;
+    o += `<line class="calib" x1="${f1(T.x(a.x))}" y1="${f1(T.y(a.y))}" x2="${f1(T.x(b.x))}" y2="${f1(T.y(b.y))}"/>` + photoCalib.pts.map(q => `<circle class="calibpt" cx="${f1(T.x(q.x))}" cy="${f1(T.y(q.y))}" r="5"/>`).join('');
+  }
   if (drag && drag.mode === 'box' && drag.cur){
     const a = drag.start, c = drag.cur, cross = c.x < a.x;
     o += `<rect class="${cross ? 'boxsel cross' : 'boxsel'}" x="${f1(Math.min(T.x(a.x), T.x(c.x)))}" y="${f1(Math.min(T.y(a.y), T.y(c.y)))}" width="${f1(Math.abs(c.x - a.x)*T.z)}" height="${f1(Math.abs(c.y - a.y)*T.z)}"/>`;
@@ -1703,6 +1743,14 @@ svg.addEventListener('pointerdown', e => {
     return;
   }
   const p = evtPoint(e), free = e.shiftKey, sp = tool === 'select' ? p : snapP(p, free);
+  if (photoCalib && e.button === 0 && state.photo){
+    if (photoCalib.pts.length >= 2) photoCalib.pts = [];
+    photoCalib.pts.push({x:p.x, y:p.y});
+    $('#hint').textContent = photoCalib.pts.length === 1 ? 'Jetzt das Ende der Strecke antippen.' : 'Wie lang ist die Strecke in echt? Oben in der Foto-Leiste eintragen und OK.';
+    render(); if (photoCalib.pts.length === 2) setTimeout(() => $('#phLen').focus(), 30);
+    return;
+  }
+  if (photoMove && e.button === 0 && state.photo){ drag = {mode:'photo', start:p, x0:state.photo.x, y0:state.photo.y}; return; }
   if (e.button === 1 || e.button === 2 || spaceDown){ drag = {mode:'pan', sx:e.clientX, sy:e.clientY, cx:view.cx, cy:view.cy}; return; }
 
   if (tool === 'select'){
@@ -1834,6 +1882,7 @@ svg.addEventListener('pointermove', e => {
   cursor = sp;
   if (!drag){ renderStatus(); updateCursor(p); return; }
   const s = drag.shape;
+  if (drag.mode === 'photo'){ state.photo.x = r2(drag.x0 + p.x - drag.start.x); state.photo.y = r2(drag.y0 + p.y - drag.start.y); render(); return; }
   if (drag.mode === 'pan'){
     view.cx = drag.cx - (e.clientX - drag.sx) / view.z;
     view.cy = drag.cy + (e.clientY - drag.sy) / view.z;
@@ -1897,6 +1946,7 @@ function endPointer(e){
   if (!drag) return;
   const d = drag; drag = null; snapMark = null;
   if (d.mode === 'pan') return;
+  if (d.mode === 'photo'){ save(); return; }
   if (d.mode === 'box'){
     if (d.cur && Math.hypot(d.cur.x - d.start.x, d.cur.y - d.start.y) * view.z > 4){
       const x0 = Math.min(d.start.x, d.cur.x), x1 = Math.max(d.start.x, d.cur.x), y0 = Math.min(d.start.y, d.cur.y), y1 = Math.max(d.start.y, d.cur.y), cross = d.cur.x < d.start.x;
@@ -1944,6 +1994,7 @@ $('#zFit').onclick = () => { if (is3() && three){ fit3d(); draw3d(); } else { fi
 function allBox(withCad = true){
   const boxes = state.shapes.map(bbox);
   if (withCad && cad && cad.box2d && mode === '2d') boxes.push(cad.box2d);
+  const ph = state.photo; if (withCad && ph && ph.on !== false && mode === '2d') boxes.push({x0:ph.x, y0:ph.y, x1:ph.x + ph.w, y1:ph.y + ph.h});
   if (!boxes.length) return {x0:0, y0:0, x1:200, y1:120};
   return boxes.reduce((a, b) => ({x0:Math.min(a.x0, b.x0), y0:Math.min(a.y0, b.y0), x1:Math.max(a.x1, b.x1), y1:Math.max(a.y1, b.y1)}));
 }
@@ -3248,7 +3299,8 @@ $('#bSave').onclick = () => download(fileBase() + '.json', new Blob([JSON.string
 $('#bOpen').onclick = () => $('#fileIn').click();
 $('#fileIn').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
-  if (/\.(stp|step)$/i.test(f.name)){ e.target.value = ''; openCad(f); return; }
+  if (/\.(stp|step|obj|stl|glb|gltf|ply)$/i.test(f.name)){ e.target.value = ''; openModel(f); return; }
+  if (/^image\//.test(f.type)){ e.target.value = ''; loadPhoto(f); return; }
   try {
     const d = JSON.parse(await f.text());
     if (!Array.isArray(d.shapes)) throw 0;
@@ -4991,6 +5043,145 @@ function readStep(buf){
   }
   return new Promise((res, rej) => { cadJob = {res, rej}; cadWorker.postMessage(buf, [buf]); });
 }
+/* ---------- 3D-Scans (OBJ, STL, GLB, PLY) und Fotos als Vorlage ---------- */
+const LOADER_BASE = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/';
+const emptyEdges = () => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([], 3)); return g; };
+// Scans nur in diesem Browser merken (IndexedDB), nie hochladen
+const IDB = {
+  db:null,
+  open(){ return this.db || (this.db = new Promise((res, rej) => { const r = indexedDB.open('wz-scans', 1); r.onupgradeneeded = () => r.result.createObjectStore('scans'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); })); },
+  async tx(mode, fn){ const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction('scans', mode), q = fn(t.objectStore('scans')); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); },
+  put(k, v){ return this.tx('readwrite', st => st.put(v, k)); },
+  get(k){ return this.tx('readonly', st => st.get(k)); },
+  del(k){ return this.tx('readwrite', st => st.delete(k)); },
+};
+function openModel(file){ return /\.(stp|step)$/i.test(file.name) ? openCad(file) : openScan(file, {keep:true}); }
+async function openScan(file, o = {}){
+  $('#fileMenu').open = false;
+  if (mode !== '3d') await setMode('3d');
+  if (!three) return;
+  const ext = (file.name.split('.').pop() || '').toLowerCase(), L = {obj:'OBJLoader', stl:'STLLoader', glb:'GLTFLoader', gltf:'GLTFLoader', ply:'PLYLoader'}[ext];
+  $('#hint').textContent = `„${file.name}“ wird geladen …`;
+  try {
+    if (!L) throw new Error('typ');
+    await loadScript(LOADER_BASE + L + '.js', () => THREE[L]);
+    const buf = await file.arrayBuffer();
+    let root;
+    if (ext === 'obj') root = new THREE.OBJLoader().parse(new TextDecoder().decode(buf));
+    else if (ext === 'stl') root = new THREE.Mesh(new THREE.STLLoader().parse(buf));
+    else if (ext === 'ply') root = new THREE.Mesh(new THREE.PLYLoader().parse(buf));
+    else root = await new Promise((res, rej) => new THREE.GLTFLoader().parse(buf, '', g => res(g.scene), rej));
+    root.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(root), mx = Math.max(...bb.getSize(new THREE.Vector3()).toArray());
+    // Handy-Scans sind meist in Metern und „Y oben“; STL meist schon in mm und „Z oben“
+    const unit = o.unit || (mx < 20 ? 1000 : 1), M = new THREE.Matrix4().makeScale(unit, unit, unit);
+    if (ext !== 'stl') M.premultiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
+    ['rx', 'ry', 'rz'].forEach(k => { for (let i = 0; i < (o[k] || 0) % 4; i++) M.premultiply(new THREE.Matrix4()[k === 'rx' ? 'makeRotationX' : k === 'ry' ? 'makeRotationY' : 'makeRotationZ'](Math.PI / 2)); });
+    const meshes = [];
+    root.traverse(m => {
+      if (!m.isMesh) return;
+      const g = m.geometry.clone(); g.applyMatrix4(m.matrixWorld); g.applyMatrix4(M);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      const om = Array.isArray(m.material) ? m.material[0] : m.material;
+      let mat = null;
+      if (g.attributes.color) mat = new THREE.MeshStandardMaterial({vertexColors:true, roughness:.85, side:THREE.DoubleSide});
+      else if (om && (om.map || (om.color && om.color.getHex() !== 0xffffff))) mat = new THREE.MeshStandardMaterial({map:om.map || null, color:om.color ? om.color.clone() : 0xffffff, roughness:.8, side:THREE.DoubleSide});
+      meshes.push({geo:g, mat, name:m.name || 'Scan'});
+    });
+    if (!meshes.length) throw new Error('leer');
+    setCad(file.name, meshes);
+    cad.unit = unit; cad.src = {name:file.name, blob:file, unit, rx:o.rx || 0, ry:o.ry || 0, rz:o.rz || 0};
+    if (o.keep && project){ try { await IDB.put(project.id, cad.src); cad.keep = true; } catch(e){} }
+    else if (o.restored) cad.keep = true;
+    renderCadInfo();
+    const n = meshes.reduce((a, q) => a + (q.geo.index ? q.geo.index.count : q.geo.attributes.position.count) / 3, 0);
+    $('#hint').textContent = `${o.restored ? 'Gemerkter Scan wieder geladen' : 'Scan geladen'}: ${Math.round(n).toLocaleString('de-DE')} Dreiecke, ${fmt(cad.size.x)} × ${fmt(cad.size.y)} × ${fmt(cad.size.z)}. In 2D erscheint er als Hintergrund zum Drumherum-Zeichnen.`;
+  } catch(e){
+    console.error(e);
+    $('#hint').textContent = 'Der Scan konnte nicht gelesen werden. Möglich sind OBJ, STL, GLB und PLY (GLTF nur als einzelne .glb-Datei). Beim ersten Mal braucht die Seite Internet.';
+  }
+}
+// Scan nachträglich skalieren oder drehen (bleibt auf 0/0/0 ausgerichtet)
+function scanXf(m, change){
+  if (!cad || !cad.scan) return;
+  const all = new THREE.Box3();
+  cad.parts.forEach(p => { p.geo.applyMatrix4(m); p.geo.computeBoundingBox(); all.union(p.geo.boundingBox); });
+  cad.parts.forEach(p => { p.geo.translate(-all.min.x, -all.min.y, -all.min.z); p.geo.computeBoundingBox(); });
+  cad.size = all.getSize(new THREE.Vector3());
+  if (change.unit) cad.unit = cad.src.unit = change.unit;
+  ['rx', 'ry', 'rz'].forEach(k => { if (change[k]) cad.src[k] = (cad.src[k] || 0) + 1; });
+  if (cad.keep && project) IDB.put(project.id, cad.src).catch(() => {});
+  cadProject(); build3d(); fit3d(); draw3d(); renderCadInfo();
+}
+// Foto als Vorlage: verkleinert (max. 1600 px) im Projekt gespeichert, Maßstab über zwei Punkte
+let photoImg = null, photoCalib = null, photoMove = false;
+function photoImage(){
+  const ph = state.photo; if (!ph) return null;
+  if (!photoImg || photoImg._src !== ph.src){ photoImg = new Image(); photoImg._src = ph.src; photoImg.onload = () => { if (mode === '2d') render(); }; photoImg.src = ph.src; }
+  return photoImg.complete && photoImg.naturalWidth ? photoImg : null;
+}
+async function loadPhoto(file){
+  if (!project) return;
+  if (is3()) await setMode('2d');
+  const url = URL.createObjectURL(file), img = new Image();
+  try { await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; }); }
+  catch(e){ $('#hint').textContent = 'Das Foto konnte nicht geöffnet werden.'; URL.revokeObjectURL(url); return; }
+  const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), cw = Math.round(img.naturalWidth * k), ch = Math.round(img.naturalHeight * k);
+  const c = document.createElement('canvas'); c.width = cw; c.height = ch; c.getContext('2d').drawImage(img, 0, 0, cw, ch); URL.revokeObjectURL(url);
+  const w = 1000, h = r2(w * ch / cw);
+  state.photo = {src:c.toDataURL('image/jpeg', .82), x:r2(view.cx - w/2), y:r2(view.cy - h/2), w, h, op:.6, rot:0};
+  photoMove = false; save(); fit(); render(); startCalib();
+}
+function startCalib(){
+  if (!state.photo) return;
+  photoCalib = {pts:[]}; photoMove = false; setTool('select');
+  $('#hint').textContent = 'Maßstab: Tippe den Anfang einer Strecke an, deren Länge du kennst (z. B. eine Kante oder ein Maßband im Foto).';
+  render();
+}
+function applyCalib(){
+  if (!photoCalib || photoCalib.pts.length < 2 || !state.photo) return;
+  const L = parseLen($('#phLen').value), [a, b] = photoCalib.pts, dd = Math.hypot(b.x - a.x, b.y - a.y);
+  if (!(L > 0) || dd < 1e-6){ flash('phLen'); return; }
+  const f = L / dd, ph = state.photo, cx = ph.x + ph.w/2, cy = ph.y + ph.h/2;
+  ph.w = r2(ph.w * f); ph.h = r2(ph.h * f); ph.x = r2(a.x + (cx - a.x) * f - ph.w/2); ph.y = r2(a.y + (cy - a.y) * f - ph.h/2); ph.cal = true;
+  photoCalib = null; $('#phLen').value = ''; save(); fit(); render();
+  $('#hint').textContent = `Maßstab gesetzt – das Foto ist jetzt ${fmt(ph.w)} breit. Jetzt mit den Werkzeugen darüber zeichnen (z. B. Rechteck, Bohrung).`;
+}
+function renderPhotoBar(){
+  const bar = $('#photoBar'); if (!bar) return;
+  const ph = state && state.photo, show = !!(ph && mode === '2d' && project);
+  bar.hidden = !show; if (!show) return;
+  bar.classList.toggle('low', !!cad);
+  $('#phCalBox').hidden = !(photoCalib && photoCalib.pts.length === 2); $('#phUnit').textContent = state.unit;
+  $('#phMove').checked = photoMove; $('#phOp').value = Math.round((ph.op ?? .6) * 100);
+  $('#phHide').textContent = ph.on === false ? 'Einblenden' : 'Ausblenden';
+  $('#phCal').textContent = photoCalib ? 'Abbrechen' : (ph.cal ? 'Maßstab neu' : 'Maßstab festlegen');
+}
+$('#phCal').onclick = () => { if (photoCalib){ photoCalib = null; render(); $('#hint').textContent = 'Maßstab abgebrochen.'; } else startCalib(); };
+$('#phOk').onclick = applyCalib;
+$('#phLen').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); applyCalib(); } });
+$('#phMove').onchange = e => { photoMove = e.target.checked; photoCalib = null; $('#hint').textContent = photoMove ? 'Foto verschieben: auf die Zeichenfläche tippen und ziehen. Danach den Haken wieder raus.' : ''; render(); };
+$('#phRot').onclick = () => { const ph = state.photo; if (!ph) return; ph.rot = ((ph.rot || 0) - 90 + 360) % 360; save(); render(); };
+$('#phOp').oninput = e => { if (!state.photo) return; state.photo.op = +e.target.value / 100; drawCadBg(); };
+$('#phOp').onchange = () => save();
+$('#phHide').onclick = () => { const ph = state.photo; if (!ph) return; ph.on = ph.on === false; save(); render(); };
+$('#phDel').onclick = () => { if (!state.photo) return; if ($('#phDel').dataset.arm !== '1'){ $('#phDel').dataset.arm = '1'; $('#phDel').textContent = 'Wirklich?'; setTimeout(() => { $('#phDel').dataset.arm = ''; $('#phDel').textContent = 'Entfernen'; }, 3000); return; } delete state.photo; photoCalib = null; photoMove = false; save(); render(); $('#phDel').dataset.arm = ''; $('#phDel').textContent = 'Entfernen'; };
+// Startseite: Projekt aus Foto oder Scan automatisch anlegen
+async function autoProject(name){
+  const by = $('#npBy').value.trim() || lsGet(LS_BY) || '', err = $('#spErr');
+  if (!by){ err.textContent = 'Bitte links zuerst „Dein Name“ eintragen.'; $('#npBy').focus(); return false; }
+  lsSet(LS_BY, by); err.textContent = '';
+  const data = freshState('leer'); data.title = {name, by, date:today};
+  const rec = {id:newId(), name, by, updated:Date.now(), data};
+  try { await putProject(rec); } catch(ex){ err.textContent = ex.code === 401 ? 'Der Werkstatt-Code fehlt oder ist falsch.' : 'Anlegen hat nicht geklappt. Bitte nochmal versuchen.'; return false; }
+  loadProject(rec); return true;
+}
+const niceName = (f, pre) => { const b = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim(); return /^(img|dsc|pxl|photo|image|scan|polycam|model)\b|^\d+$/i.test(b) || !b ? `${pre} ${today}` : b; };
+$('#spPhoto').onclick = () => $('#spPhotoIn').click();
+$('#spScan').onclick = () => $('#spScanIn').click();
+$('#spPhotoIn').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; if (await autoProject(niceName(f, 'Foto'))) setTimeout(() => loadPhoto(f), 80); };
+$('#spScanIn').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; if (await autoProject(niceName(f, 'Scan'))) setTimeout(() => openScan(f, {keep:$('#spKeep').checked}), 80); };
+
 async function openCad(file){
   $('#fileMenu').open = false;
   if (mode !== '3d') await setMode('3d');
@@ -5008,6 +5199,7 @@ async function openCad(file){
 function setCad(name, meshes){
   closeCad(true);
   cad = {name, parts:meshes.map((m, i) => {
+    if (m.geo) return {name:m.name || `Teil ${i + 1}`, geo:m.geo, mat:m.mat || null};
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(m.pos, 3));
     if (m.nor) g.setAttribute('normal', new THREE.BufferAttribute(m.nor, 3));
@@ -5015,19 +5207,20 @@ function setCad(name, meshes){
     if (!m.nor) g.computeVertexNormals();
     const mat = m.color ? new THREE.MeshStandardMaterial({color:new THREE.Color(m.color[0], m.color[1], m.color[2]), metalness:.3, roughness:.6, side:THREE.DoubleSide}) : null;
     return {name:m.name || `Teil ${i + 1}`, geo:g, mat};
-  }), view:'top', snap:true};
+  }), view:'top', snap:true, scan:!!(meshes[0] && meshes[0].geo)};
   // Nullpunkt: linke, vordere, untere Ecke des Modells auf 0/0/0
   const all = new THREE.Box3(); cad.parts.forEach(p => { p.geo.computeBoundingBox(); all.union(p.geo.boundingBox); });
-  cad.parts.forEach(p => { p.geo.translate(-all.min.x, -all.min.y, -all.min.z); p.geo.computeBoundingBox(); p.edges = new THREE.EdgesGeometry(p.geo, 30); });
+  cad.parts.forEach(p => { p.geo.translate(-all.min.x, -all.min.y, -all.min.z); p.geo.computeBoundingBox(); p.edges = cad.scan ? emptyEdges() : new THREE.EdgesGeometry(p.geo, 30); });
   cad.size = all.getSize(new THREE.Vector3());
   cadProject();
   $('#cadView').value = 'top'; $('#cadSnap').checked = true;
   cadSel = -1;
-  $('#cadName').textContent = name; $('#cadBar').hidden = false;
+  $('#cadName').textContent = name; $('#cadBar').hidden = false; $('#cadSnap').parentElement.hidden = !!cad.scan;
   renderToolOpts(); build3d(); fit3d(); draw3d(); renderCadInfo();
 }
 // Kanten des Modells in die 2D-Ansicht projizieren (Draufsicht: x/y, Vorderansicht: x/z, Seitenansicht: y/z)
 function cadProject(){
+  if (cad.scan){ scanView(); return; }
   let n = 0; cad.parts.forEach(p => n += p.edges.attributes.position.count);
   const out = new Float32Array(n * 2), v = cad.view; let k = 0;
   let u0 = Infinity, v0 = Infinity, u1 = -Infinity, v1 = -Infinity;
@@ -5041,6 +5234,25 @@ function cadProject(){
   });
   cad.proj = out; cad.box2d = {x0:u0, y0:v0, x1:u1, y1:v1};
 }
+// Scan: statt Kantenlinien eine gerenderte Ansicht (Draufsicht/Vorder-/Seitenansicht) als Hintergrundbild
+function scanView(){
+  const b = new THREE.Box3(); cad.parts.forEach(p => { p.geo.computeBoundingBox(); b.union(p.geo.boundingBox); });
+  const v = cad.view, U = v === 'side' ? [b.min.y, b.max.y] : [b.min.x, b.max.x], V = v === 'top' ? [b.min.y, b.max.y] : [b.min.z, b.max.z];
+  const uw = Math.max(1, U[1] - U[0]), vh = Math.max(1, V[1] - V[0]), k = 1400 / Math.max(uw, vh), pw = Math.max(16, Math.round(uw * k)), phh = Math.max(16, Math.round(vh * k));
+  const r = new THREE.WebGLRenderer({antialias:true, alpha:true, preserveDrawingBuffer:true}); r.setPixelRatio(1); r.setSize(pw, phh, false); r.setClearColor(0xffffff, 0);
+  const sc = new THREE.Scene(), def = new THREE.MeshStandardMaterial({color:0x9aa4b1, roughness:.8, side:THREE.DoubleSide});
+  sc.add(new THREE.HemisphereLight(0xffffff, 0x666666, .9)); const d = new THREE.DirectionalLight(0xffffff, .6); d.position.set(1, -1, 2); sc.add(d);
+  cad.parts.forEach(p => sc.add(new THREE.Mesh(p.geo, p.mat || def)));
+  const c = b.getCenter(new THREE.Vector3()), R = b.getSize(new THREE.Vector3()).length() + 10;
+  const cam = new THREE.OrthographicCamera(-uw/2, uw/2, vh/2, -vh/2, .1, R * 4);
+  if (v === 'top'){ cam.up.set(0, 1, 0); cam.position.set(c.x, c.y, c.z + R); }
+  else if (v === 'front'){ cam.up.set(0, 0, 1); cam.position.set(c.x, c.y - R, c.z); }
+  else { cam.up.set(0, 0, 1); cam.position.set(c.x + R, c.y, c.z); }
+  cam.lookAt(c); cam.updateProjectionMatrix(); r.render(sc, cam);
+  const cv = document.createElement('canvas'); cv.width = pw; cv.height = phh; cv.getContext('2d').drawImage(r.domElement, 0, 0);
+  r.dispose(); if (r.forceContextLoss) r.forceContextLoss(); def.dispose();
+  cad.img = cv; cad.proj = null; cad.box2d = {x0:U[0], y0:V[0], x1:U[1], y1:V[1]};
+}
 // Lage der Zeichenebene im Raum: Draufsicht = Boden, Vorderansicht = Vorderseite (y = 0), Seitenansicht = rechte Seite
 function drawPlaneMatrix(){
   const m = new THREE.Matrix4();
@@ -5049,11 +5261,20 @@ function drawPlaneMatrix(){
   return m;
 }
 function drawCadBg(){
-  const c = $('#cadbg'), show = cad && cad.proj && mode === '2d';
+  const ph = state && state.photo, img = ph && ph.on !== false && photoImage();
+  const c = $('#cadbg'), show = mode === '2d' && ((cad && (cad.proj || cad.img)) || img);
+  renderPhotoBar();
   if (!show){ if (c.width) c.width = 0; return; }
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
   const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const zz = view.z, ox0 = W/2 - view.cx * zz, oy0 = H/2 + view.cy * zz;
+  if (img){
+    const x = ph.x * zz + ox0, y = oy0 - (ph.y + ph.h) * zz, w = ph.w * zz, h = ph.h * zz;
+    g.save(); g.globalAlpha = ph.op ?? .6; g.translate(x + w/2, y + h/2); g.rotate(-(ph.rot || 0) * Math.PI / 180); g.drawImage(img, -w/2, -h/2, w, h); g.restore();
+  }
+  if (cad && cad.img){ const b = cad.box2d; g.save(); g.globalAlpha = .75; g.drawImage(cad.img, b.x0 * zz + ox0, oy0 - b.y1 * zz, (b.x1 - b.x0) * zz, (b.y1 - b.y0) * zz); g.restore(); }
+  if (!cad || !cad.proj) return;
   g.strokeStyle = cssVar('--cadline') || 'rgba(0,0,0,.3)'; g.lineWidth = 1; g.beginPath();
   const a = cad.proj, z = view.z, ox = W/2 - view.cx * z, oy = H/2 + view.cy * z;
   for (let i = 0; i < a.length; i += 4){ g.moveTo(a[i]*z + ox, oy - a[i+1]*z); g.lineTo(a[i+2]*z + ox, oy - a[i+3]*z); }
@@ -5095,13 +5316,25 @@ function renderCadInfo(){
       <label>Höhe (Z)</label><div class="val">${fmt(z.z)}</div>
     </div>
     <p class="note">${cadSel >= 0 ? 'Maße des Bauteils entlang der Achsen (umschließender Quader).' : 'Teil antippen, um Name und Maße zu sehen.'} Mit dem Lineal-Knopf rechts oben erscheinen die Maße direkt im Bild.</p>
-    <p class="note">Die linke, vordere, untere Ecke des Modells liegt auf 0/0/0. In <b>2D</b> erscheint das Modell grau als Hintergrund. Oben in der CAD-Leiste wählst du die Ansicht, in der du deine Teile dazu zeichnest.</p>
-    <p class="note">Das Modell wird nur angesehen. Es wird nicht gespeichert und nirgends hochgeladen.</p>
-    <div class="btnrow"><button class="btn" type="button" id="cadClose2">CAD-Modell schließen</button></div>`;
+    <p class="note">Die linke, vordere, untere Ecke des Modells liegt auf 0/0/0. In <b>2D</b> erscheint das Modell als Hintergrund. Oben in der CAD-Leiste wählst du die Ansicht, in der du deine Teile dazu zeichnest.</p>
+    ${cad.scan ? `<div class="props" style="margin-top:10px"><label for="scUnit">Scan-Einheit</label>${optSelect('scUnit', [['1000', 'Meter (Handy-Apps)'], ['10', 'Zentimeter'], ['1', 'Millimeter']], String(cad.unit || 1))}</div>
+      <div class="btnrow"><button class="btn" type="button" id="scRx">Aufrichten ↻ X</button><button class="btn" type="button" id="scRy">Kippen ↻ Y</button><button class="btn" type="button" id="scRz">Drehen ↻ Z</button></div>
+      <p class="note">Steht der Scan schief oder ist er zu groß/klein? Hier Einheit und Lage anpassen. ${cad.keep ? 'Der Scan ist nur auf diesem Gerät gemerkt und wird beim Öffnen des Projekts wieder geladen – nicht hochgeladen.' : 'Der Scan wird nicht gespeichert und nirgends hochgeladen.'}</p>`
+      : '<p class="note">Das Modell wird nur angesehen. Es wird nicht gespeichert und nirgends hochgeladen.</p>'}
+    <div class="btnrow"><button class="btn" type="button" id="cadClose2">${cad.scan ? 'Scan schließen' : 'CAD-Modell schließen'}</button>${cad.scan && cad.keep ? '<button class="btn danger" type="button" id="scForget">Scan vom Gerät löschen</button>' : ''}</div>`;
   $('#cadClose2').onclick = () => closeCad();
+  if (cad.scan){
+    $('#scUnit').onchange = e => scanXf(new THREE.Matrix4().makeScale(+e.target.value / (cad.unit || 1), +e.target.value / (cad.unit || 1), +e.target.value / (cad.unit || 1)), {unit:+e.target.value});
+    $('#scRx').onclick = () => scanXf(new THREE.Matrix4().makeRotationX(Math.PI / 2), {rx:1});
+    $('#scRy').onclick = () => scanXf(new THREE.Matrix4().makeRotationY(Math.PI / 2), {ry:1});
+    $('#scRz').onclick = () => scanXf(new THREE.Matrix4().makeRotationZ(Math.PI / 2), {rz:1});
+    if ($('#scForget')) $('#scForget').onclick = async () => { if (project) await IDB.del(project.id).catch(() => {}); cad.keep = false; renderCadInfo(); $('#hint').textContent = 'Scan vom Gerät gelöscht.'; };
+  }
 }
 $('#bCad').onclick = () => $('#cadIn').click();
-$('#cadIn').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) openCad(f); };
+$('#cadIn').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) openModel(f); };
+$('#bPhoto').onclick = () => { $('#fileMenu').open = false; $('#photoIn').click(); };
+$('#photoIn').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) loadPhoto(f); };
 $('#cadClose').onclick = () => closeCad();
 $('#zCut').onclick = () => {
   cut3d.on = !cut3d.on; $('#zCut').setAttribute('aria-pressed', cut3d.on); $('#cutBar3').hidden = !cut3d.on; applyCut();
@@ -5254,10 +5487,12 @@ function loadProject(rec){
   lsSet(LS_LAST, rec.id);
   $('#start').hidden = true; document.documentElement.classList.remove('locked');
   renderProjectName(); renderUnits(); renderTools(); setSaveState('saved');
+  photoCalib = null; photoMove = false;
   requestAnimationFrame(() => {
     fit(); render(); renderProps(); renderBom(); renderTitle(); renderLayers(); renderPins();
     if (is3() && three){ build3d(); fit3d(); draw3d(); } else refit3d = true;
   });
+  if (window.indexedDB) IDB.get(rec.id).then(v => { if (v && v.blob && project && project.id === rec.id && !cad) openScan(new File([v.blob], v.name), {...v, restored:true}); }).catch(() => {});
 }
 async function openProject(id){
   try {
@@ -5319,7 +5554,7 @@ $('#plist').addEventListener('click', async e => {
     if (delArmed !== d.dataset.del){ delArmed = d.dataset.del; d.textContent = 'Wirklich löschen?'; d.classList.add('warn'); return; }
     delArmed = null;
     try {
-      await delProject(d.dataset.del);
+      await delProject(d.dataset.del); if (window.indexedDB) IDB.del(d.dataset.del).catch(() => {});
       if (project && project.id === d.dataset.del){ project = null; state = freshState(false); renderProjectName(); setSaveState('none'); $('#startClose').hidden = true; }
       await refreshList();
     } catch(err){ renderList('Löschen hat nicht geklappt. Bitte nochmal versuchen.'); }
