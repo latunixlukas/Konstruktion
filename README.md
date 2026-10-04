@@ -33,7 +33,8 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 - Gekippte Bleche nehmen Schrauben und aufliegende Teile mit
 - **Gehrung** an Profilen: Enden links/rechts gerade oder 15°–60° (z. B. 45° für Rahmen), sichtbar in 2D, 3D, Zeichnung, STEP; Länge = längste Kante, Gehrung in Stückliste und Zuschnitt
 - **Baugruppen**: Teile zusammenfassen (Strg+G), benennen, gemeinsam verschieben, kopieren, spiegeln, kippen; Klick wählt die ganze Gruppe, Alt+Klick oder Doppelklick ein einzelnes Teil; Stückliste gegliedert (1, 1.1, 1.2 …)
-- **Baukasten**: Rahmen (Gehrung oder stumpf, Querstreben, Nähte), Geländer (Pfosten, Handlauf, Untergurt, Füllstäbe mit Prüfung lichter Abstand ≤ 12 cm, Fußplatten), Tor (Rahmen auf Gehrung, Füllstäbe, Mittelriegel), Treppe (Schrittmaßregel 2h + a = 630 mm, Wangen, Stufen) per Formular
+- **Baukasten**: Podest mit Gitterrost, Tischgestell, Regal, ortsfeste Leiter (DIN EN ISO 14122-4), Wandkonsole mit Strebe, Treppe wahlweise mit Geländer (Knieleisten oder Stäbe); außerdem Rahmen (Gehrung oder stumpf, Querstreben, Nähte), Geländer (Pfosten, Handlauf, Untergurt, Füllstäbe mit Prüfung lichter Abstand ≤ 12 cm, Fußplatten), Tor (Rahmen auf Gehrung, Füllstäbe, Mittelriegel), Treppe (Schrittmaßregel 2h + a = 630 mm, Wangen, Stufen) per Formular
+- **Kommentare** (Werkzeug C): Notiz an ein Teil heften, wandert mit; in 2D als Pin, in 3D als Fähnchen; Liste mit „erledigt“-Haken; in Exporten nicht enthalten
 - **Explosionsansicht** in der Demo-Ansicht: Teile fahren per Knopf oder Schieberegler auseinander
 - **Export** als PDF (A4 quer, je eine Seite 2D-Zeichnung, 3D-Ansicht, Stückliste) oder als ein PNG-Bild; Inhalte frei wählbar; **DXF** als Laser-Zuschnitt (Bleche, Ronden, Abwicklungen mit Biegelinien, 1:1) oder ganze Zeichnung; außerdem SVG
 

@@ -193,7 +193,8 @@ input[type="color"]{width:100%;height:34px;padding:2px;border:1px solid var(--li
 /* Zuschnitt */
 .cutpanel{width:min(860px,100%);max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:14px}
 .cuthead{display:flex;align-items:center;justify-content:space-between}
-.wizpanel{width:min(640px,100%)}
+.wizpanel{width:min(680px,100%)}
+#wizTabs{flex-wrap:wrap;height:auto}
 .wizprops{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
 .wizinfo{font-size:.85rem;line-height:1.6;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px}
 .wizinfo .ok{color:#16a34a;font-weight:600}.wizinfo .bad{color:#dc2626;font-weight:600}
@@ -326,6 +327,15 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
 .sel .arrow{fill:var(--sel)} .sel .dimtext,.sel .lbl{fill:var(--sel)}
 .handle{fill:var(--paper);stroke:var(--sel);stroke-width:1.5}
 .ghost{fill:none;stroke:var(--sel);stroke-width:1;stroke-dasharray:4 3}
+.pin path{fill:#f59e0b;stroke:#fff;stroke-width:1.5}.pin text{fill:#111;font:700 10px var(--f-body)}.pin.done path{fill:#9ca3af}
+.sel .pin path{stroke:var(--sel);stroke-width:2.5}
+.pintxt{fill:var(--ink);font:500 12px var(--f-body);paint-order:stroke;stroke:var(--paper);stroke-width:3.5px}
+.pin3{position:absolute;z-index:4;transform:translate(-50%,-100%);display:flex;align-items:center;gap:6px;max-width:240px;padding:3px 9px 3px 4px;border-radius:999px;background:var(--raised);border:1px solid var(--line-strong);box-shadow:var(--shadow);font-size:.75rem;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pin3 b{flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#f59e0b;color:#111;font-size:.7rem}
+.pin3.done{opacity:.55}.pin3.done b{background:#9ca3af}.pin3.sel{outline:2px solid var(--sel)}
+.pins{display:grid;gap:6px}.prow2{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;background:var(--raised)}
+.prow2.sel{border-color:var(--sel)}.prow2 .no{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#f59e0b;color:#111;font:700 .72rem var(--f-body)}
+.prow2.done .no{background:#9ca3af}.prow2.done .tx{text-decoration:line-through;color:var(--muted)}.prow2 .tx{min-width:0;font-size:.85rem}.prow2 .tx small{display:block;color:var(--muted);font-size:.72rem}
 .grplbl{fill:var(--sel);font:600 12px var(--f-body)}
 .grpbox{border:1px solid var(--line-strong);border-radius:var(--r);padding:12px;margin:0 0 14px;background:var(--raised)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chips button{font-size:.75rem;padding:2px 8px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);cursor:pointer}
@@ -458,7 +468,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
   <div class="modal" id="wizDlg" hidden>
     <form class="panel cutpanel wizpanel" id="wizForm" novalidate role="dialog" aria-labelledby="wizTitle">
       <div class="cuthead"><h3 id="wizTitle">Baukasten</h3><button class="btn icon" type="button" id="wizClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-      <div class="seg" id="wizTabs"><button type="button" data-w="frame" aria-pressed="true">Rahmen</button><button type="button" data-w="rail">Geländer</button><button type="button" data-w="gate">Tor</button><button type="button" data-w="stair">Treppe</button></div>
+      <div class="seg" id="wizTabs"><button type="button" data-w="frame" aria-pressed="true">Rahmen</button><button type="button" data-w="rail">Geländer</button><button type="button" data-w="gate">Tor</button><button type="button" data-w="stair">Treppe</button><button type="button" data-w="podest">Podest</button><button type="button" data-w="table">Tisch</button><button type="button" data-w="shelf">Regal</button><button type="button" data-w="ladder">Leiter</button><button type="button" data-w="bracket">Konsole</button></div>
       <div class="props wizprops" id="wizFields"></div>
       <div class="wizinfo" id="wizInfo"></div>
       <p class="err" id="wizErr"></p>
@@ -556,6 +566,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <span id="cutPos" class="cutpos"></span>
           <label class="chk"><input type="checkbox" id="cutFlip"> andere Seite</label>
         </div>
+        <div id="pins3d"></div>
         <div class="m3" id="m3x" hidden></div><div class="m3" id="m3y" hidden></div><div class="m3" id="m3z" hidden></div>
       </div>
       <div class="cadbar pill" id="cadBar" hidden>
@@ -586,7 +597,8 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Maß</b>: von Punkt zu Punkt ziehen. Der Abstand wird automatisch beschriftet.</li>
             <li><b>Text</b>: Text antippen und rechts eintippen. <b>Positionsnummer</b> und <b>Hinweispfeil</b> vom Teil nach außen ziehen – die Nummern zählen automatisch hoch.</li>
             <li><b>Spiegeln &amp; Muster</b>: Teil(e) auswählen, rechts unter den Eigenschaften „Spiegeln &amp; Muster“ aufklappen. Muster = Anzahl × Abstand in X und Y.</li>
-            <li><b>Baukasten</b> (oben): Rahmen, Geländer, Tor oder Treppe per Formular. Prüft z. B. den Stababstand ≤ 12 cm und das Schrittmaß.</li>
+            <li><b>Kommentar</b> (<kbd>C</kbd>): auf ein Teil tippen und z. B. „hier entgraten“ schreiben. Der Kommentar wandert mit dem Teil; rechts in der Liste abhaken, wenn erledigt.</li>
+            <li><b>Baukasten</b> (oben): Rahmen, Geländer, Tor, Treppe (auch mit Geländer), Podest, Tisch, Regal, Leiter oder Konsole per Formular. Prüft z. B. den Stababstand ≤ 12 cm und das Schrittmaß.</li>
             <li><b>Baugruppe</b>: mehrere Teile wählen, <kbd>Strg+G</kbd>. Klick wählt die ganze Gruppe, <kbd>Alt</kbd> + Klick oder Doppelklick ein einzelnes Teil.</li>
             <li><b>Gehrung</b>: Profil anklicken, rechts „Ende links/rechts“ z. B. 45° wählen.</li>
             <li><b>Demo</b>: oben neben 2D/3D. Bunte 3D-Ansicht zum Vorzeigen. Teil antippen und rechts eine Farbe wählen, „Bild speichern“ für ein PNG.</li>
@@ -600,13 +612,17 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li>Mehrere Teile: Rahmen aufziehen (nach rechts = ganz drin, nach links = berührt) oder Shift + Klick. <kbd>Strg+C</kbd> <kbd>Strg+V</kbd> <kbd>Strg+X</kbd> <kbd>Strg+A</kbd>.</li>
             <li><b>3D</b>: ausgewähltes Teil ziehen = verschieben, mit Shift ziehen = anheben (oder Feld „Höhe Z“, Tasten Bild↑/Bild↓). Schnitt-Knopf rechts oben schneidet das Modell auf.</li>
             <li>Ansicht verschieben: rechte Maustaste ziehen (am Handy: leere Fläche ziehen). Zoomen: Mausrad oder zwei Finger.</li>
-            <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>O</kbd> <kbd>K</kbd> <kbd>G</kbd> <kbd>W</kbd> <kbd>P</kbd> <kbd>N</kbd> <kbd>T</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
+            <li>Tasten: <kbd>V</kbd> <kbd>R</kbd> <kbd>B</kbd> <kbd>S</kbd> <kbd>O</kbd> <kbd>K</kbd> <kbd>G</kbd> <kbd>W</kbd> <kbd>P</kbd> <kbd>N</kbd> <kbd>T</kbd> <kbd>C</kbd> <kbd>L</kbd> <kbd>M</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg+D</kbd> duplizieren, Pfeiltasten verschieben, <kbd>Shift</kbd> = ohne Raster.</li>
           </ul>
         </details>
       </section>
       <section>
         <h2>Eigenschaften <small id="selInfo"></small></h2>
         <div id="props"></div>
+      </section>
+      <section>
+        <h2>Kommentare <small id="pinCount"></small> <button class="btn" type="button" id="bPinsVis">Ausblenden</button></h2>
+        <div class="pins" id="pins"></div>
       </section>
       <section>
         <h2>Ebenen <button class="btn" type="button" id="bLayerAdd">+ Neue Ebene</button></h2>
@@ -674,6 +690,8 @@ const GRADES = {hex:['8.8','10.9','A2-70'], cyl:['8.8','10.9','12.9','A2-70'], c
 const sizesFor = k => KINDS[k].sizes || SIZES;
 const MATS = {
   'S235JR':{name:'Stahl S235JR', rho:7.85},
+  'GR':{name:'Gitterrost 30/3 verzinkt', rho:0.75},
+  'HOLZ':{name:'Holz (Multiplex)', rho:0.65},
   'S355J2':{name:'Stahl S355J2', rho:7.85},
   '1.4301':{name:'Edelstahl 1.4301', rho:7.9},
   'AlMg3':{name:'Aluminium AlMg3', rho:2.66},
@@ -723,6 +741,7 @@ let tool = 'select', selId = null;
 let undoStack = [], redoStack = [];
 const opts = {
   rect:{name:'Flachstahl', t:10, mat:'S235JR'},
+  pin:{who:''},
   hole:{fit:'D-M8', d:9, form:'round', l:30, b:11, w:60, h:40, r:0},
   screw:{kind:'hex', size:'M8', len:30, grade:'8.8', view:'top'},
   line:{style:'solid'},
@@ -855,6 +874,10 @@ function regroup(copies, src){
     delete c._grp; delete c._full;
   });
 }
+function remapRefs(copies, src){
+  const map = new Map(); src.forEach((o, i) => map.set(o.id, copies[i].id));
+  copies.forEach(c => { if (c.type === 'pin' && c.ref != null && map.has(c.ref)) c.ref = map.get(c.ref); });
+}
 function groupSel(){
   const list = selShapes(); if (list.length < 2) return;
   snapshot(); const g = makeGroup(list); pruneGroups(); changed();
@@ -865,7 +888,7 @@ function ungroupSel(){
   snapshot(); groupMembers(g.id).forEach(x => delete x.group); pruneGroups(); changed();
   $('#hint').textContent = `Baugruppe „${g.name}“ aufgelöst. Die Teile sind wieder einzeln.`;
 }
-function changed(full = true){ save(); render(); if (full){ renderProps(); renderBom(); renderTitle(); renderLayers(); } if (is3() && three){ build3d(); draw3d(); } }
+function changed(full = true){ save(); render(); if (full){ renderProps(); renderBom(); renderTitle(); renderLayers(); renderPins(); } if (is3() && three){ build3d(); draw3d(); } }
 
 /* ---------- Ansicht ---------- */
 let W = 800, H = 500;
@@ -1098,8 +1121,14 @@ function rotBox(s, b){
   const ps = [[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]].map(([x, y]) => localToWorld(s, x, y));
   return {x0:Math.min(...ps.map(p => p.x)), y0:Math.min(...ps.map(p => p.y)), x1:Math.max(...ps.map(p => p.x)), y1:Math.max(...ps.map(p => p.y))};
 }
+// Kommentar (Pin): hängt an einem Teil (ref, Abstand dx/dy zum Ankerpunkt) und wandert mit; ohne Teil an fester Stelle
+const anchorOf = p => 'x1' in p ? {x:p.x1, y:p.y1} : {x:p.x, y:p.y};
+function pinPos(s){ const r = s.ref != null && byId(s.ref); if (r && r.type !== 'pin'){ const a = anchorOf(r); s.x = r2(a.x + (s.dx || 0)); s.y = r2(a.y + (s.dy || 0)); } return {x:s.x, y:s.y}; }
+function rebasePin(s){ const r = s.ref != null && byId(s.ref); if (r){ const a = anchorOf(r); s.dx = r2(s.x - a.x); s.dy = r2(s.y - a.y); } }
+const pinNo = s => state.shapes.filter(x => x.type === 'pin').indexOf(s) + 1;
+const partName = p => p ? (p.name || (p.type === 'profile' ? PROFILES[p.kind].name + ' ' + p.size : p.type === 'screw' ? KINDS[p.kind].name + ' ' + p.size : TYPENAMES[p.type])) : '';
 function bbox(s){
-  if (s.type === 'profile') return rotBox(s, profileLocalBox(s));
+  if (s.type === 'pin'){ const p = pinPos(s), R = 11 / view.z; return {x0:p.x - R, y0:p.y, x1:p.x + R, y1:p.y + 2.6 * R}; }  if (s.type === 'profile') return rotBox(s, profileLocalBox(s));
   if (s.type === 'bend') return rotBox(s, bendLocalBox(s));
   if (s.type === 'slot') return rotBox(s, {x0:-s.l/2, y0:-s.b/2, x1:s.l/2, y1:s.b/2});
   if (s.type === 'cutout') return rotBox(s, {x0:-s.w/2, y0:-s.h/2, x1:s.w/2, y1:s.h/2});
@@ -1124,7 +1153,7 @@ function distSeg(p, a, b){
 }
 function dimNormal(s){ const L = Math.hypot(s.x2 - s.x1, s.y2 - s.y1) || 1; return {x:-(s.y2 - s.y1)/L, y:(s.x2 - s.x1)/L}; }
 function hit(s, p, tol){
-  if (s.type === 'rect'){ const l = s.rot ? worldToLocal(s, p) : {x:p.x - s.x, y:p.y - s.y}; return l.x >= -tol && l.x <= s.w + tol && l.y >= -tol && l.y <= s.h + tol; }
+  if (s.type === 'pin'){ const b = bbox(s); return p.x >= b.x0 - tol && p.x <= b.x1 + tol && p.y >= b.y0 - tol && p.y <= b.y1 + tol; }  if (s.type === 'rect'){ const l = s.rot ? worldToLocal(s, p) : {x:p.x - s.x, y:p.y - s.y}; return l.x >= -tol && l.x <= s.w + tol && l.y >= -tol && l.y <= s.h + tol; }
   if (s.type === 'hole') return Math.hypot(p.x - s.x, p.y - s.y) <= s.d/2 + tol;
   if (s.type === 'screw'){ const l = worldToLocal(s, p), b = screwLocalBox(s); return l.x >= b.x0 - tol && l.x <= b.x1 + tol && l.y >= b.y0 - tol && l.y <= b.y1 + tol; }
   if (s.type === 'slot' || s.type === 'cutout'){ const l = worldToLocal(s, p), o = cutOutline(s); return inPoly(l, o) || o.some((q, i) => distSeg(l, {x:q[0], y:q[1]}, {x:o[(i+1) % o.length][0], y:o[(i+1) % o.length][1]}) <= tol); }
@@ -1149,7 +1178,7 @@ function hit(s, p, tol){
   }
   return false;
 }
-const LAYER = {text:7, balloon:7, leader:7, slot:3, cutout:3, disc:0, circle:2, rect:0, profile:1, shaft:1, bend:1, line:2, hole:3, weld:4, screw:5, dim:6};
+const LAYER = {pin:9, text:7, balloon:7, leader:7, slot:3, cutout:3, disc:0, circle:2, rect:0, profile:1, shaft:1, bend:1, line:2, hole:3, weld:4, screw:5, dim:6};
 // Ebenen: ausgeblendet = nicht gezeichnet, gesperrt = sichtbar, aber nicht anklickbar
 const layerOf = s => (state.layers || []).find(l => l.id === (s.layer || 'L1')) || {on:true, lock:false};
 const isVis = s => layerOf(s).on !== false;
@@ -1336,6 +1365,11 @@ function shapeMarkupInner(s, T, showDims){
       const b = screwLocalBox(s), w = localToWorld(s, b.x1, b.y1);
       o += `<text class="lbl" x="${f1(T.x(w.x) + 4)}" y="${f1(T.y(w.y) - 4)}">${screwLabel(s)}</text>`;
     }
+  } else if (s.type === 'pin'){
+    if (state.showPins === false) return '';
+    const p = pinPos(s), x = f1(T.x(p.x)), y = f1(T.y(p.y)), t = String(s.text || '');
+    o += `<g class="pin${s.done ? ' done' : ''}"><path d="M${x},${y}L${f1(x - 7)},${f1(y - 10)}A10,10 0 1 1 ${f1(+x + 7)},${f1(y - 10)}Z"/><text x="${x}" y="${f1(y - 17)}" text-anchor="middle" dominant-baseline="central">${pinNo(s)}</text></g>`;
+    if (!s.done && t) o += `<text class="pintxt" x="${f1(+x + 13)}" y="${f1(y - 13)}">${esc(t.length > 40 ? t.slice(0, 38) + '…' : t)}</text>`;
   } else if (s.type === 'profile'){
     o += profileMarkup(s, T, showDims);
   } else if (s.type === 'shaft'){
@@ -1466,6 +1500,7 @@ const ICONS = {
   hole:'<circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1" stroke-dasharray="3 1.5"/>',
   screw:'<path d="M7.5 3h9l2 4h-13z" fill="currentColor"/><rect x="9.5" y="7" width="5" height="14" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 11l5 2M9.5 15l5 2" stroke="currentColor" stroke-width="1.2"/>',
   text:'<path d="M5 6h14M12 6v13M9 19h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  pin:'<path d="M4 5h16v10H10l-4 4v-4H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 9h8M8 12h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
   line:'<path d="M4 19L20 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
   profile:'<path d="M5 4v15h15" fill="none" stroke="currentColor" stroke-width="3"/>',
   shaft:'<path d="M2 10h4V8h5V6h4v2h4v2h3v4h-3v2h-4v2h-4v-2H6v-2H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
@@ -1487,6 +1522,7 @@ const TOOLS = [
   {k:'profile', n:'Profil', key:'P', hint:'Längsansicht: in Richtung der Länge ziehen (oder tippen). Querschnitt: tippen.'},
   {k:'weld', n:'Naht', key:'N', hint:'Schweißnaht entlang der Kante ziehen. Das Nahtsymbol erscheint automatisch.'},
   {k:'text', n:'Text', key:'T', hint:'Text: antippen und rechts den Text eingeben. Positionsnummer und Hinweispfeil: vom Teil aus nach außen ziehen.'},
+  {k:'pin', n:'Kommentar', key:'C', hint:'Auf ein Teil tippen: Der Kommentar wird angeheftet und wandert mit dem Teil. Rechts den Text eingeben.'},
   {k:'line', n:'Linie', key:'L', hint:'Linie von Punkt zu Punkt ziehen.'},
   {k:'dim', n:'Maß', key:'M', hint:'Von Punkt zu Punkt ziehen. Der Abstand wird automatisch angezeigt.'},
 ];
@@ -1565,6 +1601,8 @@ function renderToolOpts(){
   } else if (tool === 'text'){
     h = `<label>Art ${optSelect('o-tkind', [['text','Text'],['balloon','Positionsnummer'],['leader','Hinweispfeil mit Text']], opts.text.kind)}</label>
       <label>Schrifthöhe <input id="o-tsize" value="${num(opts.text.size)}" inputmode="decimal"> ${state.unit}</label>`;
+  } else if (tool === 'pin'){
+    h = `<label>Von <input id="o-who" class="txt" style="width:10em" value="${esc(opts.pin.who || state.title.by || '')}" placeholder="Name"></label><span class="unitlbl">Auf ein Teil tippen – der Kommentar hängt dann am Teil.</span>`;
   } else if (tool === 'line'){
     h = `<label>Linienart ${optSelect('o-style', [['solid','Körperkante (breit)'],['center','Mittellinie']], opts.line.style)}</label>`;
   } else {
@@ -1591,6 +1629,7 @@ $('#toolopts').addEventListener('change', e => {
   if (id === 'o-view') opts.screw.view = v;
   if (id === 'o-style') opts.line.style = v;
   if (id === 'o-tkind') opts.text.kind = v;
+  if (id === 'o-who') opts.pin.who = v;
   if (id === 'o-tsize'){ const t = parseLen(v); if (t > 0) opts.text.size = t; }
   if (id === 'o-dd'){ const t = parseLen(v); if (t > 0) opts.disc.d = t; }
   if (id === 'o-ddi'){ const t = parseLen(v); if (t >= 0) opts.disc.di = t; }
@@ -1712,6 +1751,12 @@ svg.addEventListener('pointerdown', e => {
     s = {type:'profile', kind:o.kind, size:o.size, len:o.len, view:o.view, mat:o.mat, rot:0, x:sp.x, y:sp.y};
     if (o.view === 'side') drag = {mode:'create', shape:s, start:sp, created:true};
   }
+  else if (tool === 'pin'){
+    const tol = 6 / view.z, list = ordered().filter(isFree).filter(o => o.type !== 'pin').reverse();
+    const t = list.find(o => o.type !== 'rect' && hit(o, p, tol)) || list.find(o => hit(o, p, tol));
+    s = {type:'pin', x:r2(p.x), y:r2(p.y), text:'', who:opts.pin.who || state.title.by || '', done:false, date:today};
+    if (t){ const a = anchorOf(t); s.ref = t.id; s.dx = r2(p.x - a.x); s.dy = r2(p.y - a.y); }
+  }
   else if (tool === 'hole' && opts.hole.form === 'slot'){ s = {type:'slot', x:sp.x, y:sp.y, l:Math.max(opts.hole.l, opts.hole.b), b:opts.hole.b, rot:0}; }
   else if (tool === 'hole' && opts.hole.form === 'cutout'){ s = {type:'cutout', x:sp.x, y:sp.y, w:opts.hole.w, h:opts.hole.h, r:opts.hole.r, rot:0}; }
   else if (tool === 'hole'){ s = {type:'hole', x:sp.x, y:sp.y, d:opts.hole.d, fit:opts.hole.fit}; }
@@ -1724,7 +1769,7 @@ svg.addEventListener('pointerdown', e => {
   state.shapes.push(s); setSel([s.id]);
   if (!drag) changed();
   else render();
-  if (s.type === 'text') setTimeout(() => { const i = $('#p-text'); if (i){ i.focus(); i.select(); } }, 30);
+  if (s.type === 'text' || s.type === 'pin') setTimeout(() => { const i = $('#p-text'); if (i){ i.focus(); i.select(); } }, 30);
 });
 
 // Tablet: lange drücken auf ein Teil = zur Auswahl dazu/heraus, auf leerer Fläche = Rahmen aufziehen
@@ -1970,6 +2015,7 @@ function fieldsForBase(s){
     {k:'around', l:'Ringsum', kind:'select', o:[['0','nein'],['1','ja']]},
     {k:'_len', l:'Nahtlänge', kind:'len'},
     len('x1', 'X Start'), len('y1', 'Y Start'), len('x2', 'X Ende'), len('y2', 'Y Ende')];
+  if (s.type === 'pin') return [{k:'text', l:'Kommentar', kind:'text'}, {k:'who', l:'Von', kind:'text'}, {k:'done', l:'Status', kind:'select', o:[['0', 'offen'], ['1', 'erledigt ✓']]}];
   if (s.type === 'text') return [{k:'text', l:'Text', kind:'text'}, len('size', 'Schrifthöhe'), {k:'rot', l:'Drehung', kind:'deg'}, len('x', 'X'), len('y', 'Y')];
   if (s.type === 'balloon') return [{k:'n', l:'Positionsnummer', kind:'text'}, len('size', 'Größe')];
   if (s.type === 'leader') return [{k:'text', l:'Text', kind:'text'}, len('size', 'Schrifthöhe')];
@@ -1985,6 +2031,7 @@ function fieldsForBase(s){
 function getVal(s, k){
   if (k === '_len') return Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
   if (k === 'around') return s.around ? '1' : '0';
+  if (k === 'done') return s.done ? '1' : '0';
   if (k === 'rot') return s.rot || 0;
   if (k === 'layer') return s.layer || 'L1';
   if (k === 'z') return s.z || 0;
@@ -1999,7 +2046,7 @@ function getVal(s, k){
   if (k === '_ang') return Math.round(Math.atan2(s.y2 - s.y1, s.x2 - s.x1) * 1800 / Math.PI) / 10;
   return s[k];
 }
-const TYPENAMES = {text:'Text', balloon:'Positionsnummer', leader:'Hinweispfeil', slot:'Langloch', cutout:'Ausschnitt', disc:'Ronde / Flansch', circle:'Kreis / Bogen', bend:'Biegeteil', rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht', shaft:'Welle'};
+const TYPENAMES = {pin:'Kommentar', text:'Text', balloon:'Positionsnummer', leader:'Hinweispfeil', slot:'Langloch', cutout:'Ausschnitt', disc:'Ronde / Flansch', circle:'Kreis / Bogen', bend:'Biegeteil', rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht', shaft:'Welle'};
 function renderProps(){
   if (mode === 'demo'){ renderDemoPanel(); return; }
   const s = byId(selId), el = $('#props');
@@ -2062,6 +2109,10 @@ function renderProps(){
     else t = `Schlüsselweite SW ${dec(s.kind === 'cyl' ? g.sw : g.s)} · Durchgangsloch Ø${dec(g.dh)} · Kernloch Ø${dec(g.kl)}`;
     h += `<p class="note">${k.norm} · ${t}</p>`;
   }
+  if (s.type === 'pin'){
+    const r = s.ref != null && byId(s.ref);
+    h += `<p class="note">${r ? `Hängt an: <b>${esc(partName(r))}</b> – wandert mit dem Teil. <button class="btn" type="button" id="pinFree" style="margin-left:4px">Lösen</button>` : 'Nicht an einem Teil befestigt.'}${s.date ? ` · ${esc(s.date)}` : ''}</p>`;
+  }
   if (s.type === 'hole' && s.tol){
     h += `<p class="note">Ø${num(s.d, 'mm')} <b>${s.tol}</b>: ${tolText(s.tol, s.d)}${s.mate ? `<br>Passung <b>${s.tol}/${s.mate}</b> · ${fitText(s.tol, s.mate, s.d)}` : '<br>Wähle „Passt zu Welle“, um Spiel oder Übermaß zu sehen.'}</p>`;
   }
@@ -2085,6 +2136,7 @@ function renderProps(){
     <button class="btn danger" type="button" id="aDel">Löschen</button></div>`;
   el.innerHTML = h + toolsBlock();
   bindToolsBlock();
+  if ($('#pinFree')) $('#pinFree').onclick = () => { snapshot(); pinPos(s); delete s.ref; delete s.dx; delete s.dy; changed(); };
   if ($('#gAll')) $('#gAll').onclick = () => { setSel(withGroups([s.id])); renderProps(); render(); if (is3() && three){ build3d(); draw3d(); } };
   $('#aDup').onclick = duplicate;
   $('#aLib').onclick = () => openLibSave([s]);
@@ -2106,7 +2158,7 @@ $('#props').addEventListener('change', e => {
     s[k] = ((Math.round(a * 100) / 100) % 360 + 360) % 360; changed(); return;
   }
   if (f.kind === 'select'){
-    s[k] = (k === 'len' || k === 'rot' || k === 'a' || k === 'keyStep' || k === 'cutA' || k === 'cutB') ? +v : (k === 'around' ? v === '1' : v);
+    s[k] = (k === 'len' || k === 'rot' || k === 'a' || k === 'keyStep' || k === 'cutA' || k === 'cutB') ? +v : ((k === 'around' || k === 'done') ? v === '1' : v);
     if (k === 'keyStep' && +v >= 0) s.keyLen = Math.max(8, s.steps[+v].l - 8);
     if (k === 'kind' && s.type === 'profile') s.size = Object.keys(PROFILES[v].sizes)[0];
     if (k === 'tol' && !v) s.mate = '';
@@ -2243,7 +2295,7 @@ function bindToolsBlock(){
     for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++){
       if (!i && !j) continue;
       const copies = list.map(o => { const c = JSON.parse(JSON.stringify(o)); c.id = nextId++; moveBy(c, r2(dx * i), r2(dy * j)); return c; });
-      regroup(copies, list); copies.forEach(c => { state.shapes.push(c); ids.push(c.id); });
+      regroup(copies, list); remapRefs(copies, list); copies.forEach(c => { state.shapes.push(c); ids.push(c.id); });
     }
     setSel(ids); changed();
     $('#hint').textContent = `Muster erzeugt: ${nx} × ${ny} (${ids.length} Teile, alle ausgewählt).`;
@@ -2259,7 +2311,7 @@ function mirrorShape(o, vertical, ax){
     if (o.type === 'dim') o.off = -o.off;
     return;
   }
-  if (o.type === 'hole' || o.type === 'disc' || o.type === 'text' || o.type === 'circle'){
+  if (o.type === 'hole' || o.type === 'disc' || o.type === 'text' || o.type === 'circle' || o.type === 'pin'){
     const c = M(o.x, o.y); o.x = c.x; o.y = c.y;
     if (o.type === 'circle' && !circleFull(o)){ const a0 = o.a0, a1 = o.a1; if (vertical){ o.a0 = 180 - a1; o.a1 = 180 - a0; } else { o.a0 = -a1; o.a1 = -a0; } }
     if (o.type === 'text' && o.rot) o.rot = -o.rot;
@@ -2288,6 +2340,7 @@ function mirrorShape(o, vertical, ax){
 }
 function mirrorSel(vertical){
   const list = selShapes(); if (!list.length) return;
+  state.shapes.forEach(o => { if (o.type === 'pin') pinPos(o); });
   const b = list.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
   const copy = state.mirCopy !== false;
   // als Kopie: Achse an der rechten bzw. oberen Kante, sonst in der Mitte
@@ -2296,9 +2349,10 @@ function mirrorSel(vertical){
   if (copy){
     const ids = [];
     const copies = list.map(o => { const c = JSON.parse(JSON.stringify(o)); c.id = nextId++; mirrorShape(c, vertical, ax); return c; });
-    regroup(copies, list); copies.forEach(c => { state.shapes.push(c); ids.push(c.id); });
+    regroup(copies, list); remapRefs(copies, list); copies.forEach(c => { state.shapes.push(c); ids.push(c.id); });
+    copies.forEach(c => { if (c.type === 'pin') rebasePin(c); });
     setSel(ids);
-  } else list.forEach(o => mirrorShape(o, vertical, ax));
+  } else { list.forEach(o => mirrorShape(o, vertical, ax)); list.forEach(o => { if (o.type === 'pin') rebasePin(o); }); }
   changed();
 }
 function duplicate(){
@@ -2306,7 +2360,7 @@ function duplicate(){
   snapshot();
   const d = Math.max(state.snap, 10), ids = [];
   const copies = list.map(s => { const c = JSON.parse(JSON.stringify(s)); c.id = nextId++; moveBy(c, d, -d); return c; });
-  regroup(copies, list); copies.forEach(c => { state.shapes.push(c); ids.push(c.id); });
+  regroup(copies, list); remapRefs(copies, list); copies.forEach(c => { state.shapes.push(c); ids.push(c.id); });
   setSel(ids); changed();
 }
 function del(){
@@ -2319,7 +2373,7 @@ let clip = null;
 function copySel(){
   const list = selShapes(); if (!list.length) return false;
   const b = list.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
-  clip = list.map(s => { const c = JSON.parse(JSON.stringify(s)); delete c.id; moveBy(c, -b.x0, -b.y0); const g = groupOf(s); if (g){ c._grp = {...g}; c._full = list.filter(x => x.group === g.id).length === groupMembers(g.id).length; } return c; });
+  clip = list.map(s => { const c = JSON.parse(JSON.stringify(s)); c._oid = c.id; delete c.id; if (c.type === 'pin'){ pinPos(s); c.x = s.x; c.y = s.y; c._ref = c.ref; delete c.ref; } moveBy(c, -b.x0, -b.y0); const g = groupOf(s); if (g){ c._grp = {...g}; c._full = list.filter(x => x.group === g.id).length === groupMembers(g.id).length; } return c; });
   lsSet(LS_CLIP, JSON.stringify(clip));
   $('#hint').textContent = `${list.length} Teil${list.length === 1 ? '' : 'e'} kopiert. Mit Strg + V an der Mausposition einfügen.`;
   return true;
@@ -2330,7 +2384,11 @@ function pasteClip(){
   snapshot();
   const at = cursor || {x:view.cx, y:view.cy}, ids = [];
   const news = c.map(o => { const n = JSON.parse(JSON.stringify(o)); moveBy(n, snapV(at.x, false), snapV(at.y, false)); n.id = nextId++; n.layer = state.activeLayer || 'L1'; return n; });
-  regroup(news); news.forEach(n => { state.shapes.push(n); ids.push(n.id); });
+  regroup(news);
+  const om = new Map(news.map(n => [n._oid, n.id]));
+  news.forEach(n => { if (n.type === 'pin' && om.has(n._ref)){ n.ref = om.get(n._ref); } delete n._ref; delete n._oid; });
+  news.forEach(n => { state.shapes.push(n); ids.push(n.id); });
+  news.forEach(n => { if (n.type === 'pin') rebasePin(n); });
   setSel(ids); setTool('select'); changed();
   $('#hint').textContent = `${ids.length} Teil${ids.length === 1 ? '' : 'e'} eingefügt.`;
 }
@@ -2339,6 +2397,26 @@ function pasteClip(){
 const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 const LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>';
 const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
+function renderPins(){
+  const el = $('#pins'); if (!el) return;
+  const list = state.shapes.filter(x => x.type === 'pin'), open = list.filter(x => !x.done).length;
+  $('#pinCount').textContent = list.length ? `${open} offen` : '';
+  $('#bPinsVis').textContent = state.showPins === false ? 'Einblenden' : 'Ausblenden'; $('#bPinsVis').hidden = !list.length;
+  el.innerHTML = list.length ? list.map((p, i) => { const r = p.ref != null && byId(p.ref); return `<div class="prow2${p.done ? ' done' : ''}${isSel(p.id) ? ' sel' : ''}" data-pin="${p.id}">
+      <span class="no">${i + 1}</span><span class="tx">${esc(p.text || '(noch leer)')}<small>${esc([p.who, r ? partName(r) : '', p.date].filter(Boolean).join(' · '))}</small></span>
+      <input type="checkbox" data-done="${p.id}"${p.done ? ' checked' : ''} title="erledigt" aria-label="erledigt"></div>`; }).join('')
+    : '<p class="empty">Noch keine Kommentare. Werkzeug „Kommentar“ (Taste C) wählen und auf ein Teil tippen, z. B. „hier noch entgraten“.</p>';
+}
+$('#pins').addEventListener('click', e => {
+  const cb = e.target.closest('[data-done]');
+  if (cb){ const p = byId(+cb.dataset.done); if (p){ snapshot(); p.done = cb.checked; changed(); } return; }
+  const row = e.target.closest('[data-pin]'); if (!row) return;
+  const p = byId(+row.dataset.pin); if (!p) return;
+  if (!is3()){ const q = pinPos(p); view.cx = q.x; view.cy = q.y; }
+  if (!isVis(p)) return;
+  setSel([p.id]); if (!is3()) setTool('select'); renderProps(); render(); renderPins(); if (is3() && three) draw3d();
+});
+$('#bPinsVis').onclick = () => { state.showPins = state.showPins === false; save(); render(); renderPins(); if (is3() && three) draw3d(); };
 function renderLayers(){
   const el = $('#layers'); if (!el) return;
   if (!Array.isArray(state.layers) || !state.layers.length) state.layers = [{id:'L1', name:'Standard', on:true, lock:false}];
@@ -2418,11 +2496,14 @@ function discMass(s){
 }
 function inRect(r, x, y){
   if (r.type === 'disc'){ const d = Math.hypot(x - r.x, y - r.y); return d < r.d/2 && d > (r.di || 0)/2; } const l = r.rot ? worldToLocal(r, {x, y}) : {x:x - r.x, y:y - r.y}; return l.x > 0 && l.x < r.w && l.y > 0 && l.y < r.h; }
-function moveBy(o, dx, dy){ if ('x1' in o){ o.x1 += dx; o.x2 += dx; o.y1 += dy; o.y2 += dy; } else { o.x += dx; o.y += dy; } }
+function moveBy(o, dx, dy){
+  if (o.type === 'pin'){ if (o.ref != null && byId(o.ref)){ if (!isSel(o.ref)){ o.dx = r2((o.dx || 0) + dx); o.dy = r2((o.dy || 0) + dy); } pinPos(o); } else { o.x += dx; o.y += dy; } return; }
+  if ('x1' in o){ o.x1 += dx; o.x2 += dx; o.y1 += dy; o.y2 += dy; } else { o.x += dx; o.y += dy; } }
 function rotPt(px, py, cx, cy, a){ const c = Math.cos(a), n = Math.sin(a), dx = px - cx, dy = py - cy; return {x:cx + dx*c - dy*n, y:cy + dx*n + dy*c}; }
 const r2 = v => Math.round(v * 100) / 100;
 function rotateShapes(list, deg){
   if (!list.length) return;
+  state.shapes.forEach(o => { if (o.type === 'pin') pinPos(o); });
   const b = list.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
   const cx = (b.x0 + b.x1)/2, cy = (b.y0 + b.y1)/2, a = deg * Math.PI / 180;
   list.forEach(o => {
@@ -2431,6 +2512,7 @@ function rotateShapes(list, deg){
     if (o.type !== 'hole' && o.type !== 'disc' && o.type !== 'circle') o.rot = (((o.rot || 0) + deg) % 360 + 360) % 360;
     else if (o.type === 'circle'){ o.a0 = (o.a0 || 0) + deg; o.a1 = (o.a1 ?? 360) + deg; }
   });
+  list.forEach(o => { if (o.type === 'pin'){ delete o.rot; rebasePin(o); } });
 }
 // Fangpunkte eines Teils (Ecken, Mitten, Bohrungsmitten, Endpunkte)
 function snapPts(s){
@@ -2612,19 +2694,37 @@ const WIZ = {tab:'frame',
   frame:{B:800, H:600, prof:'QR|40×40×3', corner:'gehrung', n:1, weld:'1', stand:'0'},
   rail:{L:3000, H:1000, post:'QR|40×40×3', maxPost:1500, hand:'RO|42,4×2,6', low:'RR|40×20×2', bar:'QR|20×20×2', gap:120, yU:80, foot:'1'},
   gate:{B:1000, H:1200, prof:'QR|40×40×3', bar:'QR|20×20×2', gap:120, mid:'1'},
-  stair:{Hg:1000, W:800, hT:180, wange:'200×12', tread:6}};
+  stair:{Hg:1000, W:800, hT:180, wange:'200×12', tread:6, rail:'0', fill:'knie'},
+  podest:{L:2000, B:1000, H:1000, frame:'QR|80×80×4', leg:'QR|80×80×4', span:1000, foot:'1'},
+  table:{L:1200, B:700, H:750, leg:'QR|40×40×3', frame:'QR|40×40×3', top:'blech', low:150, foot:'1'},
+  shelf:{W:1000, D:400, H:1800, n:5, post:'QR|30×30×2', bar:'QR|30×30×2', board:'blech'},
+  ladder:{H:3000, Wi:450, holm:'RR|60×40×3', rung:'RS|Ø20', sp:280},
+  bracket:{A:500, H:300, arm:'QR|40×40×3', strut:'1', pw:120, pt:10}};
 const profOpts = kinds => kinds.flatMap(k => Object.keys(PROFILES[k].sizes).map(z => [k + '|' + z, PROFILES[k].name + ' ' + z]));
 const yesNo = [['1', 'ja'], ['0', 'nein']];
 const WIZ_FIELDS = {
   frame:[['B', 'Breite außen', 'len'], ['H', 'Höhe / Tiefe außen', 'len'], ['prof', 'Profil', profOpts(['QR', 'RR', 'RO', 'L', 'U'])], ['corner', 'Ecken', [['gehrung', 'auf Gehrung (45°)'], ['stumpf', 'stumpf (gerade)']]], ['n', 'Querstreben', 'int'], ['weld', 'Schweißnähte an den Stößen', yesNo], ['stand', 'In 3D aufstellen', yesNo]],
   rail:[['L', 'Länge', 'len'], ['H', 'Höhe (OK Handlauf)', 'len'], ['post', 'Pfosten', profOpts(['QR', 'RR', 'RO'])], ['maxPost', 'Pfostenabstand max.', 'len'], ['hand', 'Handlauf', profOpts(['RO', 'QR', 'RR'])], ['low', 'Untergurt', profOpts(['RR', 'QR', 'RO'])], ['bar', 'Füllstäbe', profOpts(['QR', 'RS', 'RO'])], ['gap', 'Lichter Stababstand max.', 'len'], ['yU', 'Abstand Boden – Untergurt', 'len'], ['foot', 'Fußplatten', yesNo]],
   gate:[['B', 'Breite', 'len'], ['H', 'Höhe', 'len'], ['prof', 'Rahmenprofil', profOpts(['QR', 'RR'])], ['bar', 'Füllstäbe', profOpts(['QR', 'RS', 'RO'])], ['gap', 'Lichter Stababstand max.', 'len'], ['mid', 'Mittelriegel', yesNo]],
-  stair:[['Hg', 'Höhe (Fußboden bis Fußboden)', 'len'], ['W', 'Laufbreite', 'len'], ['hT', 'Steigung ca.', 'len'], ['wange', 'Wange (Flachstahl)', [['200×12', '200 × 12'], ['250×12', '250 × 12'], ['250×15', '250 × 15'], ['300×15', '300 × 15']]], ['tread', 'Stufenblech (Riffelblech) Dicke', 'len']],
+  stair:[['Hg', 'Höhe (Fußboden bis Fußboden)', 'len'], ['W', 'Laufbreite', 'len'], ['hT', 'Steigung ca.', 'len'], ['wange', 'Wange (Flachstahl)', [['200×12', '200 × 12'], ['250×12', '250 × 12'], ['250×15', '250 × 15'], ['300×15', '300 × 15']]], ['tread', 'Stufenblech (Riffelblech) Dicke', 'len'],
+    ['rail', 'Treppengeländer', [['0', 'ohne'], ['l', 'vorne'], ['r', 'hinten'], ['b', 'beidseitig']]], ['fill', 'Füllung', [['knie', '2 Knieleisten'], ['staebe', 'senkrechte Stäbe ≤ 12 cm']]]],
+  podest:[['L', 'Länge', 'len'], ['B', 'Breite', 'len'], ['H', 'Höhe OK Belag', 'len'], ['frame', 'Rahmen', profOpts(['U', 'QR', 'RR', 'L'])], ['leg', 'Stützen', profOpts(['QR', 'RR', 'RO'])], ['span', 'Querträger-Abstand max.', 'len'], ['foot', 'Fußplatten', yesNo]],
+  table:[['L', 'Länge', 'len'], ['B', 'Breite', 'len'], ['H', 'Höhe', 'len'], ['leg', 'Tischbeine', profOpts(['QR', 'RR', 'RO'])], ['frame', 'Zarge', profOpts(['QR', 'RR', 'L'])], ['top', 'Tischplatte', [['blech', 'Stahlblech 3 mm'], ['holz', 'Holz 25 mm'], ['keine', 'keine']]], ['low', 'Fußrahmen auf Höhe (0 = keiner)', 'len'], ['foot', 'Fußplatten', yesNo]],
+  shelf:[['W', 'Breite', 'len'], ['D', 'Tiefe', 'len'], ['H', 'Höhe', 'len'], ['n', 'Anzahl Böden', 'int'], ['post', 'Pfosten', profOpts(['QR', 'L', 'RR'])], ['bar', 'Auflage je Boden', profOpts(['QR', 'L', 'RR'])], ['board', 'Böden', [['blech', 'Stahlblech 2 mm'], ['holz', 'Holz 19 mm']]]],
+  ladder:[['H', 'Länge der Leiter', 'len'], ['Wi', 'Lichte Breite', 'len'], ['holm', 'Holme', profOpts(['RR', 'QR'])], ['rung', 'Sprossen', profOpts(['RS', 'QR', 'RO'])], ['sp', 'Sprossenabstand max.', 'len']],
+  bracket:[['A', 'Ausladung', 'len'], ['H', 'Höhe Wandplatte', 'len'], ['arm', 'Kragarm', profOpts(['QR', 'RR', 'U', 'L'])], ['strut', 'Strebe 45°', yesNo], ['pw', 'Breite Wandplatte', 'len'], ['pt', 'Dicke Wandplatte', 'len']],
 };
 const profPick = v => { const [kind, size] = v.split('|'); return {kind, size}; };
 const profW = v => section(profPick(v)).w, profD = v => section(profPick(v)).h;
 // Profil in Längsansicht; z verschiebt in der Tiefe (bei aufgestellten Baugruppen)
 const mkProf = (v, x, y, len, rot, name, cutA = 0, cutB = 0, z = 0) => ({type:'profile', ...profPick(v), len:r2(len), view:'side', mat:'S235JR', rot, x:r2(x), y:r2(y), name, cutA, cutB, ...(z ? {z:r2(z)} : {})});
+function frameMembers(prof, B, H, miter, names, z = 0, x0 = 0, y0 = 0){
+  const w = profW(prof), [nu, no, nl, nr] = names || ['Rahmen unten', 'Rahmen oben', 'Rahmen links', 'Rahmen rechts'];
+  return miter ? [mkProf(prof, x0, y0, B, 0, nu, 45, 45, z), mkProf(prof, x0, y0 + H - w, B, 0, no, -45, -45, z), mkProf(prof, x0 + w, y0, H, 90, nl, -45, -45, z), mkProf(prof, x0 + B, y0, H, 90, nr, 45, 45, z)]
+    : [mkProf(prof, x0, y0, B, 0, nu, 0, 0, z), mkProf(prof, x0, y0 + H - w, B, 0, no, 0, 0, z), mkProf(prof, x0 + w, y0 + w, H - 2*w, 90, nl, 0, 0, z), mkProf(prof, x0 + B, y0 + w, H - 2*w, 90, nr, 0, 0, z)];
+}
+// senkrechtes Profil (Stütze, Bein) im Grundriss als Querschnitt
+const mkPost = (v, x, y, len, name, z = 0) => ({type:'profile', ...profPick(v), len:r2(len), view:'section', mat:'S235JR', rot:0, x:r2(x), y:r2(y), name, ...(z ? {z:r2(z)} : {})});
 // Stäbe gleichmäßig in einem Feld verteilen, lichter Abstand höchstens gap
 function barsIn(F, b, gap){ if (F <= gap) return {n:0, g:F}; const n = Math.max(0, Math.ceil((F - gap) / (b + gap))); return {n, g:(F - n * b) / (n + 1)}; }
 function wizBuild(tab, o){
@@ -2683,6 +2783,62 @@ function wizBuild(tab, o){
       `Lichter Stababstand <b>${mmTxt(r.g)} mm</b> <span class="${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✗'} max. ${mmTxt(o.gap)}</span>`);
     return {shapes:out, name:`Tor ${mmTxt(B)} × ${mmTxt(H)}`, elev:true, tx:90, info};
   }
+  if (tab === 'podest' || tab === 'table'){
+    // Gestell: Stützen/Beine, Rahmen (Zarge) mit Gehrung, Belag oben, ggf. Querträger und Fußplatten
+    const pod = tab === 'podest', L = o.L, B = o.B, H = o.H, wl = profW(o.leg), dl = profD(o.leg), w = profW(o.frame), fd = profD(o.frame);
+    if (L < 4*w || B < 4*w || H < 200) throw 'Bitte größere Maße eingeben.';
+    const tTop = pod ? 30 : o.top === 'holz' ? 25 : o.top === 'blech' ? 3 : 0, zTop = H - tTop, zF = zTop - fd, foot = o.foot === '1', fT = pod ? 10 : 8, fS = pod ? 150 : 70;
+    out.push(...frameMembers(o.frame, L, B, true, pod ? ['Randträger vorne', 'Randträger hinten', 'Randträger links', 'Randträger rechts'] : ['Zarge vorne', 'Zarge hinten', 'Zarge links', 'Zarge rechts'], zF));
+    const nSeg = Math.max(1, Math.ceil(L / (pod ? 2000 : 1800))), legX = [...Array(nSeg + 1)].map((_, i) => i === 0 ? 0 : i === nSeg ? L - wl : L * i / nSeg - wl / 2);
+    const z0 = foot ? fT : 0, legLen = zF - z0;
+    legX.forEach(x => [0, B - dl].forEach(y => {
+      out.push(mkPost(o.leg, x, y, legLen, pod ? 'Stütze' : 'Tischbein', z0));
+      if (foot) out.push({type:'rect', name:'Fußplatte', x:r2(x + wl / 2 - fS / 2), y:r2(y + dl / 2 - fS / 2), w:fS, h:fS, t:fT, mat:'S235JR'});
+    }));
+    let nQ = 0;
+    if (pod){ nQ = Math.max(0, Math.ceil((L - 2*w) / Math.max(300, o.span)) - 1); for (let i = 1; i <= nQ; i++){ const cx = w + (L - 2*w) * i / (nQ + 1); out.push(mkProf(o.frame, cx + w/2, w, B - 2*w, 90, 'Querträger', 0, 0, zF)); } }
+    if (!pod && o.low > 0) out.push(...frameMembers(o.leg, L, B, false, ['Fußrahmen vorne', 'Fußrahmen hinten', 'Fußrahmen links', 'Fußrahmen rechts'], o.low).map(p => { p.len = r2(p.len); return p; }));
+    if (tTop) out.push({type:'rect', name:pod ? 'Gitterrost 30/3' : o.top === 'holz' ? 'Tischplatte Holz' : 'Tischplatte Blech', x:0, y:0, w:L, h:B, t:tTop, mat:pod ? 'GR' : o.top === 'holz' ? 'HOLZ' : 'S235JR', z:r2(zTop)});
+    info.push(pod ? `${legX.length * 2} Stützen ${o.leg.split('|')[1]} à ${mmTxt(legLen)} mm, Randträger ${o.frame.split('|')[1]} auf Gehrung, ${nQ} Querträger (Abstand ≤ ${mmTxt(o.span)} mm), Belag Gitterrost 30/3 ${mmTxt(L)} × ${mmTxt(B)} mm`
+      : `${legX.length * 2} Tischbeine à ${mmTxt(legLen)} mm, Zarge ${o.frame.split('|')[1]} auf Gehrung${o.low > 0 ? ', Fußrahmen auf ' + mmTxt(o.low) + ' mm' : ''}${tTop ? ', Platte ' + (o.top === 'holz' ? 'Holz 25 mm' : 'Blech 3 mm') : ''}`);
+    if (pod) info.push(`Ab 1000 mm Absturzhöhe braucht das Podest ein Geländer (z. B. mit „Geländer“ dazu bauen). Tragfähigkeit nach Statik.`);
+    return {shapes:out, name:pod ? `Podest ${mmTxt(L)} × ${mmTxt(B)}` : `Tischgestell ${mmTxt(L)} × ${mmTxt(B)}`, elev:true, tx:0, info};
+  }
+  if (tab === 'shelf'){
+    const W = o.W, D = o.D, H = o.H, n = Math.max(2, Math.min(12, Math.round(o.n))), wp = profW(o.post), dpp = profD(o.post), wb = profW(o.bar), fd = profD(o.bar), tb = o.board === 'holz' ? 19 : 2;
+    if (W < 4*wp || D < 4*wp) throw 'Bitte größere Maße eingeben.';
+    [[0, 0], [W - wp, 0], [W - wp, D - dpp], [0, D - dpp]].forEach(([x, y]) => out.push(mkPost(o.post, x, y, H, 'Regalpfosten')));
+    const z0 = 100, zs = [...Array(n)].map((_, k) => z0 + (H - tb - z0) * k / (n - 1));
+    zs.forEach(z => {
+      out.push(mkProf(o.bar, wp, 0, W - 2*wp, 0, 'Auflage vorne', 0, 0, z - fd), mkProf(o.bar, wp, D - wb, W - 2*wp, 0, 'Auflage hinten', 0, 0, z - fd));
+      out.push({type:'rect', name:o.board === 'holz' ? 'Regalboden Holz' : 'Regalboden Blech', x:r2(wp), y:0, w:r2(W - 2*wp), h:D, t:tb, mat:o.board === 'holz' ? 'HOLZ' : 'S235JR', z:r2(z)});
+    });
+    info.push(`${n} Böden ${mmTxt(W - 2*wp)} × ${mmTxt(D)} mm, Abstand ${mmTxt(zs[1] - zs[0])} mm, 4 Pfosten ${o.post.split('|')[1]} × ${mmTxt(H)} mm`, `Hohe Regale an der Wand gegen Kippen sichern.`);
+    return {shapes:out, name:`Regal ${mmTxt(W)} × ${mmTxt(D)} × ${mmTxt(H)}`, elev:true, tx:0, info};
+  }
+  if (tab === 'ladder'){
+    const H = o.H, Wi = o.Wi, wh = profW(o.holm), dh = profD(o.holm), wr = profW(o.rung), zr = dh / 2 - profD(o.rung) / 2;
+    if (H < 600) throw 'Die Leiter muss mindestens 600 mm lang sein.';
+    out.push(mkProf(o.holm, wh, 0, H, 90, 'Holm links'), mkProf(o.holm, 2*wh + Wi, 0, H, 90, 'Holm rechts'));
+    const nR = Math.max(1, Math.ceil((H - 150) / Math.max(150, o.sp))), p = (H - 150) / nR;
+    for (let k = 1; k <= nR; k++) out.push(mkProf(o.rung, wh, k * p - wr / 2, Wi, 0, 'Sprosse', 0, 0, zr));
+    const okP = p >= 225 && p <= 300, okW = Wi >= 400 && Wi <= 600;
+    info.push(`${nR} Sprossen, Abstand <b>${mmTxt(p)} mm</b> <span class="${okP ? 'ok' : 'bad'}">${okP ? '✓' : '⚠'} 225–300</span> · lichte Breite <b>${mmTxt(Wi)} mm</b> <span class="${okW ? 'ok' : 'bad'}">${okW ? '✓' : '⚠'} 400–600</span>`, `Ortsfeste Leiter nach DIN EN ISO 14122-4: ab 3 m Steighöhe Rückenschutz bzw. Steigschutz nötig.`);
+    return {shapes:out, name:`Leiter ${mmTxt(H)} mm`, elev:true, tx:90, info};
+  }
+  if (tab === 'bracket'){
+    const A = o.A, H = o.H, wa = profW(o.arm), da = profD(o.arm), pt = o.pt, zc = o.pw / 2;
+    if (A < 3*wa || H < 2*wa) throw 'Bitte größere Maße eingeben.';
+    out.push({type:'rect', name:'Wandplatte', x:0, y:0, w:pt, h:H, t:o.pw, mat:'S235JR'});
+    out.push(mkProf(o.arm, pt, H - wa, A, 0, 'Kragarm', 0, 0, zc - da / 2));
+    let Ls = 0;
+    if (o.strut === '1'){
+      const Lx = Math.max(wa, Math.min(A - 30, H - wa - 20)), yA = H - wa - Lx; Ls = Lx * Math.SQRT2;
+      out.push(mkProf(o.arm, pt, yA, Ls, 45, 'Strebe', 45, 45, zc - da / 2));
+    }
+    info.push(`Wandplatte ${mmTxt(H)} × ${mmTxt(o.pw)} × ${mmTxt(pt)} mm, Kragarm ${o.arm.split('|')[1]} × ${mmTxt(A)} mm${Ls ? `, Strebe 45° ${mmTxt(Ls)} mm (Gehrung 45°/45°)` : ''}`, `Bohrungen und Dübel bzw. Anker nach Last und Wand festlegen.`);
+    return {shapes:out, name:`Konsole ${mmTxt(A)} mm`, elev:true, tx:90, info};
+  }
   // Treppe: Schrittmaßregel 2 h + a = 630 mm
   const n = Math.max(2, Math.round(o.Hg / Math.max(120, o.hT))), h = o.Hg / n, a = 630 - 2*h, al = Math.atan2(h, a);
   const [wh, wt] = o.wange.split('×').map(Number), W = o.W, tr = Math.max(3, o.tread);
@@ -2691,6 +2847,25 @@ function wizBuild(tab, o){
   const ax = P0.x + up * Math.sin(al), ay = P0.y - up * Math.cos(al), rot = al * 180 / Math.PI;
   [0, W - wt].forEach((z, i) => out.push({type:'rect', name:'Treppenwange ' + (i ? 'rechts' : 'links'), x:r2(ax), y:r2(ay), w:r2(Ls), h:wh, t:wt, mat:'S235JR', rot:r2(rot), ...(z ? {z:r2(z)} : {})}));
   for (let i = 1; i < n; i++) out.push({type:'rect', name:'Stufe (Riffelblech)', x:r2((i - 1) * a), y:r2(i * h - tr), w:r2(a + 30), h:tr, t:W - 2*wt, mat:'S235JR', z:wt});
+  if (o.rail !== '0'){
+    // Geländer 900 mm über Stufenvorderkante (lotrecht gemessen)
+    const pv = 'QR|40×40×3', hv = 'RO|42,4×2,6', kv = 'RO|26,9×2,3', bv = 'QR|20×20×2', wp = profW(pv), dp = profD(pv), wr = profW(hv), ca = Math.cos(al);
+    const yN = x => (x + a) * h / a, yS = x => yN(x) + 30 / ca, yR = x => yN(x) + 900 - wr / ca;
+    const xs0 = 0, xe = (n - 1) * a - wp, np = Math.max(2, Math.ceil((xe - xs0) / 1200) + 1), px = [...Array(np)].map((_, i) => xs0 + (xe - xs0) * i / (np - 1));
+    const sides = o.rail === 'b' ? [-dp, W] : o.rail === 'l' ? [-dp] : [W];
+    sides.forEach(zp => {
+      const zc = zp + dp / 2, zOf = v => zc - profD(v) / 2;
+      px.forEach(x => out.push(mkProf(pv, x + wp, yS(x + wp / 2), yR(x + wp / 2) - yS(x + wp / 2), 90, 'Geländerpfosten', 0, 0, zp)));
+      const hx0 = px[0] - 80, hx1 = px[np - 1] + wp + 80;
+      out.push(mkProf(hv, hx0, yR(hx0), (hx1 - hx0) / ca, rot, 'Handlauf', 0, 0, zOf(hv)));
+      for (let i = 0; i < np - 1; i++){
+        const f0 = px[i] + wp, f1x = px[i + 1], F = f1x - f0;
+        if (o.fill === 'knie') [1/3, 2/3].forEach(f => { const yy = x => yS(x) + (yR(x) - yS(x)) * f; out.push(mkProf(kv, f0, yy(f0), F / ca, rot, 'Knieleiste', 0, 0, zOf(kv))); });
+        else { const b = profW(bv), r = barsIn(F, b, 120); for (let k = 0; k < r.n; k++){ const xb = f0 + r.g * (k + 1) + b * k; out.push(mkProf(bv, xb + b, yS(xb + b / 2), yR(xb + b / 2) - yS(xb + b / 2), 90, 'Füllstab', 0, 0, zOf(bv))); } }
+      }
+    });
+    info.push(`Treppengeländer ${o.rail === 'b' ? 'beidseitig' : 'einseitig'}: ${np} Pfosten je Seite, Handlauf Ø42,4 auf 900 mm über Stufenvorderkante, ${o.fill === 'knie' ? '2 Knieleisten' : 'senkrechte Stäbe, lichter Abstand ≤ 120 mm'} (DIN 18065 / Landesbauordnung prüfen)`);
+  }
   const okS = Math.abs(2*h + a - 630) < 1, okH = h >= 140 && h <= 200;
   info.push(`${n} Steigungen à <b>${mmTxt(h)} mm</b> <span class="${okH ? 'ok' : 'bad'}">${okH ? '✓' : '⚠ üblich 140–200'}</span>, ${n - 1} Stufen mit Auftritt <b>${mmTxt(a)} mm</b>`,
     `Schrittmaß 2 h + a = ${mmTxt(2*h + a)} mm <span class="${okS ? 'ok' : 'bad'}">${okS ? '✓' : ''}</span> · Neigung ${dec((rot).toFixed(1))}° · Lauflänge ${mmTxt((n - 1) * a)} mm · Wangen ${wh} × ${wt}, Länge ${mmTxt(Ls)} mm`);
@@ -2838,7 +3013,7 @@ function exportSVG(withTitle = true){
   const v = {cx:(b.x0 + b.x1)/2, cy:(b.y0 + b.y1)/2, z};
   const T = mkT(v, w, hh - tb);
   let o = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hh}" viewBox="0 0 ${w} ${hh}"><style>${EXPORT_CSS}</style>${HATCH}<rect width="100%" height="100%" fill="#fff"/>`;
-  ordered().forEach(s => { o += shapeMarkup(s, T, state.showDims); });
+  ordered().filter(s => s.type !== 'pin').forEach(s => { o += shapeMarkup(s, T, state.showDims); });
   if (!withTitle) return {o:o + '</svg>', w, hh};
   const y = hh - 60, x = Math.max(10, w - 330);
   o += `<rect x="${x}" y="${y}" width="320" height="50" fill="#fff" stroke="#111" stroke-width="1.5"/><text class="tbh" x="${x + 8}" y="${y + 19}">${esc(state.title.name)}</text>`;
@@ -3532,7 +3707,7 @@ function dxfDrawing(){
   const D = makeDxf(), host = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   host.setAttribute('style', 'position:absolute;left:-99999px;top:0;width:10px;height:10px');
   const T = {z:1, x:v => v, y:v => -v};
-  host.innerHTML = ordered().map(sh => shapeMarkup(sh, T, state.showDims)).join('');
+  host.innerHTML = ordered().filter(sh => sh.type !== 'pin').map(sh => shapeMarkup(sh, T, state.showDims)).join('');
   document.body.appendChild(host);
   const layerOf = el => {
     const c = (el.getAttribute('class') || '').split(' ')[0];
@@ -3743,8 +3918,31 @@ function draw3d(){
   if (!three || !is3()) return;
   const c = three.camera; placeCam(c);
   three.renderer.render(three.scene, c);
-  placeDims3d();
+  placeDims3d(); placePins3d();
 }
+// Kommentare in 3D: Fähnchen über dem Teil, an dem sie hängen
+function placePins3d(){
+  const host = $('#pins3d'); if (!host) return;
+  const list = state.showPins === false ? [] : state.shapes.filter(p => p.type === 'pin' && isVis(p));
+  if (!list.length || !three){ host.innerHTML = ''; return; }
+  const el = three.renderer.domElement, w = el.clientWidth, h = el.clientHeight, byRef = new Map(), used = new Map();
+  (three.ents || []).forEach(e => byRef.set(e.sh.id, e.ch));
+  host.innerHTML = list.map(p => {
+    const q = pinPos(p), ch = p.ref != null ? byRef.get(p.ref) : null;
+    let v;
+    if (ch){ const b = new THREE.Box3().setFromObject(ch), c = b.getCenter(new THREE.Vector3()), k = used.get(p.ref) || 0; used.set(p.ref, k + 1); v = new THREE.Vector3(c.x, c.y, b.max.z + 4); v.z += k * 0; p._k = k; }
+    else v = new THREE.Vector3(q.x, q.y, 2);
+    if (cad && cad.view !== 'top' && three.dg && !ch) v.applyMatrix4(three.dg.matrixWorld);
+    const s2 = v.project(three.camera); if (s2.z > 1) return '';
+    const x = (s2.x + 1) / 2 * w, y = (1 - s2.y) / 2 * h - (p._k || 0) * 26;
+    const t = String(p.text || '');
+    return `<div class="pin3${p.done ? ' done' : ''}${isSel(p.id) ? ' sel' : ''}" data-pin3="${p.id}" style="left:${f1(x)}px;top:${f1(y)}px" title="${esc(t)}"><b>${pinNo(p)}</b>${esc(t.length > 36 ? t.slice(0, 34) + '…' : t || 'Kommentar')}</div>`;
+  }).join('');
+}
+$('#pins3d').addEventListener('click', e => {
+  const d = e.target.closest('[data-pin3]'); if (!d) return;
+  setSel([+d.dataset.pin3]); renderProps(); renderPins(); if (three){ build3d(); draw3d(); }
+});
 function placeCam(c){
   const o = three.orb, ce = Math.cos(o.el);
   c.position.set(o.t.x + o.r*ce*Math.cos(o.az), o.t.y + o.r*ce*Math.sin(o.az), o.t.z + o.r*Math.sin(o.el));
@@ -4597,7 +4795,7 @@ function loadProject(rec){
   $('#start').hidden = true; document.documentElement.classList.remove('locked');
   renderProjectName(); renderUnits(); renderTools(); setSaveState('saved');
   requestAnimationFrame(() => {
-    fit(); render(); renderProps(); renderBom(); renderTitle(); renderLayers();
+    fit(); render(); renderProps(); renderBom(); renderTitle(); renderLayers(); renderPins();
     if (is3() && three){ build3d(); fit3d(); draw3d(); } else refit3d = true;
   });
 }
@@ -4846,7 +5044,7 @@ $('#libSaveProj').onclick = () => {
 /* ---------- Start ---------- */
 new ResizeObserver(() => render()).observe($('#stage'));
 renderUnits(); renderTools();
-requestAnimationFrame(() => { fit(); render(); renderProps(); renderBom(); renderTitle(); renderLayers(); });
+requestAnimationFrame(() => { fit(); render(); renderProps(); renderBom(); renderTitle(); renderLayers(); renderPins(); });
 renderProjectName(); setSaveState('none'); showStart();
 })();
 </script>
