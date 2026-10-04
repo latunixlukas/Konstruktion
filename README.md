@@ -39,7 +39,7 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 - **Kamerafahrt** einmal rundherum und **Video speichern** (WebM)
 - **Maße in 3D**: Maßlinien mit Pfeilen für Länge, Breite und Höhe der Auswahl oder des ganzen Modells
 - **Startseite mit Vorschaubildern** der Projekte und Beispiele
-- **Eingabezeile** (oben rechts, Taste `/`): einfach tippen oder sagen, was man braucht, z. B. „Blech 200x100x10“, „Rechteck 3 cm“, „4 Bohrungen M10 Lochkreis 100“, „Schraube M12x40“, „Rohr 40x40x3 1 m“, „Welle 25x40 35x100“, „Geländer 3 m“; Vorschau vor dem Zeichnen, Mikrofon für Spracheingabe
+- **Eingabezeile** (oben rechts, Taste `/`): einfach tippen oder sagen, was man braucht, z. B. „Blech 200x100x10“, „Rechteck 3 cm“, „4 Bohrungen M10 Lochkreis 100“, „Schraube M12x40“, „Rohr 40x40x3 1 m“, „Welle 25x40 35x100“, „Geländer 3 m“; Vorschau vor dem Zeichnen, Rückfragen mit Optionen zum Antippen, wenn etwas fehlt oder unklar ist (Größe, Dicke, Länge, Gewinde, Anordnung, Normgröße), „Meintest du …?“ bei Tippfehlern, Mikrofon für Spracheingabe
 - **Explosionsansicht** in der Demo-Ansicht: Teile fahren per Knopf oder Schieberegler auseinander
 - **Export** als PDF (A4 quer, je eine Seite 2D-Zeichnung, 3D-Ansicht, Stückliste) oder als ein PNG-Bild; Inhalte frei wählbar; **DXF** als Laser-Zuschnitt (Bleche, Ronden, Abwicklungen mit Biegelinien, 1:1) oder ganze Zeichnung; außerdem SVG
 
