@@ -227,6 +227,14 @@ input[type="color"]{width:100%;height:34px;padding:2px;border:1px solid var(--li
 .sheets text{font:500 9px var(--f-mono);fill:var(--fg)}
 
 /* Optionsleiste */
+.cmd{position:relative;display:flex;align-items:center;gap:6px;margin-left:auto;flex:1 1 320px;max-width:520px;padding:0 4px 0 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--raised);color:var(--muted)}
+.cmd:focus-within{border-color:var(--sel);color:var(--fg)}
+.cmd input{flex:1;min-width:0;border:0;background:none;padding:7px 0;font-size:.88rem;outline:none;color:var(--fg)}
+.cmd .btn.icon{border:0;width:30px;height:30px}.cmd .btn.icon.rec{color:#dc2626}
+.cmdout{position:absolute;z-index:40;left:-1px;right:-1px;top:calc(100% + 6px);background:var(--raised);border:1px solid var(--line-strong);border-radius:10px;box-shadow:var(--shadow);padding:8px;font-size:.85rem;color:var(--fg)}
+.cmdout .ok{padding:4px 6px}.cmdout .ok b{color:var(--sel)}.cmdout .bad{padding:4px 6px;color:#dc2626}
+.cmdout .ex{display:flex;flex-wrap:wrap;gap:6px;padding:6px}.cmdout .ex button{font-size:.76rem;padding:3px 9px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);cursor:pointer;color:var(--fg)}
+.cmdout small{display:block;color:var(--muted);padding:2px 6px 0}
 .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--surface);min-height:50px}
 .toolopts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:.85rem}
 .toolopts label{display:flex;align-items:center;gap:7px;color:var(--muted)}
@@ -549,6 +557,12 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
 
   <div class="toolbar">
     <div class="toolopts" id="toolopts"></div>
+    <form class="cmd" id="cmdForm" autocomplete="off">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 17l6-5-6-5M12 19h8"/></svg>
+      <input id="cmd" placeholder="Tippen, was du brauchst – z. B. Blech 200x100x10, Bohrung M10, Rohr 40x40x3 1 m" aria-label="Eingabe: was soll gezeichnet werden" spellcheck="false">
+      <button class="btn icon" type="button" id="cmdMic" title="Sprechen statt tippen" aria-label="Spracheingabe" hidden><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></button>
+      <div class="cmdout" id="cmdOut" hidden></div>
+    </form>
   </div>
 
   <main>
@@ -605,6 +619,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Maß</b>: von Punkt zu Punkt ziehen. Der Abstand wird automatisch beschriftet.</li>
             <li><b>Text</b>: Text antippen und rechts eintippen. <b>Positionsnummer</b> und <b>Hinweispfeil</b> vom Teil nach außen ziehen – die Nummern zählen automatisch hoch.</li>
             <li><b>Spiegeln &amp; Muster</b>: Teil(e) auswählen, rechts unter den Eigenschaften „Spiegeln &amp; Muster“ aufklappen. Muster = Anzahl × Abstand in X und Y.</li>
+            <li><b>Eintippen</b>: oben rechts in die Eingabezeile schreiben, was du brauchst, z. B. „Blech 200x100x10“, „Rechteck 3 cm“, „4 Bohrungen M10 Lochkreis 100“ oder „Rohr 40x40x3 1 m“ – Enter zeichnet es. Taste <kbd>/</kbd> springt dorthin, das Mikrofon nimmt Sprache.</li>
             <li><b>Kommentar</b> (<kbd>C</kbd>): auf ein Teil tippen und z. B. „hier entgraten“ schreiben. Der Kommentar wandert mit dem Teil; rechts in der Liste abhaken, wenn erledigt.</li>
             <li><b>Baukasten</b> (oben): Rahmen, Geländer, Tor, Treppe (auch mit Geländer), Podest, Tisch, Regal, Leiter oder Konsole per Formular. Prüft z. B. den Stababstand ≤ 12 cm und das Schrittmaß.</li>
             <li><b>Baugruppe</b>: mehrere Teile wählen, <kbd>Strg+G</kbd>. Klick wählt die ganze Gruppe, <kbd>Alt</kbd> + Klick oder Doppelklick ein einzelnes Teil.</li>
@@ -2924,13 +2939,201 @@ $('#wizForm').addEventListener('submit', e => {
   $('#hint').textContent = `„${g.name}“ erzeugt: ${shapes.length} Teile als Baugruppe.${r.elev ? ' In 2D als Ansicht von vorn, in 3D steht sie aufrecht.' : ''} Alt + Klick wählt ein einzelnes Teil.`;
 });
 
+/* ---------- Eingabezeile: einfach tippen (oder sagen), was man braucht ---------- */
+const CMD_EX = ['Blech 200x100x10', 'Rechteck 3 cm', 'Flachstahl 40x10 Länge 500', '4 Bohrungen M10 Lochkreis 100', 'Bohrung Ø12', 'Gewinde M8', 'Langloch 30x11', 'Schraube M12x40', '3 Muttern M10', 'Rohr 40x40x3 1 m', 'Winkel 50x5 800', 'U 100 2 m', 'Rundstahl Ø20 300', 'Welle 25x40 35x100 25x40', 'Ronde 200 innen 60', 'Kreis 100', 'Kantteil 40 60 40 Dicke 3', 'Text Kanten entgraten', 'Rahmen 800x600', 'Geländer 3 m', 'Treppe 2,7 m', 'Podest 2000x1000', 'Tisch 1200x700', 'Regal 1000x400x1800', 'Leiter 3 m', 'Konsole 500'];
+const CMD_MATS = [[/edelstahl|v2a|v4a|1\.4301/, '1.4301'], [/alu/, 'AlMg3'], [/s355/, 'S355J2'], [/\bholz/, 'HOLZ'], [/\bc45\b/, 'C45'], [/42crmo4/, '42CrMo4']];
+function cmdParse(raw){
+  const U = {mm:1, cm:10, dm:100, m:1000}, defU = UNITS[state.unit] || 1;
+  let t = ' ' + String(raw).toLowerCase().replace(/(\d),(\d)/g, '$1.$2').replace(/[×*]/g, 'x').replace(/\s+(mal|by)\s+/g, 'x').replace(/durchmesser\s*/g, 'ø').replace(/\s+/g, ' ').trim() + ' ';
+  if (!t.trim()) return null;
+  const rawText = String(raw).trim();
+  let n = 1, m;
+  if ((m = t.match(/^ (\d{1,2}) ?(x|stk\.?|stück)? (?=[a-zäöüø])/))){ n = Math.max(1, +m[1]); t = ' ' + t.slice(m[0].length); }
+  // benannte Werte (Dicke 5, Länge 1 m, innen 60, Lochkreis 100, Abstand 50, Höhe, Breite, Tiefe, Radius)
+  const named = {};
+  const NAMES = [['t', /\b(?:dicke|stärke|stark|t)\s*=?\s*(\d+(?:\.\d+)?)\s*(mm|cm|dm|m)?\b/], ['len', /\b(?:länge|lang|l)\s*=?\s*(\d+(?:\.\d+)?)\s*(mm|cm|dm|m)?\b/], ['di', /\b(?:innen|innendurchmesser|loch)\s*(?:ø)?\s*=?\s*(\d+(?:\.\d+)?)\s*(mm|cm|dm|m)?\b/],
+    ['D', /\b(?:lochkreis|lk)\s*(?:ø)?\s*=?\s*(\d+(?:\.\d+)?)\s*(mm|cm|dm|m)?\b/], ['gap', /\babstand\s*=?\s*(\d+(?:\.\d+)?)\s*(mm|cm|dm|m)?\b/], ['H', /\b(?:höhe|hoch)\s*=?\s*(\d+(?:\.\d+)?)\s*(mm|cm|dm|m)?\b/],
+    ['B', /\b(?:breite|breit)\s*=?\s*(\d+(?:\.\d+)?)\s*(mm|cm|dm|m)?\b/], ['T', /\b(?:tiefe|tief)\s*=?\s*(\d+(?:\.\d+)?)\s*(mm|cm|dm|m)?\b/], ['r', /\b(?:radius|r)\s*=?\s*(\d+(?:\.\d+)?)\s*(mm|cm|dm|m)?\b/]];
+  NAMES.forEach(([k, re]) => { const q = t.match(re); if (q){ named[k] = +q[1] * (q[2] ? U[q[2]] : (k === 't' ? 1 : defU)); t = t.replace(q[0], ' '); } });
+  // Gewinde M10 bzw. M12x40, Lager 6205
+  let thread = null, tlen = null, bearing = null;
+  if ((m = t.match(/\bm(\d{1,2})(?:\s?x\s?(\d+))?\b/))){ thread = 'M' + m[1]; tlen = m[2] ? +m[2] : null; t = t.replace(m[0], ' '); }
+  if ((m = t.match(/\b(62\d\d)\b/))){ bearing = m[1]; }
+  let mat = null; CMD_MATS.forEach(([re, k]) => { if (!mat && re.test(t)) mat = k; });
+  // Zahlengruppen: 200x100x10 cm → [2000, 1000, 100]; Einheit am Ende gilt für die ganze Gruppe
+  const groups = [], gre = /(ø\s?)?(\d+(?:\.\d+)?)\s?(mm|cm|dm|m\b)?((?:\s?x\s?(?:ø\s?)?\d+(?:\.\d+)?\s?(?:mm|cm|dm|m\b)?)*)/g;
+  for (const g of t.matchAll(gre)){
+    const parts = [[g[2], g[3]], ...[...(g[4] || '').matchAll(/x\s?(?:ø\s?)?(\d+(?:\.\d+)?)\s?(mm|cm|dm|m\b)?/g)].map(q => [q[1], q[2]])];
+    const lastU = [...parts].reverse().find(p => p[1]);
+    groups.push({dia:!!g[1], raw:parts.map(p => +p[0]), mm:parts.map(p => +p[0] * (p[1] ? U[p[1]] : lastU ? U[lastU[1]] : defU)), unit:!!lastU});
+  }
+  const kw = re => re.test(t);
+  const words = t.replace(/[\d.x]+/g, ' ');
+  const desc = [], mk = [];
+  const num1 = groups.filter(g => g.mm.length === 1).map(g => g.mm[0]);
+  const near = (arr, v) => arr.reduce((a, b) => Math.abs(b - v) < Math.abs(a - v) ? b : a);
+  const len = x => mmTxt(x) + ' mm';
+  const out = (d, f) => ({desc:d, make:f, n});
+  // --- Baukasten ---
+  const WZ = [['frame', /rahmen/], ['rail', /geländer|gelaender/], ['gate', /\btor\b|pforte/], ['stair', /treppe/], ['podest', /podest|bühne|buehne|plattform/], ['table', /tisch|werkbank/], ['shelf', /regal/], ['ladder', /leiter/], ['bracket', /konsole|wandhalter|kragarm/]];
+  for (const [tab, re] of WZ) if (kw(re)){
+    const g = groups.find(q => q.mm.length > 1), a = g ? g.mm : num1, v = {};
+    const set = (k, x) => { if (x > 0) v[k] = x; };
+    if (tab === 'frame' || tab === 'gate'){ set('B', a[0]); set('H', a[1]); }
+    if (tab === 'rail'){ set('L', a[0]); set('H', named.H || a[1]); }
+    if (tab === 'stair'){ set('Hg', a[0]); set('W', named.B || a[1]); }
+    if (tab === 'podest' || tab === 'table'){ set('L', a[0]); set('B', a[1]); set('H', named.H || a[2]); }
+    if (tab === 'shelf'){ set('W', a[0]); set('D', named.T || a[1]); set('H', named.H || a[2]); }
+    if (tab === 'ladder') set('H', a[0]);
+    if (tab === 'bracket'){ set('A', a[0]); set('H', named.H || a[1]); }
+    if (named.B && !v.B && (tab === 'frame' || tab === 'gate' || tab === 'podest' || tab === 'table')) v.B = named.B;
+    const names = {frame:'Rahmen', rail:'Geländer', gate:'Tor', stair:'Treppe', podest:'Podest', table:'Tischgestell', shelf:'Regal', ladder:'Leiter', bracket:'Konsole'};
+    return {desc:`Baukasten <b>${names[tab]}</b>${Object.keys(v).length ? ' – ' + Object.values(v).map(mmTxt).join(' × ') + ' mm' : ''} (öffnet das Formular)`, wiz:{tab, v}, n:1};
+  }
+  // --- Text ---
+  if ((m = rawText.match(/^(?:\d+\s*)?(?:text|schrift|notiz|beschriftung)\s*:?\s*(.+)$/i))){ const tx = m[1].trim(); return out(`Text „<b>${esc(tx)}</b>“`, () => [{type:'text', x:0, y:0, text:tx, size:opts.text.size, rot:0}]); }
+  // --- Langloch / Ausschnitt ---
+  if (kw(/langloch/)){ const a = (groups[0] || {mm:[30, 11]}).mm, l = a[0] || 30, b = a[1] || Math.min(11, l); return out(`Langloch <b>${mmTxt(Math.max(l, b))} × ${mmTxt(b)}</b> mm`, () => [{type:'slot', x:0, y:0, l:Math.max(l, b), b, rot:0}]); }
+  if (kw(/ausschnitt|aussparung|durchbruch/)){ const a = (groups[0] || {mm:[60, 40]}).mm, w = a[0] || 60, h = a[1] || w; return out(`Rechteck-Ausschnitt <b>${mmTxt(w)} × ${mmTxt(h)}</b> mm${named.r ? ' R' + mmTxt(named.r) : ''}`, () => [{type:'cutout', x:0, y:0, w, h, r:named.r || 0, rot:0}]); }
+  // --- Normteile ---
+  const SK = [['lock', /sicherungsmutter|stoppmutter/], ['nut', /mutter/], ['circlip', /sicherungsring|seegering|seeger/], ['bearing', /lager/], ['set', /gewindestift|madenschraube|wurmschraube/], ['pin', /zylinderstift|\bstift/], ['csk', /senkschraube|senkkopf/], ['cyl', /zylinderschraube|inbus|innensechskant/], ['washer', /scheibe|unterlegscheibe/], ['hex', /schraube|sechskant/]];
+  for (const [k, re] of SK) if (kw(re) && !(k === 'washer' && !thread && kw(/ronde/))){
+    if (k === 'washer' && !thread && groups.length && !kw(/unterleg/)) break;      // „Scheibe 200“ = Ronde
+    const K = KINDS[k]; let size, L = null;
+    if (k === 'bearing') size = bearing || '6205';
+    else if (k === 'circlip'){ const d = num1[0] || 25; size = String(near(Object.keys(CLIPS).map(Number), d)); }
+    else if (k === 'pin'){ const g = groups[0]; const d = g ? g.raw[0] : 8; size = String(near(PINS.map(Number), d)); L = g && g.raw[1] ? g.raw[1] : null; }
+    else size = thread || 'M8';
+    if (K.len){ L = L || tlen || (num1[0] > 0 ? num1[0] : opts.screw.len); L = near(LENGTHS, L); }
+    const grade = GRADES[k].includes(opts.screw.grade) ? opts.screw.grade : GRADES[k][0];
+    return out(`${n > 1 ? n + ' × ' : ''}<b>${k === 'circlip' ? 'Sicherungsring' : K.name}</b> ${k === 'circlip' ? 'für Welle Ø' + size : k === 'pin' ? 'Ø' + size : size}${L ? ' × ' + L : ''} <small>${K.norm}</small>`, () => [{type:'screw', kind:k, size, len:L || 0, grade, view:opts.screw.view, rot:0, x:0, y:0}]);
+  }
+  // --- Bohrungen ---
+  if (kw(/bohrung|bohrloch|\bloch|löcher|gewinde/)){
+    const g = kw(/gewinde/) && thread, fit = thread ? (g ? 'G-' : 'D-') + thread : 'frei';
+    const d = thread ? (g ? NORM[thread].kl : NORM[thread].dh) : ((groups.find(q => q.dia) || groups[0] || {mm:[10]}).mm[0]);
+    const k = Math.max(n, ...groups.filter(q => !q.dia && q.mm.length === 1 && q.raw[0] <= 24 && Number.isInteger(q.raw[0]) && !thread).map(() => 1));
+    const cnt = n, lab = thread ? (g ? 'Gewinde ' + thread : 'Durchgang ' + thread + ' (Ø' + dec(d) + ')') : 'Ø' + mmTxt(d);
+    if (named.D && cnt > 1) return {desc:`<b>${cnt} Bohrungen</b> ${lab} auf Lochkreis Ø${mmTxt(named.D)}`, n:1, make:() => {
+      const sh = [{type:'circle', x:0, y:0, d:named.D, a0:0, a1:360, style:'center'}];
+      for (let i = 0; i < cnt; i++){ const a = i / cnt * Math.PI * 2; sh.push({type:'hole', x:r2(named.D / 2 * Math.cos(a)), y:r2(named.D / 2 * Math.sin(a)), d, fit}); }
+      return sh; }};
+    const gap = named.gap || Math.max(50, Math.ceil(d * 3 / 5) * 5);
+    return {desc:`${cnt > 1 ? `<b>${cnt} Bohrungen</b> ` : '<b>Bohrung</b> '}${lab}${cnt > 1 ? `, Abstand ${mmTxt(gap)} mm` : ''}`, n:1, make:() => [...Array(cnt)].map((_, i) => ({type:'hole', x:r2(i * gap), y:0, d, fit}))};
+  }
+  // --- Profile ---
+  const PK = [['QR', /quadratrohr|vierkantrohr|vierkant\b/], ['RR', /rechteckrohr/], ['RO', /rundrohr|rohr\s*ø/], ['RS', /rundstahl|rundeisen|\brundmaterial/], ['L', /winkel|l-profil|\bl\s/], ['U', /u-profil|u-stahl|unp|\bu\s/], ['RO', /\brohr/]];
+  for (let [k, re] of PK) if (kw(re)){
+    const sec = groups[0] ? groups[0].raw : [], rest = groups.slice(1), sizes = PROFILES[k].sizes;
+    if (k === 'RO' && /\brohr/.test(words) && !/rund/.test(words) && sec.length >= 3) k = sec[0] === sec[1] ? 'QR' : 'RR';
+    const SZ = PROFILES[k].sizes, keys = Object.keys(SZ);
+    const score = key => { const p = SZ[key]; const f = k === 'QR' || k === 'RR' ? [p.B, p.H, p.t] : k === 'L' ? [p.a, p.t] : k === 'U' ? [p.h] : k === 'RO' ? [p.D, p.t] : [p.D];
+      return f.reduce((a, v, i) => a + (sec[i] != null ? Math.abs(v - sec[i]) * (i === f.length - 1 && f.length > 1 ? 3 : 1) : 0), 0); };
+    const size = sec.length ? keys.reduce((a, b) => score(b) < score(a) ? b : a) : keys[Math.min(2, keys.length - 1)];
+    const L = named.len || (rest.find(q => q.mm.length === 1) || {}).mm?.[0] || opts.profile.len;
+    const exact = !sec.length || score(size) < .01;
+    return out(`${n > 1 ? n + ' × ' : ''}<b>${PROFILES[k].name} ${size}</b>, Länge ${len(L)}${exact ? '' : ' <small>(nächste Normgröße)</small>'}`, () => [{type:'profile', kind:k, size, len:L, view:'side', mat:mat || 'S235JR', rot:0, x:0, y:0}]);
+  }
+  // --- Welle ---
+  if (kw(/welle|achse|bolzen/)){
+    const st = groups.filter(q => q.mm.length >= 2).map(q => ({d:q.mm[0], l:q.mm[1]}));
+    if (!st.length) st.push({d:num1[0] || 30, l:named.len || num1[1] || 100});
+    return out(`<b>Welle</b> ${st.map(q => 'Ø' + mmTxt(q.d) + '×' + mmTxt(q.l)).join(' · ')} mm`, () => [{type:'shaft', x:0, y:0, rot:0, mat:mat || opts.shaft.mat, chamfer:1, keyStep:-1, keyLen:0, steps:st}]);
+  }
+  // --- Ronde / Flansch / Kreis ---
+  if (kw(/ronde|flansch|scheibe/)){ const d = (groups[0] || {mm:[200]}).mm[0], di = named.di || (groups[1] && groups[1].mm[0] < d ? groups[1].mm[0] : 0), tt = named.t || opts.disc.t;
+    return out(`<b>${di ? 'Flansch' : 'Ronde'}</b> Ø${mmTxt(d)}${di ? ' / innen Ø' + mmTxt(di) : ''} × ${mmTxt(tt)} mm`, () => [{type:'disc', name:di ? 'Flansch' : 'Ronde', x:0, y:0, d, di, t:tt, mat:mat || 'S235JR'}]); }
+  if (kw(/kreis|bogen/)){ const d = (groups[0] || {mm:[100]}).mm[0]; return out(`<b>Kreis</b> Ø${mmTxt(d)} mm`, () => [{type:'circle', x:0, y:0, d, a0:0, a1:kw(/bogen/) ? 90 : 360, style:'solid'}]); }
+  // --- Kantteil ---
+  if (kw(/kantteil|biegeteil|abkantung|kantblech|gekantet/)){
+    const legs = groups.flatMap(q => q.mm).filter(v => v > 0).slice(0, 8); if (legs.length < 2) legs.splice(0, legs.length, 40, 60, 40);
+    const tt = named.t || opts.bend.t, w = named.B || opts.bend.w;
+    return out(`<b>Kantteil</b> Schenkel ${legs.map(mmTxt).join(' / ')} mm, 90°, t = ${mmTxt(tt)}, Breite ${mmTxt(w)}`, () => [{type:'bend', name:'Biegeteil', x:0, y:0, rot:0, legs, angles:legs.slice(1).map(() => 90), t:tt, r:Math.max(tt, opts.bend.r), w, mat:mat || 'S235JR'}]);
+  }
+  // --- Rechteck / Blech / Flachstahl ---
+  const RN = [['Flachstahl', /flachstahl|flacheisen|\bflach\b|bandstahl/], ['Lasche', /lasche/], ['Platte', /platte/], ['Blech', /blech|tafel/], ['Blech', /rechteck|quadrat|viereck/]];
+  let rn = RN.find(([, re]) => kw(re));
+  if (rn || (groups.length && groups[0].mm.length >= 2)){
+    const nm = rn ? rn[0] : 'Blech', a = groups[0] ? groups[0].mm : [100, 50];
+    let w = a[0], h = a.length > 1 ? a[1] : a[0], tt = named.t || (a[2] ? groups[0].raw[2] * (groups[0].unit ? groups[0].mm[2] / groups[0].raw[2] : 1) : opts.rect.t);
+    if (a[2] && !named.t) tt = a[2];
+    if (nm === 'Flachstahl' && a.length === 2){ const L = named.len || num1[0] || (groups[1] && groups[1].mm[0]); if (L){ tt = named.t || a[1]; w = L; h = a[0]; } }
+    if (named.len && nm !== 'Flachstahl') w = named.len;
+    if (!(w > 0 && h > 0 && tt > 0)) return null;
+    return out(`${n > 1 ? n + ' × ' : ''}<b>${nm}</b> ${mmTxt(w)} × ${mmTxt(h)} × ${mmTxt(tt)} mm${a.length === 1 ? ' <small>(quadratisch)</small>' : ''}${mat ? ' · ' + MATS[mat].name : ''}`, () => [{type:'rect', name:nm, x:0, y:0, w, h, t:tt, mat:mat || opts.rect.mat}]);
+  }
+  return null;
+}
+function cmdShow(msg){ const o = $('#cmdOut'); o.innerHTML = msg; o.hidden = !msg; }
+function cmdPreview(){
+  const v = $('#cmd').value;
+  if (!v.trim()){ cmdShow(`<small>Beispiele – antippen zum Übernehmen:</small><div class="ex">${CMD_EX.map(x => `<button type="button" data-ex="${esc(x)}">${esc(x)}</button>`).join('')}</div>`); return; }
+  const r = cmdParse(v);
+  cmdShow(r ? `<div class="ok">→ ${r.desc}${r.n > 1 && !r.wiz ? ` <small>${r.n} Stück nebeneinander</small>` : ''}</div><small>Enter = zeichnen</small>`
+    : `<div class="bad">Nicht verstanden. Probier z. B.:</div><div class="ex">${CMD_EX.slice(0, 10).map(x => `<button type="button" data-ex="${esc(x)}">${esc(x)}</button>`).join('')}</div>`);
+}
+const cmdHist = []; let cmdHi = -1;
+function cmdRun(){
+  const v = $('#cmd').value, r = cmdParse(v);
+  if (!r){ cmdPreview(); return; }
+  if (!project) return;
+  cmdHist.unshift(v); cmdHi = -1;
+  if (r.wiz){ WIZ.tab = r.wiz.tab; Object.assign(WIZ[r.wiz.tab], r.wiz.v); $('#cmd').value = ''; cmdShow(''); $('#cmd').blur(); openWiz(); return; }
+  if (is3()) setMode('2d');
+  snapshot();
+  let shapes = [];
+  for (let i = 0; i < r.n; i++){
+    const one = r.make();
+    if (i){ const b0 = shapes.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)})), b1 = one.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), x1:Math.max(a.x1, q.x1)}));
+      one.forEach(o => moveBy(o, r2(b0.x1 + 20 - b1.x0), 0)); }
+    shapes.push(...one);
+  }
+  const b = shapes.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
+  let dx = snapV(view.cx - (b.x0 + b.x1) / 2, false), dy = snapV(view.cy - (b.y0 + b.y1) / 2, false);
+  // nicht auf vorhandene Teile legen: dann unter die bisherige Zeichnung
+  const old = state.shapes.filter(o => isVis(o) && o.type !== 'pin');
+  const hitOld = old.some(o => { const q = bbox(o); return q.x0 < b.x1 + dx && b.x0 + dx < q.x1 && q.y0 < b.y1 + dy && b.y0 + dy < q.y1; });
+  if (hitOld){ const ab = old.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0)})); dx = snapV(ab.x0 - b.x0, false); dy = snapV(ab.y0 - 60 - b.y1, false); }
+  shapes.forEach(o => { moveBy(o, dx, dy); o.id = nextId++; o.layer = state.activeLayer || 'L1'; state.shapes.push(o); });
+  setSel(shapes.map(o => o.id)); setTool('select'); changed();
+  const vb = shapes.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
+  const T0 = mkT(view, W, H), off = T0.x(vb.x0) < 0 || T0.x(vb.x1) > W || T0.y(vb.y0) > H || T0.y(vb.y1) < 0;
+  if (off || (vb.x1 - vb.x0) * view.z > W * .9 || (vb.y1 - vb.y0) * view.z > H * .9){ fit(); render(); }
+  $('#hint').innerHTML = `Gezeichnet: ${r.desc.replace(/<small>.*?<\/small>/g, '')}. Mit Auswahl verschieben, rechts genau einstellen.`;
+  $('#cmd').value = ''; cmdShow('');
+}
+$('#cmdForm').addEventListener('submit', e => { e.preventDefault(); cmdRun(); });
+$('#cmd').addEventListener('input', cmdPreview);
+$('#cmd').addEventListener('focus', cmdPreview);
+$('#cmd').addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== $('#cmd')) cmdShow(''); }, 200));
+$('#cmd').addEventListener('keydown', e => {
+  if (e.key === 'Escape'){ $('#cmd').value = ''; cmdShow(''); $('#cmd').blur(); }
+  if (e.key === 'ArrowUp' && cmdHist.length){ e.preventDefault(); cmdHi = Math.min(cmdHist.length - 1, cmdHi + 1); $('#cmd').value = cmdHist[cmdHi]; cmdPreview(); }
+  if (e.key === 'ArrowDown' && cmdHi > -1){ e.preventDefault(); cmdHi--; $('#cmd').value = cmdHi < 0 ? '' : cmdHist[cmdHi]; cmdPreview(); }
+});
+$('#cmdOut').addEventListener('mousedown', e => { const b = e.target.closest('[data-ex]'); if (!b) return; e.preventDefault(); $('#cmd').value = b.dataset.ex; cmdPreview(); $('#cmd').focus(); });
+// Spracheingabe (Chrome, Edge, Safari)
+(function(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return;
+  const btn = $('#cmdMic'); btn.hidden = false; let rec = null;
+  btn.onclick = () => {
+    if (rec){ rec.stop(); return; }
+    rec = new SR(); rec.lang = 'de-DE'; rec.interimResults = true; rec.maxAlternatives = 1;
+    btn.classList.add('rec'); $('#cmd').focus(); cmdShow('<div class="ok">Sprich jetzt, z. B. „Blech 200 mal 100 mal 10“ …</div>');
+    rec.onresult = ev => { $('#cmd').value = [...ev.results].map(x => x[0].transcript).join(' '); cmdPreview(); if (ev.results[ev.results.length - 1].isFinal && cmdParse($('#cmd').value)) setTimeout(cmdRun, 400); };
+    rec.onend = () => { btn.classList.remove('rec'); rec = null; };
+    rec.onerror = () => { cmdShow('<div class="bad">Spracheingabe ging nicht – Mikrofon erlauben oder tippen.</div>'); };
+    rec.start();
+  };
+})();
+
 /* ---------- Tastenkürzel-Übersicht ---------- */
 function openKeys(){
   const K = (...a) => a.map(x => `<kbd>${x}</kbd>`).join(' + ');
   const sec = (t, rows) => `<section><h4>${t}</h4><dl>${rows.map(([k, d]) => `<dt>${k}</dt><dd>${d}</dd>`).join('')}</dl></section>`;
   $('#keysBody').innerHTML =
     sec('Werkzeuge', TOOLS.map(t => [K(t.key), t.n])) +
-    sec('Bearbeiten', [[K('Strg', 'Z'), 'Rückgängig'], [K('Strg', 'Y'), 'Wiederholen'], [K('Strg', 'C') + ' ' + K('Strg', 'V'), 'Kopieren, an der Maus einfügen'], [K('Strg', 'X'), 'Ausschneiden'], [K('Strg', 'D'), 'Duplizieren'], [K('Strg', 'A'), 'Alles auswählen'], [K('Strg', 'G'), 'Baugruppe bilden (mit Shift: auflösen)'], [K('Alt') + ' + Klick', 'Einzelnes Teil in einer Baugruppe'], [K('Entf'), 'Löschen'], [K('Esc'), 'Auswahl aufheben'], [K('←') + ' ' + K('→') + ' ' + K('↑') + ' ' + K('↓'), 'Verschieben um ein Rasterkästchen (mit Shift: 1 mm)'], [K('Bild↑') + ' ' + K('Bild↓'), 'Höhe Z in 3D ändern'], [K('X') + ' ' + K('Y'), 'Teil um X bzw. Y um 90° kippen (mit Shift zurück)'], [K('?'), 'Diese Übersicht']]) +
+    sec('Bearbeiten', [[K('Strg', 'Z'), 'Rückgängig'], [K('Strg', 'Y'), 'Wiederholen'], [K('Strg', 'C') + ' ' + K('Strg', 'V'), 'Kopieren, an der Maus einfügen'], [K('Strg', 'X'), 'Ausschneiden'], [K('Strg', 'D'), 'Duplizieren'], [K('Strg', 'A'), 'Alles auswählen'], [K('Strg', 'G'), 'Baugruppe bilden (mit Shift: auflösen)'], [K('Alt') + ' + Klick', 'Einzelnes Teil in einer Baugruppe'], [K('Entf'), 'Löschen'], [K('Esc'), 'Auswahl aufheben'], [K('←') + ' ' + K('→') + ' ' + K('↑') + ' ' + K('↓'), 'Verschieben um ein Rasterkästchen (mit Shift: 1 mm)'], [K('Bild↑') + ' ' + K('Bild↓'), 'Höhe Z in 3D ändern'], [K('X') + ' ' + K('Y'), 'Teil um X bzw. Y um 90° kippen (mit Shift zurück)'], [K('/') + ' ' + K('Strg', 'K'), 'Eingabezeile: tippen, was du brauchst'], [K('?'), 'Diese Übersicht']]) +
     sec('Maus', [['Klick', 'Teil auswählen'], [K('Shift') + ' + Klick', 'Teil dazu oder heraus'], ['Rahmen nach rechts', 'nur Teile ganz drin'], ['Rahmen nach links', 'alle berührten Teile'], ['Rechte Maustaste ziehen', 'Ansicht verschieben (auch ' + K('Leertaste') + ' + ziehen)'], ['Mausrad', 'Zoomen'], [K('Shift') + ' beim Zeichnen', 'ohne Raster und Fang']]) +
     sec('Tablet / Handy', [['Tippen', 'Teil auswählen bzw. setzen'], ['Leere Fläche ziehen', 'Ansicht verschieben'], ['Zwei Finger', 'Zoomen'], ['Lange drücken auf Teil', 'Teil zur Auswahl dazu oder heraus'], ['Lange drücken auf leerer Fläche, dann ziehen', 'Rahmen aufziehen, mehrere Teile wählen']]) +
     sec('3D-Ansicht', [['Ziehen', 'Drehen'], ['Rechte Maustaste ziehen', 'Ansicht verschieben'], ['Ausgewähltes Teil ziehen', 'Verschieben'], [K('Shift') + ' + ziehen', 'Teil anheben'], ['3D-Lage', 'rechts „Aufstellen ↥ X / Y“ oder „Flach legen“'], ['Demo', 'bunte Ansicht, Teil antippen = Farbe wählen']]);
@@ -3828,6 +4031,7 @@ document.addEventListener('keydown', e => {
   if (!$('#wizDlg').hidden){ if (e.key === 'Escape') $('#wizDlg').hidden = true; return; }
   if (!$('#keysDlg').hidden){ if (e.key === 'Escape' || e.key === '?') $('#keysDlg').hidden = true; return; }
   if (e.key === '?'){ e.preventDefault(); openKeys(); return; }
+  if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')){ e.preventDefault(); $('#cmd').focus(); return; }
   const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   if (mode === 'demo' && !(ctrl && (k === 'z' || k === 'y')) && e.key !== 'Escape') return;
   if (ctrl && k === 'z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
