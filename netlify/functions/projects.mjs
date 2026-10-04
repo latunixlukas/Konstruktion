@@ -18,7 +18,17 @@ export default async (req) => {
   }
 
   const store = getStore({ name: "projekte", consistency: "strong" });
-  const id = new URL(req.url).searchParams.get("id");
+  const thumbs = getStore({ name: "vorschau", consistency: "strong" });
+  const params = new URL(req.url).searchParams;
+  const id = params.get("id");
+
+  // Vorschaubild für die Startseite
+  const tid = params.get("thumb");
+  if (req.method === "GET" && tid !== null) {
+    if (!ID.test(tid)) return json({ error: "Ungültige Projekt-ID" }, 400);
+    const t = await thumbs.get(tid);
+    return json({ thumb: t || null });
+  }
   if (id !== null && !ID.test(id)) return json({ error: "Ungültige Projekt-ID" }, 400);
 
   if (req.method === "GET" && id === null) {
@@ -52,11 +62,15 @@ export default async (req) => {
     const by = String(rec.by || "").slice(0, 60);
     const updated = Date.now();
     await store.setJSON(id, { id, name, by, updated, data: rec.data }, { metadata: { name, by, updated } });
+    if (typeof rec.thumb === "string" && rec.thumb.startsWith("data:image/") && rec.thumb.length < 200_000) {
+      await thumbs.set(id, rec.thumb);
+    }
     return json({ ok: true, updated });
   }
 
   if (req.method === "DELETE") {
     await store.delete(id);
+    await thumbs.delete(id);
     return json({ ok: true });
   }
 
