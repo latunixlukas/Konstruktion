@@ -265,6 +265,11 @@ input[type="color"]{width:100%;height:34px;padding:2px;border:1px solid var(--li
 .keysgrid h4{margin:0 0 8px;font:600 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
 .keysgrid dl{display:grid;grid-template-columns:minmax(0,46%) minmax(0,1fr);gap:7px 14px;margin:0;font-size:.85rem;align-items:baseline}
 .keysgrid dt{min-width:0}.keysgrid dt kbd{white-space:nowrap;display:inline-block;margin:1px 0}.keysgrid dd{margin:0;color:var(--ink);min-width:0}
+.holdkind{display:grid;gap:6px;margin:0 0 12px}
+.holdset input{width:5em}.holdset select{max-width:16em}
+#holdDlg[data-k="kontur"] .hk-nest,#holdDlg[data-k="nest"] .hk-kontur{display:none}
+.holdprev{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0 4px}.holdprev figure{margin:0;flex:1 1 220px;min-width:0}.holdprev figcaption{font-size:.72rem;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.holdprev svg{width:100%;height:auto;max-height:220px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r)}
 .cutset{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.85rem;color:var(--muted)}
 .cutset label{display:flex;align-items:center;gap:6px}
 .cutset input{width:6em}
@@ -667,6 +672,34 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       <div id="wpOut"></div>
       <p class="note">Grobe Richtwerte für die Planung (Werkstatt, Stahl S235, MAG-Schweißen). tr = Rüstzeit einmal je Auftrag, te = Zeit je Stück. Echte Zeiten hängen von Maschinen, Vorrichtungen und Übung ab.</p>
       <div class="btnrow"><button class="btn" type="button" id="wpCopy">Als Text kopieren</button><button class="btn primary" type="button" id="wpPdf">Als PDF</button></div>
+    </div>
+  </div>
+  <div class="modal" id="holdDlg" hidden>
+    <div class="panel cutpanel" role="dialog" aria-labelledby="holdTitle">
+      <div class="cuthead"><h3 id="holdTitle">Halterung bauen</h3><button class="btn icon" type="button" id="holdClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <p class="note" id="holdSrc" style="margin-top:0"></p>
+      <div class="holdkind">
+        <label class="opt"><input type="radio" name="holdKind" value="kontur" checked> <span><b>Konturplatten</b> · Grundplatte + aufgestellte Platten, Oberkante folgt der Bauteilform (wie im Vorrichtungsbau)</span></label>
+        <label class="opt"><input type="radio" name="holdKind" value="nest"> <span><b>Nest / Einlegeaufnahme</b> · Grundplatte + Rahmen mit Tasche in Bauteilform, für flache Teile</span></label>
+      </div>
+      <div class="cutset holdset">
+        <label>Lage des Bauteils <select id="hdLage"></select></label>
+        <label>Ausrichtung <select id="hdPlan"><option value="auto">automatisch</option><option value="0">wie gezeichnet</option><option value="90">90° gedreht</option></select></label>
+        <label>Spiel rundum <input id="hdGap" value="1" inputmode="decimal"> mm</label>
+        <label class="hk-kontur">Anzahl Konturplatten <input id="hdN" value="2" inputmode="numeric"></label>
+        <label class="hk-kontur">Plattendicke <input id="hdTp" value="15" inputmode="decimal"> mm</label>
+        <label class="hk-kontur">Bauteil über Grundplatte <input id="hdLift" value="20" inputmode="decimal"> mm</label>
+        <label>Einfasstiefe <input id="hdDepth" value="" placeholder="auto" inputmode="decimal"> mm</label>
+        <label class="hk-nest">Lagen (konturgenau) <input id="hdLay" value="1" inputmode="numeric"></label>
+        <label class="hk-nest">Wand rundum <input id="hdWall" value="20" inputmode="decimal"> mm</label>
+        <label>Grundplatte <input id="hdTb" value="15" inputmode="decimal"> mm</label>
+        <label>Werkstoff <select id="hdMat"></select></label>
+        <label class="chk"><input type="checkbox" id="hdBolt" checked> Befestigung 4 × M8</label>
+        <label class="chk hk-nest"><input type="checkbox" id="hdGrip" checked> Grifftaschen</label>
+        <label class="chk"><input type="checkbox" id="hdShow" checked> Bauteil zur Kontrolle einblenden</label>
+      </div>
+      <div id="holdOut"></div>
+      <div class="btnrow"><button class="btn primary" type="button" id="holdGo">Halterung erzeugen</button></div>
     </div>
   </div>
   <div class="modal" id="expDlg" hidden>
@@ -2598,6 +2631,255 @@ async function subtractContour(tool, targets, gap, keep){
   setSel(made.filter(o => o.type === 'rect').map(o => o.id)); changed();
   return `Kontur ${gap ? `mit ${dec(gap)} mm Spiel ` : ''}abgezogen${gone ? ` – ${gone} Blech${gone > 1 ? 'e' : ''} ganz weggeschnitten` : ''}${split ? ` – in ${made.filter(o => o.type === 'rect').length} Teile getrennt` : ''}.${keep ? ' Das Werkzeugteil ist geblieben.' : ''}`;
 }
+/* ---------- Halterung / Vorrichtung: aus der Form des Bauteils berechnen ---------- */
+const HOLD_T = [3,4,5,6,8,10,12,15,20,25,30,40,50];
+const holdT = v => HOLD_T.find(t => t >= v - .01) || 50;
+const HOLD_LAGE = [['auto','automatisch – möglichst flach'],['asis','so wie gezeichnet / wie im Modell'],['x90','auf die Seite gelegt (90° um X)'],['x-90','auf die andere Seite (−90° um X)'],['y90','hochkant (90° um Y)'],['y-90','hochkant andersrum (−90° um Y)'],['x180','umgedreht (180°)']];
+function holdRot(k){
+  const m = new THREE.Matrix4(), a = Math.PI / 2;
+  if (k === 'x90') m.makeRotationX(a); else if (k === 'x-90') m.makeRotationX(-a); else if (k === 'y90') m.makeRotationY(a); else if (k === 'y-90') m.makeRotationY(-a); else if (k === 'x180') m.makeRotationX(Math.PI);
+  return m;
+}
+const holdCad = () => cad && !cad.scan && cad.parts.some(p => !p.pts);
+// Dreiecke des Bauteils: angetipptes CAD-Bauteil (STEP) oder die ausgewählten eigenen Teile
+async function holdSource(){
+  const list = selShapes().filter(s => s.type !== 'pin' && s.type !== 'dim' && s.type !== 'text');
+  if (holdCad() && (cadSel >= 0 || !list.length)){
+    const ps = cadSel >= 0 ? [cadSel] : cad.parts.map((p, i) => i).filter(i => !cad.parts[i].pts), tris = [];
+    ps.forEach(i => { const g = cad.parts[i].geo, pos = g.attributes.position, idx = g.index, n = idx ? idx.count : pos.count;
+      const P = j => new THREE.Vector3().fromBufferAttribute(pos, idx ? idx.getX(j) : j);
+      for (let j = 0; j + 2 < n; j += 3) tris.push([P(j), P(j + 1), P(j + 2)]); });
+    return {tris, cad:ps, cadName:cad.name, name:cadSel >= 0 ? cad.parts[cadSel].name : cad.name.replace(/\.[^.]+$/, '')};
+  }
+  if (!list.length) return null;
+  const g = selGroup(), ids = list.map(s => s.id), r = await printMeshes(ids);
+  return {tris:r.parts.flatMap(p => p.tris), ids, name:g ? g.name : list.length === 1 ? (list[0].name || TYPENAMES[list[0].type]) : (state.title.name || 'Bauteil')};
+}
+// Lage wählen (automatisch: geringste Höhe), in der Draufsicht ausrichten, auf 0/0/0 schieben
+function holdOrient(src, lage, plan, kind){
+  const vs = []; src.tris.forEach(t => t.forEach(v => vs.push(v)));
+  const sizeOf = R => { const b = new THREE.Box3(), v = new THREE.Vector3(); for (let i = 0; i < vs.length; i += Math.max(1, Math.floor(vs.length / 30000))) b.expandByPoint(v.copy(vs[i]).applyMatrix4(R)); return b.getSize(new THREE.Vector3()); };
+  let best = null;
+  (lage === 'auto' ? ['asis','x90','x-90','y90','y-90','x180'] : [lage]).forEach(k => { const R = holdRot(k), s = sizeOf(R); if (!best || s.z < best.s.z - .5) best = {k, R, s}; });
+  const R = best.R.clone();
+  const turn = plan === '90' || (plan === 'auto' && (kind === 'nest' ? best.s.y > best.s.x + .5 : best.s.x > best.s.y + .5));
+  if (turn) R.premultiply(new THREE.Matrix4().makeRotationZ(Math.PI / 2));
+  const e = R.elements, T = [], b = new THREE.Box3(), v = new THREE.Vector3();
+  src.tris.forEach(t => { const q = t.map(p => { v.copy(p).applyMatrix4(R); b.expandByPoint(v); return [v.x, v.y, v.z]; }); T.push(q); });
+  T.forEach(q => q.forEach(p => { p[0] -= b.min.x; p[1] -= b.min.y; p[2] -= b.min.z; }));
+  return {T, R, k:best.k, size:b.getSize(new THREE.Vector3()), min:b.min.clone(), turn, ident:best.k === 'asis' && !turn, e};
+}
+// nach unten zeigende Dreiecke (die reichen für Draufsicht und Unterkante eines geschlossenen Körpers)
+const holdDown = T => T.filter(([a, b, c]) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) < -1e-9);
+// Polygon an einer Ebene abschneiden: behält Punkte mit p[ax] * sg <= lim * sg
+function holdClip(poly, ax, lim, sg){
+  const out = [];
+  for (let i = 0; i < poly.length; i++){
+    const P = poly[i], Q = poly[(i + 1) % poly.length], pin = P[ax] * sg <= lim * sg, qin = Q[ax] * sg <= lim * sg;
+    if (pin) out.push(P);
+    if (pin !== qin){ const f = (lim - P[ax]) / (Q[ax] - P[ax]); out.push(P.map((x, j) => x + f * (Q[j] - x))); }
+  }
+  return out;
+}
+const holdOuter = tree => tree.Childs().map(n => fromCP(n.Contour())).filter(P => polyArea(P) > .5);
+function holdUnion(polys){
+  // in Paketen vereinigen – geht bei vielen Dreiecken deutlich schneller
+  let cur = polys.filter(P => P.length > 2 && polyArea(P) > 1e-3);
+  while (cur.length > 400){ const nx = []; for (let i = 0; i < cur.length; i += 400) nx.push(...ClipperLib.Clipper.PolyTreeToPaths(clipRun(ClipperLib.ClipType.ctUnion, cur.slice(i, i + 400))).map(fromCP)); if (nx.length >= cur.length) break; cur = nx; }
+  return holdOuter(clipRun(ClipperLib.ClipType.ctUnion, cur));
+}
+const holdClean = P => ClipperLib.Clipper.CleanPolygons(P.map(toCP), .03 * CK).map(fromCP).filter(q => q.length > 2);
+const polyBox = Ps => { const xs = Ps.flat().map(p => p[0]), ys = Ps.flat().map(p => p[1]); return {x0:Math.min(...xs), y0:Math.min(...ys), x1:Math.max(...xs), y1:Math.max(...ys)}; };
+// Fläche mit Löchern so lange teilen, bis jedes Stück eine einfache Außenkontur hat (Taschen werden zu Aussparungen am Rand)
+function holdSplit(outer, holes, depth = 0){
+  const tree = clipRun(ClipperLib.ClipType.ctDifference, [outer], holes), out = [];
+  tree.Childs().forEach(n => {
+    const C = fromCP(n.Contour()); if (polyArea(C) < 4) return;
+    const Hs = n.Childs().map(h => fromCP(h.Contour()));
+    if (!Hs.length || depth > 8){ out.push(C); return; }
+    const b = polyBox([C]), h = polyBox([Hs[0]]), vert = b.x1 - b.x0 >= b.y1 - b.y0, m = vert ? (h.x0 + h.x1) / 2 : (h.y0 + h.y1) / 2, B = 1e6;
+    const halves = vert ? [[[-B,-B],[m,-B],[m,B],[-B,B]], [[m,-B],[B,-B],[B,B],[m,B]]] : [[[-B,-B],[B,-B],[B,m],[-B,m]], [[-B,m],[B,m],[B,B],[-B,B]]];
+    halves.forEach(hp => holdOuter(clipRun(ClipperLib.ClipType.ctIntersection, [C], [hp])).forEach(P => out.push(...holdSplit(P, Hs, depth + 1))));
+  });
+  return out;
+}
+const holdPlate = (P, tpl) => { const b = polyBox([P]); return Object.assign({type:'rect', x:r2(b.x0), y:r2(b.y0), w:r2(b.x1 - b.x0), h:r2(b.y1 - b.y0), rot:0, outline:P.map(([x, y]) => [r2(x - b.x0), r2(y - b.y0)])}, tpl); };
+function holdBolts(X0, Y0, X1, Y1, e, top, len){
+  const n = NORM.M8, out = [];
+  [[X0 + e, Y0 + e], [X1 - e, Y0 + e], [X1 - e, Y1 - e], [X0 + e, Y1 - e]].forEach(([x, y]) => {
+    out.push({type:'hole', x:r2(x), y:r2(y), d:n.dh, fit:'D-M8'});
+    if (len) out.push({type:'screw', kind:'cyl', size:'M8', len, grade:'8.8', view:'top', rot:0, x:r2(x), y:r2(y)});
+  });
+  return out;
+}
+// Hauptrechnung: liefert die Teile der Halterung (im Lagesystem des Bauteils, Unterkante Bauteil = 0)
+function holdCalc(O, o){
+  const {T, size} = O, gap = Math.max(0, o.gap), mat = o.mat, tb = o.tb, down = holdDown(T), info = [], shapes = [];
+  if (o.kind === 'nest'){
+    const D = o.depth > 0 ? o.depth : Math.min(40, Math.max(5, size.z * .4)), n = Math.max(1, Math.min(6, o.layers | 0)), tl = holdT(D / n), wall = Math.max(8, o.wall);
+    const pockets = [];
+    for (let k = 1; k <= n; k++){
+      const zt = Math.min(k * tl, size.z + 1), polys = [];
+      down.forEach(t => { const c = holdClip(t, 2, zt, 1); if (c.length > 2) polys.push(c.map(p => [p[0], p[1]])); });
+      pockets.push(holdClean(clipOffset(holdUnion(polys), gap)));
+    }
+    const top = pockets[n - 1], pb = polyBox(top), X0 = pb.x0 - wall, Y0 = pb.y0 - wall, X1 = pb.x1 + wall, Y1 = pb.y1 + wall;
+    // Grifftaschen in der Mitte der langen Seiten
+    let grips = [];
+    if (o.grip){
+      const r = Math.min(14, wall * .6, Math.max(pb.x1 - pb.x0, pb.y1 - pb.y0) * .15), alongX = pb.x1 - pb.x0 >= pb.y1 - pb.y0, cx = (pb.x0 + pb.x1) / 2, cy = (pb.y0 + pb.y1) / 2;
+      const hit = [];
+      top.forEach(P => P.forEach((p, i) => { const q = P[(i + 1) % P.length], a = alongX ? p[0] - cx : p[1] - cy, bq = alongX ? q[0] - cx : q[1] - cy; if (a * bq <= 0 && a !== bq){ const f = a / (a - bq); hit.push(alongX ? p[1] + f * (q[1] - p[1]) : p[0] + f * (q[0] - p[0])); } }));
+      if (hit.length >= 2 && r > 4){ const lo = Math.min(...hit), hi = Math.max(...hit); grips = alongX ? [circPts(cx, lo, r, 40), circPts(cx, hi, r, 40)] : [circPts(lo, cy, r, 40), circPts(hi, cy, r, 40)]; }
+    }
+    shapes.push({type:'rect', name:'Grundplatte', x:r2(X0), y:r2(Y0), w:r2(X1 - X0), h:r2(Y1 - Y0), t:tb, mat, rot:0, hbase:1});
+    const R = [[X0, Y0], [X1, Y0], [X1, Y1], [X0, Y1]];
+    pockets.forEach((pk, k) => {
+      const holes = holdOuter(clipRun(ClipperLib.ClipType.ctUnion, [...pk, ...grips]));
+      holdSplit(R, holes).forEach((P, i, all) => shapes.push(holdPlate(P, {name:`Aufnahme Lage ${k + 1}${all.length > 1 ? String.fromCharCode(97 + i) : ''}`, t:tl, mat})));
+    });
+    const stack = tb + n * tl;
+    if (o.bolt && wall >= 13) shapes.push(...holdBolts(X0, Y0, X1, Y1, wall / 2, stack, LENGTHS.find(l => l >= stack + 12) || 200));
+    info.push(`Tasche ${dec(r2(n * tl))} mm tief (${n} Lage${n > 1 ? 'n' : ''} à ${dec(tl)} mm), ${dec(gap)} mm Spiel`, `Halterung ${num(X1 - X0)} × ${num(Y1 - Y0)} × ${num(stack)} mm`);
+    return {shapes, info, ox:-X0, oy:-Y0, oz:0, lift:0, sections:[], foot:pockets[0]};
+  }
+  // Konturplatten: quer zur langen Seite (Bauteil liegt längs in Y), Oberkante = Unterseite des Bauteils + Spiel
+  const n = Math.max(1, Math.min(8, o.n | 0)), tp = Math.max(3, o.tp), lift = Math.max(0, o.lift), Ly = size.y;
+  const depth = o.depth > 0 ? o.depth : Math.min(60, Math.max(10, size.z * .35)), top = lift + depth, wall = 20;
+  const mg = Math.min(Ly / 2, Math.max(tp, Ly * .15));
+  const ys = n === 1 ? [Ly / 2] : Array.from({length:n}, (_, i) => mg + i * (Ly - 2 * mg) / (n - 1));
+  const plates = [], sections = [];
+  ys.forEach((yc, i) => {
+    const ya = yc - tp / 2 - gap, yb = yc + tp / 2 + gap, polys = [], BIG = size.z + top + 1000;
+    let mx0 = Infinity, mx1 = -Infinity;
+    down.forEach(t => {
+      let c = holdClip(t, 1, yb, 1); if (c.length < 3) return; c = holdClip(c, 1, ya, -1); if (c.length < 3) return;
+      const pts = []; c.forEach(p => { const z = p[2] + lift; pts.push([p[0], z], [p[0], BIG]); mx0 = Math.min(mx0, p[0]); mx1 = Math.max(mx1, p[0]); });
+      // konvexe Hülle (Dreieck + senkrecht nach oben verlängert)
+      pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], hi = [];
+      pts.forEach(p => { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); });
+      [...pts].reverse().forEach(p => { while (hi.length >= 2 && cr(hi[hi.length - 2], hi[hi.length - 1], p) <= 0) hi.pop(); hi.push(p); });
+      const H = lo.slice(0, -1).concat(hi.slice(0, -1)); if (H.length > 2) polys.push(H);
+    });
+    if (!polys.length) return;
+    const F = clipOffset(holdUnion(polys), gap), xa = mx0 - wall, xb = mx1 + wall;
+    const P = holdOuter(clipRun(ClipperLib.ClipType.ctDifference, [[[xa, 0], [xb, 0], [xb, top], [xa, top]]], F)).filter(q => Math.min(...q.map(p => p[1])) < .01).sort((a, b) => polyArea(b) - polyArea(a))[0];
+    if (!P) return;
+    const C = holdClean([P])[0] || P, pl = holdPlate(C, {name:`Konturplatte ${plates.length + 1}`, t:tp, mat, tx:90});
+    pl.y = r2(yc - pl.h / 2); plates.push(pl); sections.push({yc, P:C, xa, xb});
+  });
+  if (!plates.length) return {err:'Das Bauteil hat an den Stellen der Konturplatten keine Unterseite. Lage oder Anzahl ändern.'};
+  const X0 = Math.min(...sections.map(s => s.xa)) - 30, X1 = Math.max(...sections.map(s => s.xb)) + 30;
+  const Y0 = Math.min(0, ys[0] - tp / 2) - 20, Y1 = Math.max(Ly, ys[ys.length - 1] + tp / 2) + 20;
+  shapes.push({type:'rect', name:'Grundplatte', x:r2(X0), y:r2(Y0), w:r2(X1 - X0), h:r2(Y1 - Y0), t:tb, mat, rot:0, hbase:1}, ...plates);
+  if (o.bolt) shapes.push(...holdBolts(X0, Y0, X1, Y1, 15, tb, LENGTHS.find(l => l >= tb + 12) || 200));
+  const foot = [];
+  down.forEach(t => foot.push(t.map(p => [p[0], p[1]])));
+  info.push(`${plates.length} Konturplatte${plates.length > 1 ? 'n' : ''} à ${dec(tp)} mm, Oberkante = Bauteilform + ${dec(gap)} mm Spiel`, `Bauteil ${dec(r2(lift))} mm über der Grundplatte, ${dec(r2(depth))} mm eingefasst`, `Grundplatte ${num(X1 - X0)} × ${num(Y1 - Y0)} × ${num(tb)} mm`);
+  return {shapes, info, ox:-X0, oy:-Y0, oz:lift, lift, sections, foot:holdUnion(foot), tp};
+}
+// Vorschau: Draufsicht + Konturplatte bzw. Lagen
+function holdSvg(res, O){
+  const base = res.shapes.find(s => s.hbase), pad = 8, cs = cssVar('--ink') || '#222', mu = 'var(--muted)';
+  const W = base.w, H = base.h, k = 300 / Math.max(W, H);
+  const tx = x => pad + (x - base.x) * k, ty = y => pad + (base.y + H - y) * k;
+  const path = (P, dx = 0, dy = 0) => 'M' + P.map(([x, y]) => `${f1(tx(x + dx))},${f1(ty(y + dy))}`).join('L') + 'Z';
+  let top = `<rect x="${pad}" y="${pad}" width="${f1(W * k)}" height="${f1(H * k)}" fill="none" stroke="${cs}" stroke-width="1"/>`;
+  top += (res.foot || []).map(P => `<path d="${path(P)}" fill="#f59e0b" fill-opacity=".35" stroke="#d97706" stroke-width=".8"/>`).join('');
+  res.shapes.filter(s => s.type === 'rect' && !s.hbase).forEach(s => {
+    if (s.tx){ const yc = s.y + s.h / 2; top += `<rect x="${f1(tx(s.x))}" y="${f1(ty(yc + s.t / 2))}" width="${f1(s.w * k)}" height="${f1(Math.max(1, s.t * k))}" fill="${cs}" fill-opacity=".55"/>`; }
+    else top += `<path d="${path(s.outline, s.x, s.y)}" fill="${cs}" fill-opacity=".12" stroke="${cs}" stroke-width=".8"/>`;
+  });
+  res.shapes.filter(s => s.type === 'hole').forEach(h => { top += `<circle cx="${f1(tx(h.x))}" cy="${f1(ty(h.y))}" r="${f1(Math.max(1.5, h.d / 2 * k))}" fill="none" stroke="${cs}"/>`; });
+  const svgTop = `<svg viewBox="0 0 ${f1(W * k + 2 * pad)} ${f1(H * k + 2 * pad)}" role="img" aria-label="Draufsicht">${top}</svg>`;
+  let side = '';
+  if (res.sections && res.sections.length){
+    const s = res.sections[0], b = polyBox([s.P]), kw = 300 / Math.max(b.x1 - b.x0, b.y1 - b.y0), X = x => pad + (x - b.x0) * kw, Y = y => pad + (b.y1 - y) * kw;
+    side = `<svg viewBox="0 0 ${f1((b.x1 - b.x0) * kw + 2 * pad)} ${f1((b.y1 - b.y0) * kw + 2 * pad)}" role="img" aria-label="Konturplatte"><path d="M${s.P.map(([x, y]) => `${f1(X(x))},${f1(Y(y))}`).join('L')}Z" fill="${cs}" fill-opacity=".14" stroke="${cs}" stroke-width="1"/></svg>`;
+  }
+  return `<div class="holdprev"><figure><figcaption>Draufsicht (orange = Bauteil)</figcaption>${svgTop}</figure>${side ? `<figure><figcaption>Konturplatte 1 (Ansicht)</figcaption>${side}</figure>` : ''}</div>`;
+}
+const HOLD = {src:null, O:null, key:'', res:null, busy:0};
+function holdOpts(){
+  const v = id => parseLen($('#' + id).value);
+  return {kind:document.querySelector('input[name="holdKind"]:checked').value, lage:$('#hdLage').value, plan:$('#hdPlan').value, gap:v('hdGap') || 0, n:parseInt($('#hdN').value, 10) || 2, tp:v('hdTp') || 15,
+    lift:isNaN(v('hdLift')) ? 20 : v('hdLift'), depth:$('#hdDepth').value.trim() ? v('hdDepth') : 0, layers:parseInt($('#hdLay').value, 10) || 1, wall:v('hdWall') || 20, tb:v('hdTb') || 15, mat:$('#hdMat').value,
+    bolt:$('#hdBolt').checked, grip:$('#hdGrip').checked, show:$('#hdShow').checked};
+}
+async function holdUpdate(){
+  const o = holdOpts(), my = ++HOLD.busy;
+  $('#holdDlg').dataset.k = o.kind;
+  if (!HOLD.src){ $('#holdOut').innerHTML = ''; return; }
+  const key = [o.lage, o.plan, o.kind].join('|');
+  if (HOLD.key !== key){ HOLD.O = holdOrient(HOLD.src, o.lage, o.plan, o.kind); HOLD.key = key; }
+  let res;
+  try { res = holdCalc(HOLD.O, o); } catch(e){ console.error(e); res = {err:'Die Halterung konnte nicht berechnet werden.'}; }
+  if (my !== HOLD.busy) return;
+  HOLD.res = res.err ? null : res;
+  const z = HOLD.O.size, lageTxt = (HOLD_LAGE.find(l => l[0] === HOLD.O.k) || [])[1] || '';
+  $('#holdOut').innerHTML = res.err ? `<p class="note" style="color:var(--danger,#dc2626)">${esc(res.err)}</p>`
+    : holdSvg(res, HOLD.O) + `<p class="note">Bauteil in dieser Lage: <b>${num(z.x)} × ${num(z.y)} × ${num(z.z)} mm</b> (${esc(lageTxt)}${HOLD.O.turn ? ', 90° gedreht' : ''}).<br>${res.info.map(esc).join(' · ')}</p>`;
+  $('#holdGo').disabled = !!res.err;
+}
+async function openHold(pre){
+  const list = selShapes();
+  if (!holdCad() && !list.length){ $('#hint').textContent = 'Für eine Halterung zuerst das Bauteil anklicken (oder ein STEP-Modell laden und das Bauteil antippen).'; return false; }
+  if (!$('#hdLage').options.length){ $('#hdLage').innerHTML = HOLD_LAGE.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join(''); $('#hdMat').innerHTML = Object.entries(MATS).filter(([k]) => k !== 'GR').map(([k, m]) => `<option value="${esc(k)}">${esc(m.name)}</option>`).join(''); }
+  if (pre){
+    if (pre.kind) document.querySelector(`input[name="holdKind"][value="${pre.kind}"]`).checked = true;
+    if (pre.lage) $('#hdLage').value = pre.lage;
+    [['n','hdN'],['gap','hdGap'],['tp','hdTp'],['lift','hdLift'],['depth','hdDepth'],['layers','hdLay'],['tb','hdTb']].forEach(([k, id]) => { if (pre[k] != null) $('#' + id).value = num(pre[k]); });
+  }
+  $('#holdDlg').hidden = false; $('#holdOut').innerHTML = '<p class="note">Berechne die Form des Bauteils …</p>'; $('#holdGo').disabled = true;
+  HOLD.src = null; HOLD.key = '';
+  try {
+    await Promise.all([loadThree(), loadScript(CLIPPER_URL, () => window.ClipperLib)]);
+    HOLD.src = await holdSource();
+  } catch(e){ console.error(e); $('#holdOut').innerHTML = '<p class="note">Das Bauteil konnte nicht gelesen werden. Beim ersten Mal braucht die Seite Internet.</p>'; return true; }
+  if (!HOLD.src || !HOLD.src.tris.length){ $('#holdOut').innerHTML = '<p class="note">Die Auswahl hat keinen 3D-Körper (z. B. nur Maße oder Text). Bitte das Bauteil selbst anklicken.</p>'; return true; }
+  $('#holdSrc').innerHTML = `Bauteil: <b>${esc(HOLD.src.name)}</b>${HOLD.src.cad ? ' (CAD-Modell – wird nicht gespeichert)' : ''}. Die Halterung wird aus der echten Form berechnet.`;
+  if (HOLD.src.cad && !pre) $('#hdLage').value = 'asis';
+  await holdUpdate();
+  return true;
+}
+function holdMake(){
+  const res = HOLD.res, src = HOLD.src, O = HOLD.O, o = holdOpts(); if (!res || !src) return;
+  snapshot();
+  const shapes = res.shapes.map(s => JSON.parse(JSON.stringify(s)));
+  const g = makeGroup(shapes, {name:'Halterung – ' + src.name});
+  g.holder = {R:O.R.toArray().map(v => Math.round(v * 1e6) / 1e6), ox:r2(res.ox), oy:r2(res.oy), oz:r2(res.oz), show:o.show, ...(src.cad ? {cad:src.cad, cadName:src.cadName} : {ids:src.ids})};
+  // CAD-Modell in Originallage: Halterung direkt darunter bauen
+  if (src.cad && O.ident){
+    const dz = -(o.tb + res.oz) + O.min.z;
+    shapes.forEach(s => { moveBy(s, O.min.x, O.min.y); if (Z_TYPES.includes(s.type)) s.z = r2(dz); s.id = nextId++; s.layer = state.activeLayer || 'L1'; state.shapes.push(s); });
+    g.holder.show = false; setSel(shapes.map(s => s.id)); changed();
+  } else placeNew(shapes);
+  $('#holdDlg').hidden = true;
+  $('#hint').textContent = `Halterung erzeugt (${shapes.filter(s => s.type === 'rect').length} Platten). In 3D prüfen – exportieren als Zeichnung, STEP, CATIA oder 3D-Druck wie gewohnt.`;
+  if (!is3()) setMode('3d');
+}
+$('#holdClose').onclick = () => { $('#holdDlg').hidden = true; };
+$('#holdDlg').addEventListener('click', e => { if (e.target.id === 'holdDlg') $('#holdDlg').hidden = true; });
+$('#holdDlg').addEventListener('change', () => holdUpdate());
+$('#holdDlg').addEventListener('input', e => { if (e.target.tagName === 'INPUT' && e.target.type !== 'checkbox'){ clearTimeout(HOLD.t); HOLD.t = setTimeout(holdUpdate, 350); } });
+$('#holdGo').onclick = holdMake;
+// Sprache/Eingabezeile: „Halterung hochkant mit 3 Konturplatten, Spiel 2“
+function holdParse(t){
+  if (!/\b(halterung|halter|vorrichtung|aufnahme|konturplatten?|nest)\b/.test(t)) return null;
+  const o = {}, W = {ein:1, eine:1, zwei:2, drei:3, vier:4, fünf:5, sechs:6}, m = t.match(/\b(\d|ein|eine|zwei|drei|vier|fünf|sechs)\s*(kontur)?(platten|platte|auflagen|stützen)\b/);
+  if (m) o.n = W[m[1]] || +m[1];
+  if (/\b(nest|tasche|einlege|rahmen)/.test(t)) o.kind = 'nest'; else if (/kontur|platten|auflage/.test(t)) o.kind = 'kontur';
+  if (/hochkant|stehend|aufrecht/.test(t)) o.lage = 'y90'; else if (/(auf der|auf die) seite/.test(t)) o.lage = 'x90'; else if (/umgedreht|kopfüber/.test(t)) o.lage = 'x180'; else if (/wie gezeichnet|wie im modell|so wie/.test(t)) o.lage = 'asis'; else if (/flach|liegend|automatisch/.test(t)) o.lage = 'auto';
+  const v = re => { const q = t.match(re); return q ? +q[1] : null; };
+  const gap = v(/spiel\s*(\d+(?:\.\d+)?)/); if (gap != null) o.gap = gap;
+  const tp = v(/(?:platten)?dicke\s*(\d+(?:\.\d+)?)/); if (tp != null) o.tp = tp;
+  const lift = v(/(?:abstand|höhe|über (?:der )?grundplatte)\s*(\d+(?:\.\d+)?)/); if (lift != null) o.lift = lift;
+  const dp = v(/(?:tiefe|tief|eingefasst)\s*(\d+(?:\.\d+)?)/); if (dp != null) o.depth = dp;
+  const ly = v(/(\d)\s*lagen/); if (ly != null) o.layers = ly;
+  const parts = [o.kind === 'nest' ? 'als Nest' : `${o.n || 2} Konturplatten`, o.lage ? (HOLD_LAGE.find(l => l[0] === o.lage) || [])[1] : null, o.gap != null ? `Spiel ${dec(o.gap)} mm` : null].filter(Boolean);
+  return {hold:o, n:1, desc:`Halterung für das ausgewählte Bauteil – ${parts.join(', ')} (öffnet die Berechnung)`};
+}
 function renderMultiProps(){
   const list = selShapes(), counts = {};
   list.forEach(s => counts[TYPENAMES[s.type]] = (counts[TYPENAMES[s.type]] || 0) + 1);
@@ -2685,6 +2967,7 @@ function toolsBlock(){
       <button class="btn" type="button" id="tiltY" title="Um die Y-Achse kippen (Taste Y)">Aufstellen ↥ Y</button>
       <button class="btn" type="button" id="tilt0" title="Wieder flach hinlegen">Flach legen</button>
       <button class="btn" type="button" id="aSheet" title="Technische Zeichnung nur von der Auswahl">Zeichnung</button>
+      <button class="btn" type="button" id="aHold" title="Halterung / Vorrichtung aus der Form dieses Bauteils berechnen">Halterung bauen</button>
     </div>` : '') + `<details class="tblock" id="tbBox"${state.tbOpen ? ' open' : ''}><summary>Spiegeln &amp; Muster</summary>
     <div class="btnrow">
       <button class="btn" type="button" id="mirV" title="An einer senkrechten Achse spiegeln (links ↔ rechts)">Spiegeln ↔</button>
@@ -2702,7 +2985,7 @@ function toolsBlock(){
   </details>`;
 }
 function bindToolsBlock(){
-  if ($('#tiltX')){ $('#tiltX').onclick = () => tiltSel('x', 90); $('#tiltY').onclick = () => tiltSel('y', 90); $('#tilt0').onclick = () => tiltSel(0); $('#aSheet').onclick = () => openExport('sheet'); }
+  if ($('#tiltX')){ $('#tiltX').onclick = () => tiltSel('x', 90); $('#tiltY').onclick = () => tiltSel('y', 90); $('#tilt0').onclick = () => tiltSel(0); $('#aSheet').onclick = () => openExport('sheet'); $('#aHold').onclick = () => openHold(); }
   $('#tbBox').addEventListener('toggle', e => { state.tbOpen = e.target.open; });
   $('#mirCopy').onchange = e => { state.mirCopy = e.target.checked; };
   $('#mirV').onclick = () => mirrorSel(true);
@@ -3383,6 +3666,7 @@ function cmdParse(raw){
   const U = {mm:1, cm:10, dm:100, m:1000}, defU = UNITS[state.unit] || 1;
   let t = ' ' + String(raw).toLowerCase().replace(/(\d),(\d)/g, '$1.$2').replace(/[×*]/g, 'x').replace(/\s+(mal|by)\s+/g, 'x').replace(/durchmesser\s*/g, 'ø').replace(/\s+/g, ' ').trim() + ' ';
   if (!t.trim()) return null;
+  const hp = holdParse(t); if (hp) return hp;
   const rawText = String(raw).trim();
   let n = 1, m;
   if ((m = t.match(/^ (\d{1,2}) ?(x|stk\.?|stück)? (?=[a-zäöüø])/))){ n = Math.max(1, +m[1]); t = ' ' + t.slice(m[0].length); }
@@ -3558,7 +3842,7 @@ function cmdPreview(){
   if (!v.trim()){ cmdShow(`<small>Beispiele – antippen zum Übernehmen:</small><div class="ex">${CMD_EX.map(x => `<button type="button" data-ex="${esc(x)}">${esc(x)}</button>`).join('')}</div>`); return; }
   const r = cmdParse(v);
   const askH = r && r.ask ? r.ask.map(a => `<div class="ask"><div class="q">${a.q}</div><div class="ex">${a.o.map(([l, c]) => `<button type="button" data-ex="${esc(c)}">${esc(String(l))}</button>`).join('')}</div></div>`).join('') : '';
-  cmdShow(r ? `<div class="${r.make || r.wiz ? 'ok' : 'q0'}">${r.make || r.wiz ? '→ ' : ''}${r.desc}${r.n > 1 && !r.wiz ? ` <small>${r.n} Stück nebeneinander</small>` : ''}</div>${askH}<small>${r.make || r.wiz ? (r.ask ? 'Antippen zum Ändern · Enter = so zeichnen' : 'Enter = zeichnen') : 'Bitte eine Option antippen oder weiter tippen'}</small>`
+  cmdShow(r ? `<div class="${r.make || r.wiz || r.hold ? 'ok' : 'q0'}">${r.make || r.wiz || r.hold ? '→ ' : ''}${r.desc}${r.n > 1 && !r.wiz ? ` <small>${r.n} Stück nebeneinander</small>` : ''}</div>${askH}<small>${r.make || r.wiz || r.hold ? (r.ask ? 'Antippen zum Ändern · Enter = so zeichnen' : 'Enter = zeichnen') : 'Bitte eine Option antippen oder weiter tippen'}</small>`
     : `<div class="bad">Nicht verstanden. Probier z. B.:</div><div class="ex">${CMD_EX.slice(0, 10).map(x => `<button type="button" data-ex="${esc(x)}">${esc(x)}</button>`).join('')}</div>`);
 }
 const cmdHist = []; let cmdHi = -1;
@@ -3589,9 +3873,10 @@ function cmdShapes(r){
 }
 function cmdRun(){
   const v = $('#cmd').value, r = cmdParse(v);
-  if (!r || (!r.make && !r.wiz)){ cmdPreview(); return; }
+  if (!r || (!r.make && !r.wiz && !r.hold)){ cmdPreview(); return; }
   if (!project) return;
   cmdHist.unshift(v); cmdHi = -1;
+  if (r.hold){ $('#cmd').value = ''; cmdShow(''); $('#cmd').blur(); openHold(r.hold); return; }
   if (r.wiz){ WIZ.tab = r.wiz.tab; Object.assign(WIZ[r.wiz.tab], r.wiz.v); $('#cmd').value = ''; cmdShow(''); $('#cmd').blur(); openWiz(); return; }
   if (is3()) setMode('2d');
   snapshot();
@@ -3617,7 +3902,7 @@ $('#cmdOut').addEventListener('mousedown', e => { const b = e.target.closest('[d
     if (rec){ rec.stop(); return; }
     rec = new SR(); rec.lang = 'de-DE'; rec.interimResults = true; rec.maxAlternatives = 1;
     btn.classList.add('rec'); $('#cmd').focus(); cmdShow('<div class="ok">Sprich jetzt, z. B. „Blech 200 mal 100 mal 10“ …</div>');
-    rec.onresult = ev => { $('#cmd').value = [...ev.results].map(x => x[0].transcript).join(' '); cmdPreview(); const fin = ev.results[ev.results.length - 1].isFinal, rr = fin && cmdParse($('#cmd').value); if (rr && (rr.make || rr.wiz) && !rr.ask) setTimeout(cmdRun, 400); };
+    rec.onresult = ev => { $('#cmd').value = [...ev.results].map(x => x[0].transcript).join(' '); cmdPreview(); const fin = ev.results[ev.results.length - 1].isFinal, rr = fin && cmdParse($('#cmd').value); if (rr && (rr.make || rr.wiz || rr.hold) && !rr.ask) setTimeout(cmdRun, 400); };
     rec.onend = () => { btn.classList.remove('rec'); rec = null; };
     rec.onerror = () => { cmdShow('<div class="bad">Spracheingabe ging nicht – Mikrofon erlauben oder tippen.</div>'); };
     rec.start();
@@ -5041,6 +5326,7 @@ document.addEventListener('keydown', e => {
   if (!$('#libDlg').hidden){ if (e.key === 'Escape') $('#libDlg').hidden = true; return; }
   if (!$('#cutDlg').hidden){ if (e.key === 'Escape') $('#cutDlg').hidden = true; return; }
   if (!$('#wpDlg').hidden){ if (e.key === 'Escape') $('#wpDlg').hidden = true; return; }
+  if (!$('#holdDlg').hidden){ if (e.key === 'Escape') $('#holdDlg').hidden = true; return; }
   if (!$('#expDlg').hidden){ if (e.key === 'Escape') $('#expDlg').hidden = true; return; }
   if (!$('#wizDlg').hidden){ if (e.key === 'Escape') $('#wizDlg').hidden = true; return; }
   if (!$('#keysDlg').hidden){ if (e.key === 'Escape' || e.key === '?') $('#keysDlg').hidden = true; return; }
@@ -5678,7 +5964,7 @@ function build3d(){
   // Gewindebohrung (G-Mx) im 3D-Druck: Loch größer, Innengewinde-Ring hinein
   const thrSize = h => printThreads && (h.fit || '').startsWith('G-') && PITCH[h.fit.slice(2)] ? h.fit.slice(2) : null, thrRings = [];
   rects.forEach((r, i) => {
-    let z = 0; if (!isElev(r)) rects.slice(0, i).forEach(q => { if (!isElev(q) && over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });
+    let z = 0; if (!isElev(r)) rects.slice(0, i).forEach(q => { if (!isElev(q) && !tilted(q) && over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });   // aufgestellte Bleche tragen nichts
     base.set(r.id, z);
     if (r.equip && r.equip.kind === 'robot'){ dg.add(robotMesh(r, z, mesh)); return; }
     if (r.equip){ const g = new THREE.BoxGeometry(r.w, r.h, r.t); g.translate(r.w/2, r.h/2, r.t/2); g.rotateZ((r.rot || 0) * Math.PI / 180); g.translate(r.x, r.y, z); const m = mesh(g, r, 'plate');
@@ -5898,6 +6184,19 @@ function build3d(){
     list.forEach(e => e.ch.applyMatrix4(m));
     const b1 = new THREE.Box3(); list.forEach(e => b1.union(boxOf(e.ch)));
     list.forEach(e => { e.ch.position.z += b0.min.z - b1.min.z; });
+  });
+  // Halterung: Bauteil zur Kontrolle durchsichtig in der Aufnahme zeigen (wird nicht exportiert)
+  groupsOf().filter(g => g.holder && g.holder.show).forEach(g => {
+    const H = g.holder, b = groupMembers(g.id).find(s => s.hbase), be = b && ents.find(e => e.sh === b); if (!be) return;
+    const gm = new THREE.MeshStandardMaterial({color:0xf59e0b, transparent:true, opacity:.4, depthWrite:false, side:THREE.DoubleSide}), ge = new THREE.LineBasicMaterial({color:0xb45309, transparent:true, opacity:.6});
+    const gh = new THREE.Group(), R = new THREE.Matrix4().fromArray(H.R);
+    const add = o => { o.traverse(x => { x.userData = {ghost:true, keep:!!H.cad}; if (x.isMesh){ x.material = gm; x.raycast = () => {}; } else if (x.isLine) x.material = ge; }); o.applyMatrix4(R); gh.add(o); };
+    if (H.cad){ if (!cad || cad.name !== H.cadName) return; H.cad.forEach(i => { const p = cad.parts[i]; if (p && !p.pts) add(new THREE.Mesh(p.geo, gm)); }); }
+    else ents.filter(e => H.ids.includes(e.sh.id) && e.sh.group !== g.id).forEach(e => { e.ch.updateMatrix(); add(e.ch.clone()); });
+    if (!gh.children.length) return;
+    gh.updateMatrixWorld(true); const bx = new THREE.Box3().setFromObject(gh), bb = boxOf(be.ch);
+    gh.position.set(b.x + H.ox - bx.min.x, b.y + H.oy - bx.min.y, bb.max.z + H.oz - bx.min.z); gh.userData = {ghost:true, keep:!!H.cad};
+    dg.add(gh);
   });
   three.ents = ents;
   if (guide) applyGuide(ents);
@@ -6637,6 +6936,7 @@ function partCard(r){
 function chatAnswer(r, t){
   const asks = r && r.ask ? r.ask.map(a => `<div class="askq">${a.q}</div>${chips(a.o, 'scroll')}`).join('') : '';
   if (!r){ chatSay('bot', 'Das habe ich nicht verstanden. Sag z. B. was es ist und die Maße:', chips(CHAT_EX)); return; }
+  if (r.hold){ chatSay('bot', 'Für eine Halterung brauche ich das Bauteil: Projekt anlegen, das Bauteil als STEP laden (Datei → CAD-Modell öffnen) oder zeichnen, antippen – dann „Halterung bauen“ oder in der Befehlszeile „Halterung“ sagen.'); return; }
   const n = chat.items.length;
   const acts = chips([['✓ Erstellen', '#make', 'go'], ['+ Noch ein Teil dazu', '#add'], ['Neu', '#reset', 'ghost']], 'acts') + afterChips();
   if (r.make){
@@ -6855,8 +7155,10 @@ function renderCadInfo(){
       <div class="btnrow"><button class="btn" type="button" id="scRx">Aufrichten ↻ X</button><button class="btn" type="button" id="scRy">Kippen ↻ Y</button><button class="btn" type="button" id="scRz">Drehen ↻ Z</button></div>
       <p class="note">Steht der Scan schief oder ist er zu groß/klein? Hier Einheit und Lage anpassen – oder mit dem Lineal eine bekannte Strecke messen und „Maßstab setzen“. ${cad.keep ? 'Der Scan ist nur auf diesem Gerät gemerkt und wird beim Öffnen des Projekts wieder geladen – nicht hochgeladen.' : 'Der Scan wird nicht gespeichert und nirgends hochgeladen.'}</p>`
       : '<p class="note">Das Modell wird nur angesehen. Es wird nicht gespeichert und nirgends hochgeladen.</p>'}
+    ${cad.scan ? '' : `<div class="btnrow"><button class="btn primary" type="button" id="cadHold">Halterung bauen${cadSel >= 0 ? ' für dieses Teil' : ''}</button></div>`}
     <div class="btnrow"><button class="btn" type="button" id="cadClose2">${cad.scan ? 'Scan schließen' : 'CAD-Modell schließen'}</button>${cad.scan && cad.keep ? '<button class="btn danger" type="button" id="scForget">Scan vom Gerät löschen</button>' : ''}</div>`;
   $('#cadClose2').onclick = () => closeCad();
+  if ($('#cadHold')) $('#cadHold').onclick = () => openHold();
   if (cad.scan){
     $('#scUnit').onchange = e => scanXf(new THREE.Matrix4().makeScale(+e.target.value / (cad.unit || 1), +e.target.value / (cad.unit || 1), +e.target.value / (cad.unit || 1)), {unit:+e.target.value});
     $('#scRx').onclick = () => scanXf(new THREE.Matrix4().makeRotationX(Math.PI / 2), {rx:1});
