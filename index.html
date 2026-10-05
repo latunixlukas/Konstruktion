@@ -692,6 +692,8 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <label class="opt"><input type="radio" name="prFmt" value="stl"> <span><b>STL</b> · ein Netz, geht mit jedem Drucker</span></label>
         <div class="props" style="margin-top:6px"><label for="prScale">Maßstab</label><select id="prScale"><option value="fit">aufs Druckbett einpassen</option><option value="1">1 : 1 (Originalgröße)</option><option value="2">1 : 2</option><option value="5">1 : 5</option><option value="10">1 : 10</option><option value="20">1 : 20</option><option value="50">1 : 50</option></select>
           <label for="prBed">Druckbett</label><select id="prBed"><option value="180">180 mm (z. B. Bambu A1 mini)</option><option value="220" selected>220 mm (z. B. Ender 3, Prusa MK4 ≈ 250)</option><option value="256">256 mm (z. B. Bambu P1S / X1C)</option><option value="300">300 mm</option></select></div>
+        <label class="opt"><input type="checkbox" id="prThr" checked> <span><b>Echte Gewinde</b> an Schrauben, Muttern und Gewindebohrungen (nur bei 1 : 1 – gut druckbar ab M6)</span></label>
+        <div class="props"><label for="prClear">Gewinde-Spiel</label><select id="prClear"><option value="0.1">0,1 mm (Harzdrucker)</option><option value="0.15">0,15 mm</option><option value="0.2" selected>0,2 mm (FDM, normal)</option><option value="0.3">0,3 mm (FDM, locker)</option></select></div>
         <label class="opt" id="prSelRow" hidden><input type="checkbox" id="prSel"> <span id="prSelTxt">Nur die Auswahl</span></label>
         <p class="note">Alle eigenen Teile zusammengebaut, flach auf dem Druckbett (unterste Stelle auf 0), Maße in Millimetern. Runde Flächen bestehen aus vielen kleinen Flächen. Ein geladenes CAD-Modell kommt nie mit in die Datei.</p>
       </fieldset>
@@ -811,6 +813,8 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Start-Chat</b>: Auf der Startseite oben sagen oder tippen, was du bauen willst (z. B. „Blech 200 mal 100“). Die App fragt nach, du antwortest („Dicke 5“, „aus Edelstahl“, „3 Stück“) oder tippst eine Option an. „Erstellen“ legt das Projekt an.</li>
             <li><b>Foto entzerren</b>: Teil auf ein A4-Blatt legen und von oben fotografieren. Datei → „Foto als Vorlage“, dann in der Foto-Leiste „Entzerren“ und die 4 Blattecken antippen. Das Foto wird gerade gerechnet und ist 1:1 – jetzt mit „Maß“ messen oder nachzeichnen.</li>
             <li><b>Messen in 3D</b>: Lineal-Knopf rechts, unten die Messart wählen – Abstand, Durchmesser (3 Punkte am Rand), Winkel, Dicke (Fläche → Punkt) oder Blech (3 Ecken). Durchmesser und Blech lassen sich direkt als Teil übernehmen. Bei Scans ohne LiDAR erst eine bekannte Strecke messen und „Maßstab setzen“.</li>
+            <li><b>Bleche zusammenführen / Kontur abziehen</b>: Mehrere Teile mit Shift + Klick auswählen. Rechts unter „Bleche bearbeiten“: <i>Zusammenführen</i> macht aus sich berührenden Blechen ein Blech. <i>Kontur abziehen</i> schneidet die Form des gewählten Teils (z. B. Rohr, Ronde, Profil) mit Spiel aus den Blechen aus – bei Schrauben entsteht die Durchgangsbohrung.</li>
+            <li><b>3D-Druck</b>: Datei → Exportieren → 3D-Druck. 3MF oder STL, Maßstab wählen. Bei 1 : 1 mit echten Gewinden an Schrauben, Muttern und Gewindebohrungen (Spiel 0,2 mm für FDM).</li>
             <li><b>Arbeitsplan</b>: In der Stückliste auf „Arbeitsplan“ tippen. Die App plant Sägen, Schneiden, Bohren, Gewinde, Kanten, Schweißen, Oberfläche und Montage mit groben Zeiten. Stückzahl und Oberfläche oben einstellen, als PDF speichern.</li>
             <li><b>Bauanleitung</b>: In der Stückliste auf „Bauanleitung“ tippen. Die 3D-Ansicht zeigt Schritt für Schritt, welches Teil wann dazukommt (neu = farbig, schon verbaut = grau), mit Teileliste je Schritt. Weiter/Zurück unten links oder mit den Pfeiltasten.</li>
             <li><b>Biegeteil</b>: Schenkel als Außenmaße und Biegewinkel eintragen. Die gestreckte Länge (Zuschnitt) wird nach DIN 6935 berechnet.</li>
@@ -1433,7 +1437,7 @@ function pick(p){
 }
 function handles(s){
   if (!s) return [];
-  if (s.type === 'rect' && s.rot) return [];
+  if (s.type === 'rect' && (s.rot || s.outline)) return [];
   if (s.type === 'rect') return [{k:'ll', x:s.x, y:s.y}, {k:'lr', x:s.x + s.w, y:s.y}, {k:'ur', x:s.x + s.w, y:s.y + s.h}, {k:'ul', x:s.x, y:s.y + s.h}];
   if (s.type === 'line' || s.type === 'weld' || s.type === 'balloon' || s.type === 'leader') return [{k:'p1', x:s.x1, y:s.y1}, {k:'p2', x:s.x2, y:s.y2}];
   if (s.type === 'profile' && s.view === 'side'){ const w = localToWorld(s, s.len, section(s).w / 2); return [{k:'len', x:w.x, y:w.y}]; }
@@ -2348,6 +2352,7 @@ function renderProps(){
   $('#selInfo').innerHTML = `<span class="badge">${TYPENAMES[s.type]}</span>`;
   let h = '';
   const og = groupOf(s);
+  if (s.outline) h += `<div class="grpbox" style="padding:8px 12px"><p class="note" style="margin:0"><b>Blech mit freier Kontur</b> (aus Zusammenführen / Kontur abziehen). Länge und Breite skalieren die Kontur, Eckenform entfällt. Laser-DXF und 3D übernehmen die Kontur.</p></div>`;
   if (s.equip) h += `<div class="grpbox" style="padding:8px 12px"><p class="note" style="margin:0"><b>Zukaufteil – Platzhalter.</b> ${esc(s.equip.info)}. Länge × Breite = Aufstellfläche, Dicke = Höhe. Ca.-Werte – bitte im Datenblatt des Herstellers prüfen.</p></div>`;
   if (og) h += `<div class="grpbox" style="padding:8px 12px"><p class="note" style="margin:0">Teil der Baugruppe <b>${esc(og.name)}</b> <button class="btn" type="button" id="gAll" style="margin-left:6px">Ganze Gruppe wählen</button></p></div>`;
   h += '<div class="props">';
@@ -2477,12 +2482,110 @@ $('#props').addEventListener('change', e => {
     const positive = ['w','h','t','d','len','keyLen','l','b','size'].includes(k);
     if (k === 'di' && !(n >= 0 && n < s.d)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
     if (isNaN(n) || (positive && n <= 0)){ undoStack.pop(); renderProps(); flash(e.target.id); return; }
+    if ((k === 'w' || k === 'h') && (s.outline || s.pts) && s[k] > 0){ const f = n / s[k], ix = k === 'w' ? 0 : 1, sc = a => a.map(q => { const c = q.slice(); c[ix] = r2(c[ix] * f); return c; }); if (s.outline) s.outline = sc(s.outline); else s.pts = sc(s.pts); }
     s[k] = Math.round(n * 1000) / 1000;
     if (k === 'd') s.fit = 'frei';
   }
   changed();
 });
 function flash(id){ const i = document.getElementById(id); if (!i) return; i.style.borderColor = '#dc2626'; i.title = 'Bitte eine Zahl eingeben, z. B. 120 oder 12cm'; }
+/* ---------- Bleche zusammenführen und Kontur abziehen (Draufsicht, mit Clipper) ---------- */
+const CLIPPER_URL = 'https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js', CK = 1000;
+const isPlate = s => (s.type === 'rect' || s.type === 'disc') && !s.equip;
+// Außenkontur(en) eines Teils in Weltkoordinaten, so wie es in der Draufsicht liegt
+function worldOutline(s){
+  const W = pts => pts.map(([x, y]) => { const q = localToWorld(s, x, y); return [q.x, q.y]; });
+  if (s.type === 'rect') return [W(rectOutline(s))];
+  if (s.type === 'disc') return [circPts(s.x, s.y, s.d/2, 96)];
+  if (s.type === 'bend') return [W(bendOutline(s))];
+  if (s.type === 'profile'){ if (s.view === 'section') return [W(section(s).outer)]; const b = profileLocalBox(s); return [W([[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]])]; }
+  if (s.type === 'shaft'){ let x = 0; const up = [], lo = []; s.steps.forEach(t => { up.push([x, t.d/2], [x + t.l, t.d/2]); lo.push([x, -t.d/2], [x + t.l, -t.d/2]); x += t.l; }); return [W([...up, ...lo.reverse()])]; }
+  if (s.type === 'slot' || s.type === 'cutout') return [W(cutOutline(s))];
+  if (s.type === 'hole') return [circPts(s.x, s.y, s.d/2, 48)];
+  return null;
+}
+const canTool = s => s.type === 'screw' || !!worldOutline(s);
+const toCP = poly => { const p = poly.map(([x, y]) => ({X:Math.round(x * CK), Y:Math.round(y * CK)})); return ClipperLib.Clipper.Orientation(p) ? p : p.reverse(); };
+const fromCP = path => path.map(p => [p.X / CK, p.Y / CK]);
+function clipRun(type, subj, clip){
+  const c = new ClipperLib.Clipper(), tree = new ClipperLib.PolyTree();
+  c.AddPaths(subj.map(toCP), ClipperLib.PolyType.ptSubject, true);
+  if (clip && clip.length) c.AddPaths(clip.map(toCP), ClipperLib.PolyType.ptClip, true);
+  c.Execute(type, tree, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+  return tree;
+}
+function clipOffset(polys, d){
+  if (!d) return polys;
+  const co = new ClipperLib.ClipperOffset(2, .02 * CK), sol = new ClipperLib.Paths();
+  co.AddPaths(polys.map(toCP), ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon); co.Execute(sol, d * CK);
+  return sol.map(fromCP);
+}
+// Ergebnis (PolyTree) → Bleche mit freier Kontur + Ausschnitte für Löcher darin
+function treeToShapes(tree, tpl){
+  const plates = [], cuts = [];
+  const outer = node => {
+    const P = fromCP(node.Contour()); if (Math.abs(polyArea(P)) < 1) return;
+    const x0 = Math.min(...P.map(p => p[0])), y0 = Math.min(...P.map(p => p[1])), x1 = Math.max(...P.map(p => p[0])), y1 = Math.max(...P.map(p => p[1]));
+    plates.push({type:'rect', name:tpl.name || 'Blech', x:r2(x0), y:r2(y0), w:r2(x1 - x0), h:r2(y1 - y0), t:tpl.t, mat:tpl.mat, rot:0, outline:P.map(([x, y]) => [r2(x - x0), r2(y - y0)]),
+      ...(tpl.z ? {z:tpl.z} : {}), ...(tpl.color ? {color:tpl.color} : {}), ...(tpl.finish ? {finish:tpl.finish} : {}), ...(tpl.group ? {group:tpl.group} : {})});
+    node.Childs().forEach(h => {
+      const H = fromCP(h.Contour()); if (Math.abs(polyArea(H)) < .5) return;
+      const hx0 = Math.min(...H.map(p => p[0])), hy0 = Math.min(...H.map(p => p[1])), hx1 = Math.max(...H.map(p => p[0])), hy1 = Math.max(...H.map(p => p[1])), cx = (hx0 + hx1) / 2, cy = (hy0 + hy1) / 2;
+      // runde Löcher bleiben Bohrungen, alles andere wird ein Kontur-Ausschnitt
+      const rr = H.map(([x, y]) => Math.hypot(x - cx, y - cy)), rm = rr.reduce((a, b) => a + b, 0) / rr.length;
+      if (H.length > 20 && Math.max(...rr) - Math.min(...rr) < Math.max(.05, rm * .01)) cuts.push({type:'hole', x:r2(cx), y:r2(cy), d:r2(rm * 2), fit:'frei'});
+      else cuts.push({type:'cutout', name:'Kontur', x:r2(cx), y:r2(cy), w:r2(hx1 - hx0), h:r2(hy1 - hy0), r:0, rot:0, pts:H.map(([x, y]) => [r2(x - cx), r2(y - cy)])});
+      h.Childs().forEach(outer);   // Insel im Loch = eigenes Blech
+    });
+  };
+  tree.Childs().forEach(outer);
+  return {plates, cuts};
+}
+function replaceShapes(olds, news){
+  const L = olds[0] ? olds[0].layer : (state.activeLayer || 'L1'), ids = new Set(olds.map(o => o.id));
+  state.shapes = state.shapes.filter(o => !ids.has(o.id));
+  news.forEach(o => { o.id = nextId++; o.layer = o.layer || L; state.shapes.push(o); });
+  return news;
+}
+async function mergePlates(list){
+  const plates = list.filter(isPlate);
+  if (plates.length < 2) return 'Zum Zusammenführen mindestens zwei Bleche oder Ronden auswählen.';
+  if (plates.some(p => p.t !== plates[0].t || p.mat !== plates[0].mat)) return 'Zusammenführen geht nur bei gleicher Dicke und gleichem Werkstoff.';
+  if (plates.some(p => tilted(p) || (p.z || 0) !== (plates[0].z || 0))) return 'Die Bleche müssen flach auf gleicher Höhe liegen (nicht gekippt).';
+  await loadScript(CLIPPER_URL, () => window.ClipperLib);
+  const inner = plates.filter(p => p.type === 'disc' && p.di > 0).map(p => circPts(p.x, p.y, p.di/2, 96));
+  let tree = clipRun(ClipperLib.ClipType.ctUnion, plates.flatMap(worldOutline));
+  if (inner.length){ const paths = ClipperLib.Clipper.PolyTreeToPaths(tree).map(fromCP); tree = clipRun(ClipperLib.ClipType.ctDifference, paths, inner); }
+  const r = treeToShapes(tree, plates[0]);
+  snapshot(); const made = replaceShapes(plates, [...r.plates, ...r.cuts]);
+  setSel(made.filter(o => o.type === 'rect').map(o => o.id)); changed();
+  return r.plates.length > 1 ? `Zusammengeführt – die Bleche berühren sich nicht überall, es sind ${r.plates.length} Bleche geblieben. Für ein Teil müssen sie sich überlappen oder berühren.` : `Zu einem Blech zusammengeführt (${fmt(r.plates[0].w)} × ${fmt(r.plates[0].h)}). Bohrungen und Ausschnitte bleiben erhalten.`;
+}
+async function subtractContour(tool, targets, gap, keep){
+  targets = targets.filter(p => isPlate(p) && p !== tool);
+  if (!targets.length) return 'Bitte mindestens ein Blech oder eine Ronde mit auswählen, aus dem die Kontur ausgeschnitten wird.';
+  snapshot();
+  // Schraube: passende Durchgangsbohrung statt Kontur
+  if (tool.type === 'screw'){
+    const n = NORM[tool.size], hit = targets.filter(p => inRect(p, tool.x, tool.y));
+    if (!n || !hit.length){ undoStack.pop(); return 'Die Schraube sitzt auf keinem der ausgewählten Bleche.'; }
+    state.shapes.push({type:'hole', id:nextId++, layer:tool.layer, x:tool.x, y:tool.y, d:r2(n.dh + 2 * gap), fit:gap ? 'frei' : 'D-' + tool.size});
+    if (!keep) state.shapes = state.shapes.filter(o => o !== tool);
+    changed(); return `Durchgangsbohrung Ø${dec(r2(n.dh + 2 * gap))} für ${tool.size} gesetzt.`;
+  }
+  await loadScript(CLIPPER_URL, () => window.ClipperLib);
+  const cutter = clipOffset(worldOutline(tool), gap);
+  let made = [], gone = 0, split = 0;
+  targets.forEach(p => {
+    const inner = p.type === 'disc' && p.di > 0 ? [circPts(p.x, p.y, p.di/2, 96)] : [];
+    const tree = clipRun(ClipperLib.ClipType.ctDifference, worldOutline(p), [...cutter, ...inner]), r = treeToShapes(tree, p);
+    if (!r.plates.length) gone++; if (r.plates.length > 1) split++;
+    made.push(...replaceShapes([p], [...r.plates, ...r.cuts]));
+  });
+  if (!keep) state.shapes = state.shapes.filter(o => o !== tool);
+  setSel(made.filter(o => o.type === 'rect').map(o => o.id)); changed();
+  return `Kontur ${gap ? `mit ${dec(gap)} mm Spiel ` : ''}abgezogen${gone ? ` – ${gone} Blech${gone > 1 ? 'e' : ''} ganz weggeschnitten` : ''}${split ? ` – in ${made.filter(o => o.type === 'rect').length} Teile getrennt` : ''}.${keep ? ' Das Werkzeugteil ist geblieben.' : ''}`;
+}
 function renderMultiProps(){
   const list = selShapes(), counts = {};
   list.forEach(s => counts[TYPENAMES[s.type]] = (counts[TYPENAMES[s.type]] || 0) + 1);
@@ -2508,6 +2611,26 @@ function renderMultiProps(){
     <div class="btnrow"><label class="chk">Auf Ebene ${optSelect('m-layer', (state.layers || []).map(l => [l.id, l.name]), state.activeLayer)}</label><button class="btn" type="button" id="mLayer">Verschieben</button></div>
     <p class="note">Tipp: Shift + Klick nimmt Teile dazu oder heraus. Strg + C / Strg + V kopiert und fügt an der Mausposition ein.</p>` + toolsBlock();
   bindToolsBlock();
+  // Bleche zusammenführen / Kontur eines Teils abziehen
+  const plates = list.filter(isPlate), tools = list.filter(q => canTool(q) && !isCut(q));
+  if (plates.length && list.length >= 2 && tools.length){
+    const area = q => { const b = bbox(q); return (b.x1 - b.x0) * (b.y1 - b.y0); };
+    const def = tools.filter(q => !isPlate(q)).sort((a, b) => b.id - a.id)[0] || plates.slice().sort((a, b) => area(a) - area(b))[0];   // zuletzt eingefügtes Teil
+    const nm = q => q.type === 'screw' ? `${KINDS[q.kind].name} ${q.size}` : q.type === 'profile' ? `${q.name ? q.name + ' – ' : ''}${PROFILES[q.kind].name} ${q.size}` : `${q.name || TYPENAMES[q.type]}${isPlate(q) ? ` ${num(bbox(q).x1 - bbox(q).x0)} × ${num(bbox(q).y1 - bbox(q).y0)}` : ''}`;
+    $('#props').insertAdjacentHTML('beforeend', `<div class="grpbox" style="margin-top:14px"><p class="note" style="margin:0 0 10px"><b>Bleche bearbeiten</b> – in der Draufsicht</p>
+      ${plates.length >= 2 ? `<div class="btnrow" style="margin-top:0"><button class="btn" type="button" id="mMerge">Zusammenführen (${plates.length} Bleche zu einem)</button></div>` : ''}
+      <div class="props" style="margin-top:10px"><label for="m-tool">Kontur von</label>${optSelect('m-tool', tools.map(q => [q.id, nm(q)]), def.id)}
+        <label for="m-gap">Spiel rundum <em>mm</em></label><input id="m-gap" value="0" inputmode="decimal"></div>
+      <label class="chk" style="margin-top:8px"><input type="checkbox" id="m-keep"${isPlate(def) ? '' : ' checked'}> Werkzeugteil behalten</label>
+      <div class="btnrow"><button class="btn primary" type="button" id="mSub">Kontur abziehen</button></div>
+      <p class="note" style="margin-bottom:0">Schneidet die Form des gewählten Teils aus den anderen Blechen aus – z. B. Rohr durch Blech stecken (Spiel 1 mm), Ausklinkung, Ronde als Loch. Bei Schrauben entsteht die passende Durchgangsbohrung.</p></div>`);
+    $('#m-tool').onchange = e => { const q = byId(+e.target.value); $('#m-keep').checked = q && !isPlate(q); };
+    if ($('#mMerge')) $('#mMerge').onclick = async () => { try { $('#hint').textContent = await mergePlates(selShapes()); } catch(err){ console.error(err); $('#hint').textContent = 'Zusammenführen hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.'; } };
+    $('#mSub').onclick = async () => {
+      const tool = byId(+$('#m-tool').value), gap = Math.max(0, parseFloat(($('#m-gap').value || '0').replace(',', '.')) || 0);
+      try { $('#hint').textContent = await subtractContour(tool, selShapes().filter(q => q !== tool), gap, $('#m-keep').checked); } catch(err){ console.error(err); $('#hint').textContent = 'Kontur abziehen hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.'; }
+    };
+  }
   const sg = selGroup();
   if (sg){
     const mem = groupMembers(sg.id);
@@ -2610,6 +2733,8 @@ function mirrorShape(o, vertical, ax){
   const r = o.rot || 0;
   if (o.type === 'rect' || o.type === 'slot' || o.type === 'cutout' || o.type === 'profile'){
     // Rechteck-artige Teile: Ankerecke wechselt, Drehung wird gespiegelt
+    if (o.pts) o.pts = o.pts.map(([x, y]) => vertical ? [-x, y] : [x, -y]).reverse();
+    if (o.outline) o.outline = o.outline.map(([x, y]) => vertical ? [r2(o.w - x), y] : [x, r2(o.h - y)]).reverse();
     if (o.type === 'slot' || o.type === 'cutout'){ const c = M(o.x, o.y); o.x = c.x; o.y = c.y; o.rot = ((-r) % 360 + 360) % 360; return; }
     if (o.type === 'profile'){ if (vertical){ const a = o.cutA; o.cutA = o.cutB; o.cutB = a; } else { if (o.cutA) o.cutA = -o.cutA; if (o.cutB) o.cutB = -o.cutB; } }
     const b = o.type === 'rect' ? {x1:o.w, y1:o.h} : profileLocalBox(o);
@@ -2754,6 +2879,7 @@ $('#bLayerAdd').onclick = () => {
 const circleFull = s => s.a0 == null || Math.abs(s.a1 - s.a0) >= 359.99;
 // Umriss eines Blechs im lokalen System, mit Fasen oder Radien an den Ecken
 function rectOutline(s){
+  if (s.outline) return s.outline;   // Freiform-Blech (aus Zusammenführen / Kontur abziehen)
   const {w, h} = s, k = s.cornerType, c = Math.min(s.corner || 0, w/2, h/2);
   if (!c || !k || k === 'none') return [[0,0],[w,0],[w,h],[0,h]];
   if (k === 'fase') return [[c,0],[w-c,0],[w,c],[w,h-c],[w-c,h],[c,h],[0,h-c],[0,c]];
@@ -2761,9 +2887,10 @@ function rectOutline(s){
   arc(w-c, c, 270); arc(w-c, h-c, 0); arc(c, h-c, 90); arc(c, c, 180);
   return pts;
 }
-const cornerLoss = s => { const c = Math.min(s.corner || 0, s.w/2, s.h/2); return !c || !s.cornerType || s.cornerType === 'none' ? 0 : s.cornerType === 'fase' ? 2*c*c : (4 - Math.PI)*c*c; };
+const cornerLoss = s => { if (s.outline) return s.w * s.h - Math.abs(polyArea(s.outline)); const c = Math.min(s.corner || 0, s.w/2, s.h/2); return !c || !s.cornerType || s.cornerType === 'none' ? 0 : s.cornerType === 'fase' ? 2*c*c : (4 - Math.PI)*c*c; };
 // Langloch (Länge über alles l, Breite b) und Ausschnitt (w × h, Eckradius r), zentriert um 0/0
 function cutOutline(o){
+  if (o.pts) return o.pts;   // Kontur-Ausschnitt
   const pts = [];
   if (o.type === 'slot'){
     const r = o.b/2, a = Math.max(0, o.l/2 - r);
@@ -2777,7 +2904,7 @@ function cutOutline(o){
   arc(w-r, -h+r, 270); arc(w-r, h-r, 0); arc(-w+r, h-r, 90); arc(-w+r, -h+r, 180);
   return pts;
 }
-const cutArea = o => o.type === 'hole' ? Math.PI * (o.d/2) ** 2 : o.type === 'slot' ? (Math.max(0, o.l - o.b)) * o.b + Math.PI * o.b * o.b / 4 : o.w * o.h - (4 - Math.PI) * Math.min(o.r || 0, o.w/2, o.h/2) ** 2;
+const cutArea = o => o.pts ? Math.abs(polyArea(o.pts)) : o.type === 'hole' ? Math.PI * (o.d/2) ** 2 : o.type === 'slot' ? (Math.max(0, o.l - o.b)) * o.b + Math.PI * o.b * o.b / 4 : o.w * o.h - (4 - Math.PI) * Math.min(o.r || 0, o.w/2, o.h/2) ** 2;
 const isCut = o => o.type === 'hole' || o.type === 'slot' || o.type === 'cutout';
 function discMass(s){
   let area = Math.PI / 4 * (s.d**2 - (s.di || 0)**2);
@@ -2785,7 +2912,7 @@ function discMass(s){
   return Math.max(0, area) * s.t / 1e6 * MATS[s.mat].rho;
 }
 function inRect(r, x, y){
-  if (r.type === 'disc'){ const d = Math.hypot(x - r.x, y - r.y); return d < r.d/2 && d > (r.di || 0)/2; } const l = r.rot ? worldToLocal(r, {x, y}) : {x:x - r.x, y:y - r.y}; return l.x > 0 && l.x < r.w && l.y > 0 && l.y < r.h; }
+  if (r.type === 'disc'){ const d = Math.hypot(x - r.x, y - r.y); return d < r.d/2 && d > (r.di || 0)/2; } if (r.outline){ const l = worldToLocal(r, {x, y}); return inPoly(l, r.outline); } const l = r.rot ? worldToLocal(r, {x, y}) : {x:x - r.x, y:y - r.y}; return l.x > 0 && l.x < r.w && l.y > 0 && l.y < r.h; }
 function moveBy(o, dx, dy){
   if (o.type === 'pin'){ if (o.ref != null && byId(o.ref)){ if (!isSel(o.ref)){ o.dx = r2((o.dx || 0) + dx); o.dy = r2((o.dy || 0) + dy); } pinPos(o); } else { o.x += dx; o.y += dy; } return; }
   if ('x1' in o){ o.x1 += dx; o.x2 += dx; o.y1 += dy; o.y2 += dy; } else { o.x += dx; o.y += dy; } }
@@ -2835,7 +2962,7 @@ function bomRows(list = state.shapes){
   list.filter(s => s.type === 'rect').forEach(s => {
     if (s.equip){ add(`e|${s.name}`, {name:s.name, dim:`Zukaufteil · ${s.equip.info}`, mat:s.equip.maker || '–', mass:s.equip.kg || null}); return; }
     const m = rectMass(s);
-    add(`r|${s.name}|${s.w}|${s.h}|${s.t}|${s.mat}|${m.toFixed(3)}`, {name:s.name || 'Blech', dim:`${num(s.w)} × ${num(s.h)} × ${num(s.t)} ${state.unit}`, mat:MATS[s.mat].name, mass:m});
+    add(`r|${s.name}|${s.w}|${s.h}|${s.t}|${s.mat}|${m.toFixed(3)}|${s.outline ? s.outline.length : ''}`, {name:s.name || 'Blech', dim:`${s.outline ? 'Kontur, Zuschnitt ' : ''}${num(s.w)} × ${num(s.h)} × ${num(s.t)} ${state.unit}`, mat:MATS[s.mat].name, mass:m});
   });
   list.filter(s => s.type === 'disc').forEach(s => {
     const m = discMass(s);
@@ -2867,7 +2994,7 @@ function bomRows(list = state.shapes){
 function holeRows(){
   const map = new Map();
   state.shapes.filter(isCut).forEach(s => {
-    const key = s.type === 'slot' ? `Langloch ${num(s.l, 'mm')} × ${num(s.b, 'mm')} mm` : s.type === 'cutout' ? `Ausschnitt ${num(s.w, 'mm')} × ${num(s.h, 'mm')} mm${s.r ? ' R' + num(s.r, 'mm') : ''}`
+    const key = s.type === 'slot' ? `Langloch ${num(s.l, 'mm')} × ${num(s.b, 'mm')} mm` : s.type === 'cutout' ? `${s.pts ? 'Kontur-Ausschnitt ca.' : 'Ausschnitt'} ${num(s.w, 'mm')} × ${num(s.h, 'mm')} mm${s.r ? ' R' + num(s.r, 'mm') : ''}`
       : s.fit && s.fit !== 'frei' ? FITS[s.fit] : 'Bohrung Ø' + num(s.d, 'mm') + ' mm';
     map.set(key, (map.get(key) || 0) + 1);
   });
@@ -4491,10 +4618,10 @@ document.querySelectorAll('input[name="expFmt"]').forEach(r => r.addEventListene
 
 /* ---------- 3D-Druck: STL (binär) und 3MF (mit einzelnen Teilen) ---------- */
 // alle eigenen Teile als Dreiecke in Welt-Koordinaten (mm), zusammengebaut, ohne CAD-Modell
-async function printMeshes(ids){
+async function printMeshes(ids, thr){
   await loadThree();
   const savedCad = cad, savedCut = cut3d.on, savedExp = explodeF, savedGuide = guide, parts = [];
-  init3d(); cad = null; cut3d.on = false; explodeF = 0; guide = null;
+  init3d(); cad = null; cut3d.on = false; explodeF = 0; guide = null; printThreads = thr || null;
   try {
     build3d(); three.root.updateMatrixWorld(true);
     const rootId = ch => ch.userData.id != null ? ch.userData.id : (ch.children.find(c => c.userData.id != null) || {userData:{}}).userData.id;
@@ -4509,9 +4636,10 @@ async function printMeshes(ids){
         const P = i => new THREE.Vector3().fromBufferAttribute(pos, idx ? idx.getX(i) : i).applyMatrix4(m.matrixWorld);
         for (let i = 0; i + 2 < n; i += 3){ const a = P(i), b = P(i + 1), c = P(i + 2); tris.push(flip ? [a, c, b] : [a, b, c]); }
       });
-      if (tris.length) parts.push({name:nm, tris});
+      const old = parts.find(q => q.id === id);   // z. B. Gewindering gehört zum Blech
+      if (old) old.tris.push(...tris); else if (tris.length) parts.push({id, name:nm, tris});
     });
-  } finally { cad = savedCad; cut3d.on = savedCut; explodeF = savedExp; guide = savedGuide; build3d(); draw3d(); }
+  } finally { printThreads = null; cad = savedCad; cut3d.on = savedCut; explodeF = savedExp; guide = savedGuide; build3d(); draw3d(); }
   if (!parts.length) throw new Error('leer');
   // aufs Druckbett: unterste Stelle auf z = 0, Mitte auf x/y = 0
   const B = new THREE.Box3(); parts.forEach(p => p.tris.forEach(t => t.forEach(v => B.expandByPoint(v))));
@@ -4564,13 +4692,16 @@ function mf3Blob(parts, k){
     ['3D/3dmodel.model', model]]);
 }
 async function export3dPrint(o){
-  const {parts, size} = await printMeshes(o.ids);
+  let {parts, size} = await printMeshes(o.ids);
   const maxD = Math.max(size.x, size.y, size.z), k = o.scale === 'fit' ? Math.min(1, (o.bed || 200) / maxD) : 1 / (+o.scale || 1);
+  // echte Gewinde nur in Originalgröße – verkleinert passen keine Normschrauben mehr
+  const thrOn = o.threads && k === 1 && state.shapes.some(s => (s.type === 'screw' && PITCH[s.size] && ['hex', 'cyl', 'set', 'nut'].includes(s.kind)) || (s.type === 'hole' && (s.fit || '').startsWith('G-')));
+  if (thrOn) ({parts, size} = await printMeshes(o.ids, {c:o.clear}));
   // sehr dünne Teile nach dem Verkleinern melden (unter 0,8 mm ist schwer druckbar)
   const thin = parts.filter(p => { const b = new THREE.Box3(); p.tris.forEach(t => t.forEach(v => b.expandByPoint(v))); const s = b.getSize(new THREE.Vector3()); return Math.min(s.x, s.y, s.z) * k < .8; }).length;
   const blob = o.fmt === '3mf' ? mf3Blob(parts, k) : stlBlob(parts, k);
   download(fileBase() + (o.ids ? '_auswahl' : '') + (k !== 1 ? `_1zu${dec(+(1 / k).toFixed(1))}` : '') + '.' + o.fmt, blob);
-  return {n:parts.length, k, size:size.clone().multiplyScalar(k), thin};
+  return {n:parts.length, k, size:size.clone().multiplyScalar(k), thin, thr:thrOn, thrSkip:o.threads && k !== 1};
 }
 
 /* ---------- DXF (R12, Millimeter) ---------- */
@@ -4691,9 +4822,9 @@ $('#expForm').addEventListener('submit', async e => {
   if (opt.fmt === 'print'){
     const btn = $('#expGo'); btn.disabled = true; btn.textContent = 'Wird erstellt …'; $('#expErr').textContent = '';
     try {
-      const r = await export3dPrint({fmt:document.querySelector('input[name="prFmt"]:checked').value, scale:$('#prScale').value, bed:+$('#prBed').value, ids:$('#prSel').checked ? selShapes().filter(s => Z_TYPES.includes(s.type)).map(s => s.id) : null});
+      const r = await export3dPrint({fmt:document.querySelector('input[name="prFmt"]:checked').value, scale:$('#prScale').value, bed:+$('#prBed').value, threads:$('#prThr').checked, clear:+$('#prClear').value, ids:$('#prSel').checked ? selShapes().filter(s => Z_TYPES.includes(s.type)).map(s => s.id) : null});
       $('#expDlg').hidden = true;
-      $('#hint').textContent = `3D-Druck-Datei gespeichert: ${r.n} Teil${r.n === 1 ? '' : 'e'}, Maßstab 1 : ${dec(+(1 / r.k).toFixed(1))}, Größe ${dec(r.size.x.toFixed(1))} × ${dec(r.size.y.toFixed(1))} × ${dec(r.size.z.toFixed(1))} mm.${r.thin ? ` Achtung: ${r.thin} Teil${r.thin === 1 ? ' ist' : 'e sind'} dünner als 0,8 mm – kleineren Maßstab wählen oder einzeln drucken.` : ''}`;
+      $('#hint').textContent = `3D-Druck-Datei gespeichert: ${r.n} Teil${r.n === 1 ? '' : 'e'}, Maßstab 1 : ${dec(+(1 / r.k).toFixed(1))}, Größe ${dec(r.size.x.toFixed(1))} × ${dec(r.size.y.toFixed(1))} × ${dec(r.size.z.toFixed(1))} mm.${r.thr ? ` Mit echten Gewinden (Spiel ${dec($('#prClear').value)} mm).` : r.thrSkip ? ' Gewinde glatt, weil nicht 1 : 1.' : ''}${r.thin ? ` Achtung: ${r.thin} Teil${r.thin === 1 ? ' ist' : 'e sind'} dünner als 0,8 mm – kleineren Maßstab wählen oder einzeln drucken.` : ''}`;
     } catch(err){ console.error(err); $('#expErr').textContent = err.message === 'leer' ? 'Noch keine Teile für den 3D-Druck da.' : '3D-Druck-Export hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.'; }
     finally { btn.disabled = false; btn.textContent = 'Exportieren'; }
     return;
@@ -5373,6 +5504,8 @@ function build3d(){
   const rects = SH.filter(s => s.type === 'rect' || s.type === 'disc'), base = new Map();
   const over = (a, b) => { const p = bbox(a), q = bbox(b); return p.x0 < q.x1 && q.x0 < p.x1 && p.y0 < q.y1 && q.y0 < p.y1; };
   const holes = SH.filter(s => s.type === 'hole'), cuts = SH.filter(s => s.type === 'slot' || s.type === 'cutout');
+  // Gewindebohrung (G-Mx) im 3D-Druck: Loch größer, Innengewinde-Ring hinein
+  const thrSize = h => printThreads && (h.fit || '').startsWith('G-') && PITCH[h.fit.slice(2)] ? h.fit.slice(2) : null, thrRings = [];
   rects.forEach((r, i) => {
     let z = 0; if (!isElev(r)) rects.slice(0, i).forEach(q => { if (!isElev(q) && over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });
     base.set(r.id, z);
@@ -5385,7 +5518,7 @@ function build3d(){
       if (r.di > 0){ const p = new THREE.Path(); p.absarc(0, 0, r.di/2, 0, Math.PI*2, true); sh.holes.push(p); }
       holes.forEach(h => {
         const d = Math.hypot(h.x - r.x, h.y - r.y);
-        if (d + h.d/2 < r.d/2 && d - h.d/2 > (r.di || 0)/2){ const p = new THREE.Path(); p.absarc(h.x - r.x, h.y - r.y, h.d/2, 0, Math.PI*2, true); sh.holes.push(p); }
+        if (d + h.d/2 < r.d/2 && d - h.d/2 > (r.di || 0)/2){ const tz = thrSize(h), p = new THREE.Path(); p.absarc(h.x - r.x, h.y - r.y, tz ? thrHoleR(tz) : h.d/2, 0, Math.PI*2, true); sh.holes.push(p); if (tz) thrRings.push([h, r, z]); }
       });
       cuts.filter(c => inRect(r, c.x, c.y)).forEach(c => sh.holes.push(new THREE.Path(cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y); return new THREE.Vector2(w.x - r.x, w.y - r.y); }))));
       const g = extrude(sh, r.t); g.translate(r.x, r.y, z);
@@ -5396,13 +5529,14 @@ function build3d(){
     cuts.filter(c => inRect(r, c.x, c.y)).forEach(c => sh.holes.push(new THREE.Path(cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y), l = worldToLocal(r, w); return new THREE.Vector2(l.x, l.y); }))));
     holes.forEach(h => {
       const l = worldToLocal(r, h);
-      if (l.x - h.d/2 > 0 && l.x + h.d/2 < r.w && l.y - h.d/2 > 0 && l.y + h.d/2 < r.h){
-        const p = new THREE.Path(); p.absarc(l.x, l.y, h.d/2, 0, Math.PI*2, true); sh.holes.push(p);
+      if (l.x - h.d/2 > 0 && l.x + h.d/2 < r.w && l.y - h.d/2 > 0 && l.y + h.d/2 < r.h && (!r.outline || inPoly(l, r.outline))){
+        const tz = thrSize(h), p = new THREE.Path(); p.absarc(l.x, l.y, tz ? thrHoleR(tz) : h.d/2, 0, Math.PI*2, true); sh.holes.push(p); if (tz) thrRings.push([h, r, z]);
       }
     });
     const g = extrude(sh, r.t); g.rotateZ((r.rot || 0) * Math.PI / 180); g.translate(r.x, r.y, z);
     dg.add(mesh(g, r, 'plate'));
   });
+  thrRings.forEach(([h, r, z]) => { const g = threadRing(h.fit.slice(2), r.t, printThreads.c); g.translate(h.x, h.y, z); dg.add(mesh(g, r, 'plate')); });
   const inR = (r, x, y) => !isElev(r) && inRect(r, x, y);
   const topAt = (x, y) => rects.reduce((m, r) => inR(r, x, y) ? Math.max(m, base.get(r.id) + r.t) : m, 0);
   const botAt = (x, y) => rects.reduce((m, r) => inR(r, x, y) ? Math.min(m, base.get(r.id)) : m, Infinity);
@@ -5431,7 +5565,7 @@ function build3d(){
     if (prof || s.kind === 'lock'){
       const g = NORM[s.size];
       // Sicherungsmutter: Sechskant + Klemmring; sonst Rotationskörper
-      const geos = s.kind === 'lock' ? (() => { const m = LOCKM[s.size], a = extrude(hexShape(g.s, g.d/2), m*.75), b = extrude(ringShape(g.s/2*.9, g.d/2), m*.25); b.translate(0, 0, m*.75); return [a, b]; })() : [lathe(prof)];
+      const geos = printThreads && s.kind === 'set' && PITCH[s.size] ? [threadRod(s.size, s.len, printThreads.c).translate(0, 0, -s.len).rotateX(-Math.PI/2)] : s.kind === 'lock' ? (() => { const m = LOCKM[s.size], a = extrude(hexShape(g.s, g.d/2), m*.75), b = extrude(ringShape(g.s/2*.9, g.d/2), m*.25); b.translate(0, 0, m*.75); return [a, b]; })() : [lathe(prof)];
       const R = s.kind === 'bearing' ? BEARINGS[s.size][1]/2 : s.kind === 'circlip' ? (+s.size + 2*(.12*+s.size + 2))/2 : s.kind === 'pin' ? +s.size/2 : s.kind === 'lock' ? g.s/Math.sqrt(3) : (s.kind === 'csk' ? CSK[s.size][0]/2 : g.d/2);
       if (s.view === 'top'){
         const z0 = topAt(s.x, s.y), zb = botAt(s.x, s.y), bottom = isFinite(zb) ? zb : 0;
@@ -5460,10 +5594,12 @@ function build3d(){
         const head = s.kind === 'hex' ? extrude(hexShape(g.s), g.k) : extrude(ringShape(g.dk/2, 0), d);
         if (s.kind === 'cyl'){ const sock = extrude(hexShape(g.sw), g.sw*.6); place(sock, z0 + lift + d - g.sw*.6 + .02); }
         dg.add(mesh(place(head, z0 + lift), s, 'metal'));
-        const sh = new THREE.CylinderGeometry(d/2, d/2, s.len, 28); sh.rotateX(Math.PI/2);
-        dg.add(mesh(place(sh, z0 + lift - s.len/2), s, 'metal'));
+        if (printThreads && PITCH[s.size]) dg.add(mesh(place(threadRod(s.size, s.len, printThreads.c), z0 + lift - s.len), s, 'metal'));
+        else { const sh = new THREE.CylinderGeometry(d/2, d/2, s.len, 28); sh.rotateX(Math.PI/2); dg.add(mesh(place(sh, z0 + lift - s.len/2), s, 'metal')); }
       } else if (s.kind === 'nut'){
-        dg.add(mesh(place(extrude(hexShape(g.s, d/2), g.m), bottom - g.m), s, 'metal'));
+        const thr = printThreads && PITCH[s.size];
+        dg.add(mesh(place(extrude(hexShape(g.s, thr ? thrHoleR(s.size) : d/2), g.m), bottom - g.m), s, 'metal'));
+        if (thr) dg.add(mesh(place(threadRing(s.size, g.m, printThreads.c), bottom - g.m), s, 'metal'));
       } else {
         const idx = washers.filter(w => screws.indexOf(w) < screws.indexOf(s)).length;
         dg.add(mesh(place(extrude(ringShape(g.d2/2, g.d1/2), g.h), z0 + idx*g.h), s, 'metal'));
@@ -5476,8 +5612,8 @@ function build3d(){
       if (s.kind === 'hex' || s.kind === 'cyl'){
         if (s.kind === 'hex') grp.add(mesh(alongY(extrude(hexShape(g.s), g.k), 0), s, 'metal'));
         else { grp.add(mesh(alongY(extrude(ringShape(g.dk/2, 0), d), 0), s, 'metal')); R = g.dk/2; }
-        const sh = new THREE.CylinderGeometry(d/2, d/2, s.len, 28); sh.translate(0, -s.len/2, 0);
-        grp.add(mesh(sh, s, 'metal'));
+        if (printThreads && PITCH[s.size]){ const rod = threadRod(s.size, s.len, printThreads.c); rod.rotateX(Math.PI/2); grp.add(mesh(rod, s, 'metal')); }
+        else { const sh = new THREE.CylinderGeometry(d/2, d/2, s.len, 28); sh.translate(0, -s.len/2, 0); grp.add(mesh(sh, s, 'metal')); }
       } else if (s.kind === 'nut') grp.add(mesh(alongY(extrude(hexShape(g.s, d/2), g.m), 0), s, 'metal'));
       else { grp.add(mesh(alongY(extrude(ringShape(g.d2/2, g.d1/2), g.h), 0), s, 'metal')); R = g.d2/2; }
       grp.rotation.z = rot; grp.position.set(s.x, s.y, topAt(s.x, s.y) + R);
@@ -5663,6 +5799,41 @@ function build3d(){
   }
 }
 // Bemaßung in 3D: Maßlinien mit Pfeilen und Hilfslinien an Länge, Breite und Höhe
+/* ---------- Echte Gewinde für den 3D-Druck (ISO metrisch, 60°) ---------- */
+const PITCH = {M3:.5, M4:.7, M5:.8, M6:1, M8:1.25, M10:1.5, M12:1.75, M16:2, M20:2.5};
+let printThreads = null;   // beim 3D-Druck-Export: {c: Spiel je Seite in mm}
+// Gewindeprofil über eine Steigung: Spitze, Flanke, Grund, Flanke (Grundprofil ISO 68-1)
+const thProf = (u, rMaj, h) => u < .125 ? rMaj : u < .4375 ? rMaj - h * (u - .125) / .3125 : u < .6875 ? rMaj - h : rMaj - h + h * (u - .6875) / .3125;
+function threadGrid(rFn, len, P, n){
+  const rows = Math.max(2, Math.ceil(len / (P / 8))), pos = [];
+  for (let j = 0; j <= rows; j++){ const z = len * j / rows; for (let i = 0; i < n; i++){ const th = i / n * Math.PI * 2, u = ((z / P - i / n) % 1 + 1) % 1, r = rFn(u); pos.push(r * Math.cos(th), r * Math.sin(th), z); } }
+  return {pos, rows};
+}
+const bufGeo = (pos, idx) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; };
+// Gewindestange (Außengewinde) entlang +z von 0 bis len, dicht geschlossen
+function threadRod(size, len, c){
+  const d = NORM[size].d, P = PITCH[size], h = .5413 * P, n = 48, G = threadGrid(u => thProf(u, d/2 - c, h), len, P, n), pos = G.pos, idx = [], at = (j, i) => j * n + (i % n);
+  for (let j = 0; j < G.rows; j++) for (let i = 0; i < n; i++){ const a = at(j, i), b = at(j, i + 1), cc = at(j + 1, i + 1), e = at(j + 1, i); idx.push(a, b, cc, a, cc, e); }
+  const b0 = pos.length / 3; pos.push(0, 0, 0); const t0 = b0 + 1; pos.push(0, 0, len);
+  for (let i = 0; i < n; i++){ idx.push(b0, at(0, i + 1), at(0, i)); idx.push(t0, at(G.rows, i), at(G.rows, i + 1)); }
+  return bufGeo(pos, idx);
+}
+// Innengewinde-Ring (z. B. in Mutter oder Gewindebohrung): außen glatt (überlappt das Bauteil), innen Gewinde
+function threadRing(size, len, c){
+  const d = NORM[size].d, P = PITCH[size], h = .5413 * P, n = 48, Ro = d/2 + c + .3;
+  const O = threadGrid(() => Ro, len, P, n), I = threadGrid(u => thProf(u, d/2 + c, h), len, P, n), pos = [...O.pos, ...I.pos], idx = [], N = O.pos.length / 3;
+  const o = (j, i) => j * n + (i % n), ii = (j, i) => N + j * n + (i % n), R = O.rows;
+  for (let j = 0; j < R; j++) for (let i = 0; i < n; i++){
+    idx.push(o(j, i), o(j, i + 1), o(j + 1, i + 1), o(j, i), o(j + 1, i + 1), o(j + 1, i));
+    idx.push(ii(j, i), ii(j + 1, i + 1), ii(j, i + 1), ii(j, i), ii(j + 1, i), ii(j + 1, i + 1));
+  }
+  for (let i = 0; i < n; i++){
+    idx.push(o(0, i), ii(0, i), ii(0, i + 1), o(0, i), ii(0, i + 1), o(0, i + 1));
+    idx.push(o(R, i), o(R, i + 1), ii(R, i + 1), o(R, i), ii(R, i + 1), ii(R, i));
+  }
+  return bufGeo(pos, idx);
+}
+const thrHoleR = size => NORM[size].d / 2 + printThreads.c + .15;   // Loch im Bauteil für den Gewindering
 // Roboter-Platzhalter: Fuß, Drehteil, Oberarm, Unterarm, Handgelenk – Proportionen aus Aufstellfläche, Höhe und Reichweite
 function robotMesh(s, z0, mesh){
   const g = new THREE.Group(), H = s.t, R = s.equip.reach || 1000, F = Math.min(s.w, s.h), a = Math.max(30, Math.min(F * .34, H * .13)), c = localToWorld(s, s.w/2, s.h/2);
