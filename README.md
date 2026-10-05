@@ -45,6 +45,8 @@ Einfaches Konstruktions-Werkzeug im Browser für Schlosser- und Metallbau-Azubis
 - **Bauanleitung Schritt für Schritt** (Stückliste → „Bauanleitung“): 3D zeigt nacheinander, welches Teil wann angelegt, geheftet, geschweißt oder verschraubt wird – neue Teile fliegen farbig ein, verbaute Teile werden grau; Teileliste je Schritt, Abspielen, Pfeiltasten, PDF mit einer Seite je Schritt
 - **Arbeitsplan automatisch** (Stückliste → „Arbeitsplan“): Sägen (mit Gehrung), Blech schneiden (Schere/Laser), Drehen, Fräsen, Bohren (Ø, Anzahl, Tiefe), Gewinde, Senken, Entgraten, Kanten, Heften, Schweißen (Nahtlängen, a-Maß), Richten, Lackieren/Pulvern/Verzinken, Montage, Endkontrolle – mit groben Rüst- und Stückzeiten, Stückzahl, Stundensatz und PDF
 - **3D-Maße** liegen immer sichtbar über dem Modell
+- **Foto entzerren** (Foto-Leiste → „Entzerren“): Teil auf A4/A3-Blatt, Scheckkarte oder eigenes Rechteck legen, 4 Ecken antippen – das Foto wird per Homografie gerade gerechnet und maßstäblich 1:1 (flache Teile ca. ±1 mm)
+- **Messen in 3D / an Scans**: Abstand, Durchmesser aus 3 Randpunkten, Winkel, Dicke (Fläche → Punkt), Blech aus 3 Ecken; Ergebnis als Bohrung, Ronde oder Blech übernehmen; „Maßstab setzen“ für Scans ohne LiDAR
 - **Export** als PDF (A4 quer, je eine Seite 2D-Zeichnung, 3D-Ansicht, Stückliste) oder als ein PNG-Bild; Inhalte frei wählbar; **DXF** als Laser-Zuschnitt (Bleche, Ronden, Abwicklungen mit Biegelinien, 1:1) oder ganze Zeichnung; außerdem SVG
 
 ## Speichern
