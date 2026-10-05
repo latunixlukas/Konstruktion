@@ -689,11 +689,13 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       </fieldset>
       <fieldset id="catiaSet" hidden>
         <legend>CATIA V5</legend>
+        <label class="opt"><input type="radio" name="caKind" value="vbs" checked> <span><b>Zum Doppelklicken (.vbs)</b> – CATIA starten, dann die Datei in Windows doppelklicken: die Teile werden im laufenden CATIA gebaut</span></label>
+        <label class="opt"><input type="radio" name="caKind" value="cat"> <span><b>CATIA-Makro (.CATScript)</b> – in CATIA über Tools → Makro → Makros (Alt + F8) ausführen (falls .vbs auf dem PC gesperrt ist)</span></label>
         <label class="opt"><input type="checkbox" id="caFeat" checked> <span>Bohrungen und Ausschnitte als <b>eigene Features</b> (Tasche) – sonst in der Skizze des Blocks</span></label>
         <label class="opt"><input type="checkbox" id="caThr" checked> <span>Gewindebohrungen als CATIA-<b>Bohrung mit Gewinde</b> (M6, M8 …)</span></label>
         <label class="opt"><input type="checkbox" id="caInst" checked> <span>Gleiche Teile nur <b>einmal als Part</b>, sonst als Instanz (wie Normteile)</span></label>
         <label class="opt" id="caSelRow" hidden><input type="checkbox" id="caSel"> <span id="caSelTxt">Nur die Auswahl</span></label>
-        <p class="note">Speichert eine Makro-Datei <b>.CATScript</b>. In CATIA V5: <b>Tools → Makro → Makros…</b> (Alt + F8) → <b>Makrobibliotheken…</b> → Verzeichnis mit der Datei hinzufügen → Makro auswählen → <b>Ausführen</b>. CATIA erzeugt dann alle Parts und das Produkt; danach <b>Datei → Alles speichern unter</b>. Schweißnähte, Texte und Maße kommen nicht mit.</p>
+        <p class="note">CATIA erzeugt alle Parts mit Strukturbaum und das Produkt; danach <b>Datei → Alles speichern unter</b>. Eine fertige .CATPart-Datei kann nur CATIA selbst schreiben – deshalb baut CATIA die Teile. Nur zum Anschauen ohne Strukturbaum: STEP nehmen und einfach in CATIA ziehen. Schweißnähte, Texte und Maße kommen nicht mit.</p>
       </fieldset>
       <fieldset id="printSet" hidden>
         <legend>3D-Druck</legend>
@@ -4820,9 +4822,16 @@ async function exportCatia(o){
   });
   if (!inst.length) throw new Error('leer');
   const V = [];
-  V.push('Language="VBSCRIPT"', `' Erzeugt mit Werkstatt-Zeichenbrett am ${today} – Projekt: ${state.title.name || ''}`,
+  if (o.vbs) V.push(`' Erzeugt mit Werkstatt-Zeichenbrett am ${today} – Projekt: ${state.title.name || ''}`,
+    "' DOPPELKLICK in Windows: verbindet sich mit dem laufenden CATIA V5 (sonst wird CATIA gestartet) und baut alle Bauteile auf.",
+    "' Danach in CATIA: Datei > Alles speichern unter.", '',
+    'Dim CATIA', 'On Error Resume Next', 'Set CATIA = GetObject(, "CATIA.Application")', 'If Err.Number <> 0 Then',
+    '  Err.Clear', '  Set CATIA = CreateObject("CATIA.Application")', '  CATIA.Visible = True', 'End If',
+    'If Err.Number <> 0 Then', '  MsgBox "CATIA V5 wurde nicht gefunden. Bitte CATIA starten und die Datei nochmal doppelklicken."', '  WScript.Quit', 'End If', 'On Error GoTo 0', 'CATMain', '');
+  else V.push('Language="VBSCRIPT"', `' Erzeugt mit Werkstatt-Zeichenbrett am ${today} – Projekt: ${state.title.name || ''}`,
     "' In CATIA V5: Tools > Makro > Makros... (Alt+F8) > Makrobibliotheken > Verzeichnis mit dieser Datei hinzufügen > Makro wählen > Ausführen.",
-    "' CATIA baut daraus ein Produkt mit allen Bauteilen (Skizze, Block, Tasche, Welle, Bohrung). Danach: Datei > Alles speichern unter.", '',
+    "' CATIA baut daraus ein Produkt mit allen Bauteilen (Skizze, Block, Tasche, Welle, Bohrung). Danach: Datei > Alles speichern unter.", '');
+  V.push(
     'Dim root, fails', ...defs.map(d => `Dim R${d.i}`), '',
     'Sub CATMain()', '  Dim doc, c', '  Set doc = CATIA.Documents.Add("Product")', '  Set root = doc.Product', `  root.PartNumber = ${vbS((state.title.name || 'Baugruppe').replace(/[^\wäöüÄÖÜß -]+/g, ' ').trim() || 'Baugruppe')}`, '  fails = ""');
   const firstSeen = new Set();
@@ -4852,8 +4861,8 @@ async function exportCatia(o){
   // CATIA erwartet Windows-1252 (ANSI) – Umlaute, Ø, ×, ° bleiben erhalten
   const txt = V.join('\r\n'), CP = {'€':0x80,'‚':0x82,'„':0x84,'…':0x85,'–':0x96,'—':0x97,'‘':0x91,'’':0x92,'“':0x93,'”':0x94}, bytes = new Uint8Array(txt.length);
   for (let i = 0; i < txt.length; i++){ const ch = txt[i], c = ch.charCodeAt(0); bytes[i] = c < 256 ? c : CP[ch] || 63; }
-  download(fileBase() + (o.ids ? '_auswahl' : '') + '.CATScript', new Blob([bytes], {type:'text/plain'}));
-  return {n:inst.length, parts:defs.length, skipped:skipped.length};
+  download(fileBase() + (o.ids ? '_auswahl' : '') + (o.vbs ? '_CATIA.vbs' : '.CATScript'), new Blob([bytes], {type:'text/plain'}));
+  return {n:inst.length, parts:defs.length, skipped:skipped.length, vbs:!!o.vbs};
 }
 
 /* ---------- DXF (R12, Millimeter) ---------- */
@@ -4974,9 +4983,9 @@ $('#expForm').addEventListener('submit', async e => {
   if (opt.fmt === 'catia'){
     const btn = $('#expGo'); btn.disabled = true; btn.textContent = 'Wird erstellt …'; $('#expErr').textContent = '';
     try {
-      const r = await exportCatia({feat:$('#caFeat').checked, thread:$('#caThr').checked, inst:$('#caInst').checked, ids:$('#caSel').checked ? selShapes().map(s => s.id) : null});
+      const r = await exportCatia({vbs:document.querySelector('input[name="caKind"]:checked').value === 'vbs', feat:$('#caFeat').checked, thread:$('#caThr').checked, inst:$('#caInst').checked, ids:$('#caSel').checked ? selShapes().map(s => s.id) : null});
       $('#expDlg').hidden = true;
-      $('#hint').textContent = `CATIA-Makro gespeichert: ${r.n} Bauteile (${r.parts} verschiedene Parts)${r.skipped ? `, ${r.skipped} ohne Volumen (Naht, Text …) weggelassen` : ''}. In CATIA mit Alt + F8 ausführen.`;
+      $('#hint').textContent = `CATIA-Datei gespeichert: ${r.n} Bauteile (${r.parts} verschiedene Parts)${r.skipped ? `, ${r.skipped} ohne Volumen (Naht, Text …) weggelassen` : ''}. ${r.vbs ? 'CATIA starten und die .vbs-Datei doppelklicken.' : 'In CATIA mit Alt + F8 ausführen.'}`;
     } catch(err){ console.error(err); $('#expErr').textContent = err.message === 'leer' ? 'Noch keine Bauteile für CATIA da.' : 'CATIA-Export hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.'; }
     finally { btn.disabled = false; btn.textContent = 'Exportieren'; }
     return;
