@@ -5510,7 +5510,8 @@ function build3d(){
   if (dims3d){
     root.updateMatrixWorld(true);
     const box = new THREE.Box3();
-    [...root.children, ...(three.dg ? three.dg.children : [])].forEach(ch => {
+    // nur die Teile selbst prüfen – nicht die Gruppe dg, die alle Teile enthält (sonst Rahmen um alles)
+    [...root.children.filter(c => c !== three.dg), ...(three.dg ? three.dg.children : [])].forEach(ch => {
       const hitSel = (cadSel >= 0 && ch.userData.cad === cadSel) ||
         (cadSel < 0 && (selId != null || multi.size) && (isSel(ch.userData.id) || ch.children.some(c => isSel(c.userData.id))));
       if (hitSel) box.expandByObject(ch);
