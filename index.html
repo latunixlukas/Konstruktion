@@ -150,7 +150,24 @@ html.locked,html.locked body{overflow:hidden}
 .chatmic.rec{background:#dc2626;border-color:#dc2626;animation:micpulse 1.2s infinite}
 .chatsend{background:var(--surface);color:var(--fg)}
 @keyframes micpulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}70%{box-shadow:0 0 0 14px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}
-@media (max-width: 760px){ .chatlog{max-height:46vh} .bub{font-size:1rem} }
+.chattip{margin:-4px 4px 0;font-size:.76rem;color:var(--muted)}
+@media (max-width: 760px){
+  .start{padding-top:14px}
+  .start-head{gap:10px}.start-head .logo{width:34px;height:34px;border-radius:9px}.start-head .logo svg{width:19px;height:19px}
+  .start-head h2{font-size:1.15rem}.start-head p{font-size:.82rem}
+  .storeinfo{font-size:.74rem}
+  .chatpanel{padding:12px;gap:8px}
+  .chathead .note{display:none}.chathead h3{font-size:1rem;margin:0}.chatico{width:32px;height:32px;border-radius:10px}.chatico svg{width:18px;height:18px}
+  .chatlog{max-height:44vh;min-height:0;gap:8px}
+  .bub{font-size:.92rem;padding:8px 12px}
+  .chips.scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-right:-12px;padding-right:12px;-webkit-overflow-scrolling:touch}
+  .chips.scroll::-webkit-scrollbar{display:none}
+  .chips.scroll .chip{flex:none}
+  .chip{min-height:36px;padding:6px 12px;font-size:.84rem}
+  .pcard{font-size:.82rem;padding:8px 10px}
+  .chatin .txt{height:44px}.chatmic,.chatsend{width:44px;height:44px}
+  .chattip{font-size:.7rem}
+}
 .plist-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
 .plist-head input{max-width:220px;width:100%}
 .plist{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
@@ -446,6 +463,8 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
 .snapmk{fill:none;stroke:#16a34a;stroke-width:2}
 .note2{fill:var(--ink);font-family:var(--f-body);font-weight:500}
 .lead{fill:none;stroke:var(--ink);stroke-width:.9}
+.part.equip{fill:var(--sel-soft);fill-opacity:.35;stroke-dasharray:9 4}
+.reach{fill:none;stroke:#f59e0b;stroke-width:1.2;stroke-dasharray:14 4 2 4}.reachtxt{fill:#b45309;font:500 11px var(--f-mono)}
 .leaddot,.leadarrow{fill:var(--ink)}
 .balloon{fill:var(--paper);stroke:var(--ink);stroke-width:1.2}
 .sel .note2{fill:var(--sel)} .sel .lead,.sel .balloon{stroke:var(--sel)} .sel .leaddot,.sel .leadarrow{fill:var(--sel)}
@@ -532,6 +551,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <div class="chathead"><div class="chatico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></div><div><h3>Sag, was du bauen willst</h3><p class="note">Sprechen oder tippen – die App fragt nach, wenn etwas fehlt, und legt das Projekt an.</p></div></div>
           <div class="chatlog" id="chatLog" aria-live="polite"></div>
           <form class="chatin" id="chatForm" autocomplete="off"><input id="chatTxt" class="txt" placeholder="z. B. Blech 200 mal 100 mal 10" enterkeyhint="send" aria-label="Was soll gezeichnet werden?"><button type="button" class="chatmic" id="chatMic" aria-label="Sprechen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></button><button type="submit" class="chatsend" aria-label="Senden"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button></form>
+          <p class="chattip">Tipp: „… mit Zeichnung“ oder „… und PDF“ dazusagen · auch Roboter, Paletten, IPE/HEB-Träger, Alu-Profile</p>
         </section>
         <form class="panel newform" id="newForm" novalidate>
           <h3>Neues Projekt</h3>
@@ -882,6 +902,7 @@ const MATS = {
   'S355J2':{name:'Stahl S355J2', rho:7.85},
   '1.4301':{name:'Edelstahl 1.4301', rho:7.9},
   'AlMg3':{name:'Aluminium AlMg3', rho:2.66},
+  'AlMgSi':{name:'Aluminium EN AW-6060', rho:2.7},
   'C45':{name:'Vergütungsstahl C45', rho:7.85},
   '42CrMo4':{name:'Vergütungsstahl 42CrMo4', rho:7.85},
   '11SMnPb30':{name:'Automatenstahl 11SMnPb30', rho:7.85},
@@ -893,6 +914,10 @@ const PROFILES = {
   QR:{name:'Quadratrohr', norm:'EN 10219', sizes:{'20×20×2':{B:20,H:20,t:2},'30×30×2':{B:30,H:30,t:2},'40×40×3':{B:40,H:40,t:3},'50×50×3':{B:50,H:50,t:3},'60×60×4':{B:60,H:60,t:4},'80×80×4':{B:80,H:80,t:4},'100×100×5':{B:100,H:100,t:5}}},
   RR:{name:'Rechteckrohr', norm:'EN 10219', sizes:{'40×20×2':{B:40,H:20,t:2},'50×30×3':{B:50,H:30,t:3},'60×40×3':{B:60,H:40,t:3},'80×40×4':{B:80,H:40,t:4},'100×50×4':{B:100,H:50,t:4}}},
   RO:{name:'Rundrohr', norm:'EN 10220', sizes:{'21,3×2':{D:21.3,t:2},'26,9×2,3':{D:26.9,t:2.3},'33,7×2,6':{D:33.7,t:2.6},'42,4×2,6':{D:42.4,t:2.6},'48,3×2,9':{D:48.3,t:2.9},'60,3×3,2':{D:60.3,t:3.2},'76,1×3,6':{D:76.1,t:3.6}}},
+  IPE:{name:'Träger', norm:'EN 10365 (IPE)', sizes:{'IPE 80':{h:80,b:46,s:3.8,t:5.2},'IPE 100':{h:100,b:55,s:4.1,t:5.7},'IPE 120':{h:120,b:64,s:4.4,t:6.3},'IPE 140':{h:140,b:73,s:4.7,t:6.9},'IPE 160':{h:160,b:82,s:5,t:7.4},'IPE 180':{h:180,b:91,s:5.3,t:8},'IPE 200':{h:200,b:100,s:5.6,t:8.5},'IPE 220':{h:220,b:110,s:5.9,t:9.2},'IPE 240':{h:240,b:120,s:6.2,t:9.8},'IPE 270':{h:270,b:135,s:6.6,t:10.2},'IPE 300':{h:300,b:150,s:7.1,t:10.7}}},
+  HEA:{name:'Träger', norm:'EN 10365 (HEA)', sizes:{'HEA 100':{h:96,b:100,s:5,t:8},'HEA 120':{h:114,b:120,s:5,t:8},'HEA 140':{h:133,b:140,s:5.5,t:8.5},'HEA 160':{h:152,b:160,s:6,t:9},'HEA 180':{h:171,b:180,s:6,t:9.5},'HEA 200':{h:190,b:200,s:6.5,t:10},'HEA 220':{h:210,b:220,s:7,t:11},'HEA 240':{h:230,b:240,s:7.5,t:12},'HEA 260':{h:250,b:260,s:7.5,t:12.5},'HEA 300':{h:290,b:300,s:8.5,t:14}}},
+  HEB:{name:'Träger', norm:'EN 10365 (HEB)', sizes:{'HEB 100':{h:100,b:100,s:6,t:10},'HEB 120':{h:120,b:120,s:6.5,t:11},'HEB 140':{h:140,b:140,s:7,t:12},'HEB 160':{h:160,b:160,s:8,t:13},'HEB 180':{h:180,b:180,s:8.5,t:14},'HEB 200':{h:200,b:200,s:9,t:15},'HEB 220':{h:220,b:220,s:9.5,t:16},'HEB 240':{h:240,b:240,s:10,t:17},'HEB 260':{h:260,b:260,s:10,t:17.5},'HEB 300':{h:300,b:300,s:11,t:19}}},
+  ALU:{name:'Alu-Systemprofil', norm:'Nut-Profil (z. B. item/Bosch, Werte ca.)', sizes:{'30×30 Nut 8':{B:30,H:30,n:8,A:296},'40×40 Nut 8':{B:40,H:40,n:8,A:555},'45×45 Nut 10':{B:45,H:45,n:10,A:704},'40×80 Nut 8':{B:40,H:80,n:8,A:1000}}},
   RS:{name:'Rundstahl', norm:'EN 10060', sizes:{'Ø6':{D:6},'Ø8':{D:8},'Ø10':{D:10},'Ø12':{D:12},'Ø16':{D:16},'Ø20':{D:20},'Ø25':{D:25},'Ø30':{D:30},'Ø40':{D:40},'Ø50':{D:50}}},
 };
 // Schweißnähte nach ISO 2553: a = Kehlnahtdicke, s = Nahtdicke bei Stumpfnähten
@@ -1184,6 +1209,16 @@ function section(s){
   const p = PROFILES[s.kind].sizes[s.size];
   let outer, hole = null, w, h, inner;
   if (s.kind === 'L'){ const {a, t} = p; outer = [[0,0],[a,0],[a,t],[t,t],[t,a],[0,a]]; w = a; h = a; inner = [{u:t, cls:'edge'}]; }
+  else if (['IPE', 'HEA', 'HEB'].includes(s.kind)){ const {h:Hh, b, s:sw, t} = p, v0 = (b - sw) / 2, v1 = (b + sw) / 2;
+    outer = [[0,0],[0,b],[t,b],[t,v1],[Hh-t,v1],[Hh-t,b],[Hh,b],[Hh,0],[Hh-t,0],[Hh-t,v0],[t,v0],[t,0]]; w = Hh; h = b; inner = [{u:t, cls:'edge'}, {u:Hh-t, cls:'edge'}]; }
+  else if (s.kind === 'ALU'){ const {B, H:Hh, n} = p, dep = n + 1.5; outer = []; inner = [];
+    // Außenkontur mit T-Nuten (vereinfacht als Rechteck-Nuten) je 40 mm Seite eine Nut
+    const side = (x0, y0, x1, y1, ix, iy, L) => { const m = Math.max(1, Math.round(L / 40)); outer.push([x0, y0]);
+      for (let k = 0; k < m; k++){ const c = (k + .5) / m, cx = x0 + (x1 - x0) * c, cy = y0 + (y1 - y0) * c, ux = (x1 - x0) / L, uy = (y1 - y0) / L;
+        [[-n/2, 0], [-n/2, dep], [n/2, dep], [n/2, 0]].forEach(([a, d]) => outer.push([cx + ux * a + ix * d, cy + uy * a + iy * d])); } };
+    side(0, 0, B, 0, 0, 1, B); side(B, 0, B, Hh, -1, 0, Hh); side(B, Hh, 0, Hh, 0, -1, B); side(0, Hh, 0, 0, 1, 0, Hh);
+    if (B === Hh) hole = circPts(B/2, Hh/2, n * .42, 24);
+    w = B; h = Hh; const m = Math.max(1, Math.round(B / 40)); for (let k = 0; k < m; k++){ const c = (k + .5) / m * B; inner.push({u:c - n/2, cls:'edge'}, {u:c + n/2, cls:'edge'}); } }
   else if (s.kind === 'U'){ const {h:Hh, b, s:sw, t} = p; outer = [[0,0],[Hh,0],[Hh,b],[Hh-t,b],[Hh-t,sw],[t,sw],[t,b],[0,b]]; w = Hh; h = b; inner = [{u:t, cls:'edge'}, {u:Hh-t, cls:'edge'}]; }
   else if (s.kind === 'QR' || s.kind === 'RR'){ const {B, H:Hh, t} = p; outer = [[0,0],[B,0],[B,Hh],[0,Hh]]; hole = [[t,t],[B-t,t],[B-t,Hh-t],[t,Hh-t]]; w = B; h = Hh; inner = [{u:t, cls:'hidden'}, {u:B-t, cls:'hidden'}]; }
   else if (s.kind === 'RO'){ const {D, t} = p; outer = circPts(D/2, D/2, D/2); hole = circPts(D/2, D/2, D/2 - t); w = D; h = D; inner = [{u:t, cls:'hidden'}, {u:D-t, cls:'hidden'}, {u:D/2, cls:'center'}]; }
@@ -1191,6 +1226,7 @@ function section(s){
   let area = polyArea(outer) - (hole ? polyArea(hole) : 0);
   if (s.kind === 'RO') area = Math.PI/4 * (p.D**2 - (p.D - 2*p.t)**2);
   if (s.kind === 'RS') area = Math.PI/4 * p.D**2;
+  if (p.A) area = p.A;
   return {outer, hole, w, h, area, inner};
 }
 // Gehrung: cutA = Anfang, cutB = Ende in Grad; + = obere Kante (u = Breite) kürzer, − = untere Kante kürzer
@@ -1526,7 +1562,14 @@ function shapeMarkup(s, T, showDims){
 }
 function shapeMarkupInner(s, T, showDims){
   let o = '';
-  if (s.type === 'rect'){
+  if (s.type === 'rect' && s.equip){
+    const c = [[0,0],[s.w,0],[s.w,s.h],[0,s.h]].map(([x, y]) => localToWorld(s, x, y)), P = q => f1(T.x(q.x)) + ',' + f1(T.y(q.y)), m = localToWorld(s, s.w/2, s.h/2);
+    o += `<polygon class="part equip" points="${c.map(P).join(' ')}"/><path class="thin" d="M${P(c[0])}L${P(c[2])}M${P(c[1])}L${P(c[3])}"/>`;
+    if (s.equip.reach){ const R = s.equip.reach * T.z; o += `<circle class="reach" cx="${f1(T.x(m.x))}" cy="${f1(T.y(m.y))}" r="${f1(R)}"/><text class="reachtxt" x="${f1(T.x(m.x) + 4)}" y="${f1(T.y(m.y) - R - 4)}">Reichweite ${num(s.equip.reach)}</text>`; }
+    if (showDims){ o += dimMarkup(T, c[0].x, c[0].y, c[1].x, c[1].y, -22, num(s.w)); o += dimMarkup(T, c[0].x, c[0].y, c[3].x, c[3].y, 22, num(s.h)); }
+    const bx = Math.min(...c.map(q => T.x(q.x))), by = Math.min(...c.map(q => T.y(q.y)));
+    o += `<text class="lbl" x="${f1(bx + 4)}" y="${f1(by - 6)}">${esc(s.name)}</text>`;
+  } else if (s.type === 'rect'){
     const c = [[0,0],[s.w,0],[s.w,s.h],[0,s.h]].map(([x, y]) => localToWorld(s, x, y));
     o += `<polygon class="part" points="${rectOutline(s).map(([x, y]) => { const q = localToWorld(s, x, y); return f1(T.x(q.x)) + ',' + f1(T.y(q.y)); }).join(' ')}"/>`;
     if (showDims){
@@ -2277,6 +2320,7 @@ function renderProps(){
   $('#selInfo').innerHTML = `<span class="badge">${TYPENAMES[s.type]}</span>`;
   let h = '';
   const og = groupOf(s);
+  if (s.equip) h += `<div class="grpbox" style="padding:8px 12px"><p class="note" style="margin:0"><b>Zukaufteil – Platzhalter.</b> ${esc(s.equip.info)}. Länge × Breite = Aufstellfläche, Dicke = Höhe. Ca.-Werte – bitte im Datenblatt des Herstellers prüfen.</p></div>`;
   if (og) h += `<div class="grpbox" style="padding:8px 12px"><p class="note" style="margin:0">Teil der Baugruppe <b>${esc(og.name)}</b> <button class="btn" type="button" id="gAll" style="margin-left:6px">Ganze Gruppe wählen</button></p></div>`;
   h += '<div class="props">';
   fieldsFor(s).forEach(f => {
@@ -2761,6 +2805,7 @@ function bomRows(list = state.shapes){
   const rows = [], map = new Map();
   const add = (key, row) => { if (map.has(key)) map.get(key).qty++; else { row.qty = 1; map.set(key, row); rows.push(row); } };
   list.filter(s => s.type === 'rect').forEach(s => {
+    if (s.equip){ add(`e|${s.name}`, {name:s.name, dim:`Zukaufteil · ${s.equip.info}`, mat:s.equip.maker || '–', mass:s.equip.kg || null}); return; }
     const m = rectMass(s);
     add(`r|${s.name}|${s.w}|${s.h}|${s.t}|${s.mat}|${m.toFixed(3)}`, {name:s.name || 'Blech', dim:`${num(s.w)} × ${num(s.h)} × ${num(s.t)} ${state.unit}`, mat:MATS[s.mat].name, mass:m});
   });
@@ -2839,7 +2884,7 @@ function cutPieces(){
     if (s.type === 'profile') push(bars, `${PROFILES[s.kind].name} ${s.size} · ${MATS[s.mat].name}`, {l:s.len, n:(s.name || 'Profil') + (hasMiter(s) ? ' (' + miterTxt(s) + ')' : '')});
     if (s.type === 'shaft') push(bars, `Rundstahl Ø${num(shaftDmax(s), 'mm')} · ${MATS[s.mat].name}`, {l:shaftLen(s) + 2, n:'Welle (+2 mm Aufmaß)'});
     if (s.type === 'disc') push(sheets, `Blech ${num(s.t, 'mm')} mm · ${MATS[s.mat].name}`, {w:s.d, h:s.d, n:s.name || 'Ronde'});
-    if (s.type === 'rect') push(sheets, `Blech ${num(s.t, 'mm')} mm · ${MATS[s.mat].name}`, {w:s.w, h:s.h, n:s.name || 'Blech'});
+    if (s.type === 'rect' && !s.equip) push(sheets, `Blech ${num(s.t, 'mm')} mm · ${MATS[s.mat].name}`, {w:s.w, h:s.h, n:s.name || 'Blech'});
     if (s.type === 'bend') push(sheets, `Blech ${num(s.t, 'mm')} mm · ${MATS[s.mat].name}`, {w:bendCalc(s).L, h:s.w, n:s.name || 'Biegeteil'});
   });
   return {bars, sheets};
@@ -3142,8 +3187,31 @@ const fN = v => String(r2(v)).replace('.', ',');
 const MATWORD = {'1.4301':'edelstahl', AlMg3:'alu', S355J2:'s355', HOLZ:'holz', C45:'c45', '42CrMo4':'42crmo4'};
 const CMD_KW = ['blech','platte','flachstahl','lasche','rechteck','bohrung','gewinde','langloch','ausschnitt','schraube','zylinderschraube','senkschraube','mutter','scheibe','stift','kugellager','sicherungsring','rohr','quadratrohr','rechteckrohr','rundrohr','rundstahl','winkel','welle','ronde','flansch','kreis','kantteil','text','rahmen','geländer','tor','treppe','podest','tisch','regal','leiter','konsole'];
 function lev(a, b){ const d = [...Array(b.length + 1).keys()]; for (let i = 1; i <= a.length; i++){ let p = d[0]; d[0] = i; for (let j = 1; j <= b.length; j++){ const t = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, p + (a[i - 1] === b[j - 1] ? 0 : 1)); p = t; } } return d[b.length]; }
-const PROFWORD = {QR:'Quadratrohr', RR:'Rechteckrohr', RO:'Rundrohr', RS:'Rundstahl', L:'Winkel', U:'U'};
-const profCmd = (k, key, L, pre = '') => `${pre}${PROFWORD[k]} ${key.replace(/^L |^U /, '').replace(/×/g, 'x')}${L ? ' Länge ' + fN(L) + ' mm' : ''}`;
+const PROFWORD = {QR:'Quadratrohr', RR:'Rechteckrohr', RO:'Rundrohr', RS:'Rundstahl', L:'Winkel', U:'U', IPE:'', HEA:'', HEB:'', ALU:'Alu-Profil'};
+const profCmd = (k, key, L, pre = '') => `${pre}${PROFWORD[k] ? PROFWORD[k] + ' ' : ''}${key.replace(/^L |^U /, '').replace(/ Nut \d+/, '').replace(/×/g, 'x')}${L ? ' Länge ' + fN(L) + ' mm' : ''}`;
+// Zukaufteile / Industrie: Platzhalter mit Aufstellfläche (w × h), Höhe t, Gewicht, ggf. Reichweite – ca.-Werte, Datenblatt prüfen
+const EQ = [
+  ...[['ABB IRB 1100-4/0.58', /irb\s?1100/, 180, 180, 650, 21, 580, 4], ['ABB IRB 1200-5/0.9', /irb\s?1200/, 210, 210, 870, 54, 900, 5], ['ABB IRB 2600-20/1.65', /irb\s?2600/, 676, 511, 1380, 272, 1650, 20],
+      ['ABB IRB 4600-60/2.05', /irb\s?4600/, 676, 511, 1730, 425, 2050, 60], ['ABB IRB 6700-200/2.60', /irb\s?6700/, 1004, 720, 2050, 1170, 2600, 200], ['ABB GoFa CRB 15000-5/0.95', /gofa|crb\s?15000/, 200, 200, 900, 27, 950, 5]]
+    .map(([name, re, w, h, t, kg, reach, pay]) => ({name, re, maker:'ABB', kind:'robot', w, h, t, kg, reach, pay, color:'#e4e6e9'})),
+  ...[['KUKA KR 6 R900 (KR AGILUS)', /kr\s?6\b|agilus|r\s?900\b/, 320, 320, 900, 52, 901, 6], ['KUKA KR 10 R1100', /kr\s?10\b|r\s?1100\b/, 320, 320, 1000, 55, 1101, 10], ['KUKA KR 210 R2700', /kr\s?210|r\s?2700\b/, 754, 754, 2050, 1068, 2700, 210]]
+    .map(([name, re, w, h, t, kg, reach, pay]) => ({name, re, maker:'KUKA', kind:'robot', w, h, t, kg, reach, pay, color:'#ff6a00'})),
+  ...[['FANUC LR Mate 200iD/7L', /lr\s?mate|200\s?id/, 190, 190, 850, 27, 911, 7], ['FANUC M-20iD/25', /m-?\s?20\s?id/, 520, 520, 1500, 250, 1831, 25]]
+    .map(([name, re, w, h, t, kg, reach, pay]) => ({name, re, maker:'FANUC', kind:'robot', w, h, t, kg, reach, pay, color:'#f2c200'})),
+  ...[['Universal Robots UR5e', /\bur\s?5e?\b/, 150, 150, 1000, 20.6, 850, 5], ['Universal Robots UR10e', /\bur\s?10e?\b/, 190, 190, 1300, 33.5, 1300, 12.5]]
+    .map(([name, re, w, h, t, kg, reach, pay]) => ({name, re, maker:'Universal Robots', kind:'robot', w, h, t, kg, reach, pay, color:'#9fb4c7'})),
+  {name:'Europalette EPAL 1 (1200×800)', re:/euro-?\s?palette|epal\s?1\b|europal/, kind:'pallet', maker:'EPAL', w:1200, h:800, t:144, kg:25, norm:'EN 13698-1', color:'#c9a46c'},
+  {name:'Industriepalette EPAL 2 (1200×1000)', re:/epal\s?2\b|industriepalette/, kind:'pallet', maker:'EPAL', w:1200, h:1000, t:162, kg:33, norm:'EN 13698-2', color:'#c9a46c'},
+  {name:'Gitterbox EPAL (1240×835)', re:/gitterbox/, kind:'pallet', maker:'EPAL', w:1240, h:835, t:970, kg:85, norm:'DIN 15155', color:'#8d949c'},
+  {name:'KLT 3147 (300×200×147)', re:/klt\s?3147|klt\D*300x200/, kind:'box', maker:'VDA', w:300, h:200, t:147, kg:.8, norm:'VDA 4315', color:'#3b82c4'},
+  {name:'KLT 4147 (400×300×147)', re:/klt\s?4147|klt\D*400x300/, kind:'box', maker:'VDA', w:400, h:300, t:147, kg:1.4, norm:'VDA 4315', color:'#3b82c4'},
+  {name:'KLT 6280 (600×400×280)', re:/klt\s?6280|klt\D*600x400/, kind:'box', maker:'VDA', w:600, h:400, t:280, kg:3.1, norm:'VDA 4315', color:'#3b82c4'},
+  {name:'Schaltschrank 800×600×2000 (Standschrank)', re:/standschrank|schaltschrank\D*800/, kind:'cabinet', maker:'z. B. Rittal', w:800, h:600, t:2000, kg:110, color:'#d7dade'},
+  {name:'Wandgehäuse 600×600×250', re:/wandgeh|klemmenkasten|schaltkasten/, kind:'cabinet', maker:'z. B. Rittal', w:600, h:250, t:600, kg:25, color:'#d7dade'},
+  {name:'Schutzzaun-Feld 1000 × 2000', re:/schutzzaun|zaunfeld|schutzgitter/, kind:'fence', maker:'z. B. Troax', w:1000, h:40, t:2000, kg:18, norm:'EN ISO 14120', color:'#f2c200'},
+];
+EQ.forEach(e => { e.cobot = /GoFa|Universal/.test(e.name); e.info = e.kind === 'robot' ? `Traglast ${dec(e.pay)} kg · Reichweite ${fN(e.reach)} mm · ca. ${dec(e.kg)} kg` : `${e.norm ? e.norm + ' · ' : ''}${fN(e.w)} × ${fN(e.h)} × ${fN(e.t)} mm · ca. ${dec(e.kg)} kg`; e.short = e.name.replace(/\s*\(.*\)$/, ''); });
+const eqShape = e => ({type:'rect', name:e.name, x:0, y:0, w:e.w, h:e.h, t:e.t, mat:'S235JR', color:e.color, equip:{kind:e.kind, maker:e.maker, kg:e.kg, reach:e.reach || 0, info:e.info}});
 function cmdParse(raw){
   const U = {mm:1, cm:10, dm:100, m:1000}, defU = UNITS[state.unit] || 1;
   let t = ' ' + String(raw).toLowerCase().replace(/(\d),(\d)/g, '$1.$2').replace(/[×*]/g, 'x').replace(/\s+(mal|by)\s+/g, 'x').replace(/durchmesser\s*/g, 'ø').replace(/\s+/g, ' ').trim() + ' ';
@@ -3177,6 +3245,18 @@ function cmdParse(raw){
   const len = x => mmTxt(x) + ' mm';
   const out = (d, f, ask) => ({desc:d, make:f, n, ask:ask && ask.length ? ask : null});
   const pre = n > 1 ? n + ' ' : '', mw = mat ? ' ' + MATWORD[mat] : '';
+  // --- Industrie / Zukaufteile (Roboter, Paletten, KLT, Schaltschrank, Schutzzaun) ---
+  {
+    const hit = EQ.filter(e => e.re.test(t));
+    const pick = (q, pool) => ({desc:q, n:1, make:null, ask:[{q:'Bitte auswählen:', o:pool.map(e => [e.short, (n > 1 ? n + ' ' : '') + e.short])}]});
+    if (hit.length === 1){ const e = hit[0]; return out(`${n > 1 ? n + ' × ' : ''}<b>${e.name}</b> <small>(Platzhalter: ${e.info})</small>`, () => [eqShape(e)]); }
+    if (hit.length > 1) return pick('Welches genau?', hit);
+    const mk = [['ABB', /\babb\b|\birb\b/], ['KUKA', /kuka/], ['FANUC', /fanuc/], ['Universal Robots', /universal|\bur\b/]].find(([, re]) => kw(re));
+    if (mk || kw(/roboter|robot|cobot|knickarm/)) return pick(mk ? `Welcher ${mk[0]}-Roboter?` : kw(/cobot/) ? 'Welcher Cobot?' : 'Welcher Roboter?', EQ.filter(e => e.kind === 'robot' && (!mk || e.maker === mk[0]) && (!kw(/cobot/) || e.cobot)));
+    if (kw(/palette|paletten/)) return pick('Welche Palette?', EQ.filter(e => e.kind === 'pallet'));
+    if (kw(/\bklt\b|kleinladungs|behälter|kiste/)) return pick('Welcher Behälter?', EQ.filter(e => e.kind === 'box'));
+    if (kw(/schaltschrank|gehäuse|schrank/)) return pick('Welcher Schrank?', EQ.filter(e => e.kind === 'cabinet'));
+  }
   // --- Baukasten ---
   const WZ = [['frame', /rahmen/], ['rail', /geländer|gelaender/], ['gate', /\btor\b|pforte/], ['stair', /treppe/], ['podest', /podest|bühne|buehne|plattform/], ['table', /tisch|werkbank/], ['shelf', /regal/], ['ladder', /leiter/], ['bracket', /konsole|wandhalter|kragarm/]];
   for (const [tab, re] of WZ) if (kw(re)){
@@ -3238,12 +3318,13 @@ function cmdParse(raw){
     return {desc:`${cnt > 1 ? `<b>${cnt} Bohrungen</b> ` : '<b>Bohrung</b> '}${lab}${cnt > 1 ? `, Abstand ${mmTxt(gap)} mm` : ''}`, n:1, ask:askH.length ? askH : null, make:() => [...Array(cnt)].map((_, i) => ({type:'hole', x:r2(i * gap), y:0, d, fit}))};
   }
   // --- Profile ---
-  const PK = [['QR', /quadratrohr|vierkantrohr|vierkant\b/], ['RR', /rechteckrohr/], ['RO', /rundrohr|rohr\s*ø/], ['RS', /rundstahl|rundeisen|\brundmaterial/], ['L', /winkel|l-profil|\bl\s/], ['U', /u-profil|u-stahl|unp|\bu\s/], ['RO', /\brohr/]];
+  const PK = [['IPE', /\bi\s?p\s?e\b|i-träger|doppel-?t/], ['HEA', /\bh\s?e\s?a\b|\bipbl\b/], ['HEB', /\bh\s?e\s?b\b|\bipb\b/], ['ALU', /alu-?\s?profil|systemprofil|nutprofil|item-?profil|bosch-?profil|aluprofil/], ['IPE', /träger|traeger/], ['QR', /quadratrohr|vierkantrohr|vierkant\b/], ['RR', /rechteckrohr/], ['RO', /rundrohr|rohr\s*ø/], ['RS', /rundstahl|rundeisen|\brundmaterial/], ['L', /winkel|l-profil|\bl\s/], ['U', /u-profil|u-stahl|unp|\bu\s/], ['RO', /\brohr/]];
   for (let [k, re] of PK) if (kw(re)){
     const sec = groups[0] ? groups[0].raw : [], rest = groups.slice(1), sizes = PROFILES[k].sizes;
+    if (k === 'IPE' && !/\bi\s?p\s?e\b|i-träger|doppel/.test(t) && !sec.length) return {desc:'Welcher Träger?', n:1, make:null, ask:[{q:'Bitte auswählen:', o:[['IPE 200', 'IPE 200'], ['IPE 120', 'IPE 120'], ['HEA 200', 'HEA 200'], ['HEB 200', 'HEB 200'], ['HEB 160', 'HEB 160']]}]};
     if (k === 'RO' && /\brohr/.test(words) && !/rund/.test(words) && sec.length >= 3) k = sec[0] === sec[1] ? 'QR' : 'RR';
     const SZ = PROFILES[k].sizes, keys = Object.keys(SZ);
-    const score = key => { const p = SZ[key]; const f = k === 'QR' || k === 'RR' ? [p.B, p.H, p.t] : k === 'L' ? [p.a, p.t] : k === 'U' ? [p.h] : k === 'RO' ? [p.D, p.t] : [p.D];
+    const score = key => { const p = SZ[key]; const f = ['IPE', 'HEA', 'HEB'].includes(k) ? [p.h] : k === 'ALU' ? [p.B, p.H] : k === 'QR' || k === 'RR' ? [p.B, p.H, p.t] : k === 'L' ? [p.a, p.t] : k === 'U' ? [p.h] : k === 'RO' ? [p.D, p.t] : [p.D];
       return f.reduce((a, v, i) => a + (sec[i] != null ? Math.abs(v - sec[i]) * (i === f.length - 1 && f.length > 1 ? 3 : 1) : 0), 0); };
     const size = sec.length ? keys.reduce((a, b) => score(b) < score(a) ? b : a) : keys[Math.min(2, keys.length - 1)];
     const givenL = named.len || (rest.find(q => q.mm.length === 1) || {}).mm?.[0], L = givenL || opts.profile.len;
@@ -3252,7 +3333,7 @@ function cmdParse(raw){
     else if (!sec.length) ask.push({q:'Welche Größe?', o:keys.slice(0, 8).map(z => [z, profCmd(k, z, givenL, pre)])});
     else if (!exact) ask.push({q:'Diese Größe gibt es nicht genau als Normprofil – welche nehmen?', o:[...keys].sort((a, b) => score(a) - score(b)).slice(0, 4).map(z => [z, profCmd(k, z, givenL, pre)])});
     else if (!givenL) ask.push({q:'Welche Länge?', o:[500, 1000, 2000, 3000, 6000].map(l => [fN(l) + ' mm', profCmd(k, size, l, pre)])});
-    return out(`${n > 1 ? n + ' × ' : ''}<b>${PROFILES[k].name} ${size}</b>, Länge ${len(L)}${exact ? '' : ' <small>(nächste Normgröße)</small>'}`, () => [{type:'profile', kind:k, size, len:L, view:'side', mat:mat || 'S235JR', rot:0, x:0, y:0}], ask);
+    return out(`${n > 1 ? n + ' × ' : ''}<b>${PROFILES[k].name} ${size}</b>, Länge ${len(L)}${exact ? '' : ' <small>(nächste Normgröße)</small>'}`, () => [{type:'profile', kind:k, size, len:L, view:'side', mat:k === 'ALU' ? 'AlMgSi' : mat || 'S235JR', rot:0, x:0, y:0}], ask);
   }
   // --- Welle ---
   if (kw(/welle|achse|bolzen/)){
@@ -3421,7 +3502,7 @@ function workPlan(lot, surf){
   const count = (map, key, v = 1) => map.set(key, (map.get(key) || 0) + v);
   const join = map => [...map].map(([k, n]) => `${typeof n === 'number' ? n : n.n} × ${k}`);
   const soft = s => s.mat === 'HOLZ' || s.mat === 'GR', pd = p => { if (p.type === 'disc') return {t:p.t, a:p.d, b:p.d}; const [t, a, b] = [p.w, p.h, p.t].sort((x, y) => x - y); return {t, a:Math.max(a, b), b:Math.min(a, b), up:t !== p.t}; };
-  const others = S.filter(s => (s.type === 'rect' || s.type === 'disc') && soft(s)), plates = S.filter(s => (s.type === 'rect' || s.type === 'disc') && !soft(s)), profs = S.filter(s => s.type === 'profile' && s.view !== 'section');
+  const others = S.filter(s => (s.type === 'rect' || s.type === 'disc') && soft(s) && !s.equip), plates = S.filter(s => (s.type === 'rect' || s.type === 'disc') && !soft(s) && !s.equip), equips = S.filter(s => s.equip), profs = S.filter(s => s.type === 'profile' && s.view !== 'section');
   const bends = S.filter(s => s.type === 'bend'), shafts = S.filter(s => s.type === 'shaft'), welds = S.filter(s => s.type === 'weld'), screws = S.filter(s => s.type === 'screw');
   const holes = S.filter(s => s.type === 'hole'), mills = S.filter(s => s.type === 'slot' || s.type === 'cutout');
   const inside = p => S.filter(c => isCut(c) && inRect(p, c.x, c.y));
@@ -3527,6 +3608,8 @@ function workPlan(lot, surf){
   screws.forEach(s => count(mM, `${KINDS[s.kind].name} ${s.size}${KINDS[s.kind].len ? ' × ' + s.len : ''}`));
   const keyN = shafts.filter(shaftKey).length;
   if (keyN) count(mM, 'Passfeder einsetzen', keyN);
+  const eM = new Map(); equips.forEach(e => count(eM, e.name));
+  add('Zukaufteile aufstellen', 'Montage', [...join(eM), ...(equips.some(e => e.equip.kind === 'robot') ? ['Roboter: Fundament/Dübel nach Datenblatt, ausrichten, Schutzzaun prüfen'] : [])], 10, equips.reduce((a, e) => a + (e.equip.kind === 'robot' ? 45 : e.equip.kind === 'cabinet' ? 30 : e.equip.kind === 'fence' ? 15 : 3), 0));
   add('Montieren', 'Werkbank', join(mM), 5, screws.reduce((a, s) => a + (MT[s.kind] || 1), 0) + keyN);
   // 11 Endkontrolle
   if (pieces) add('Endkontrolle', 'Prüfplatz', ['Maße nach Zeichnung, Stückliste vollständig, Sichtprüfung Nähte und Oberfläche'], 0, 5 + pieces * .3);
@@ -4398,7 +4481,7 @@ function makeDxf(){
 // Laser: Bleche und Ronden an ihrer Stelle, Biegeteile als Abwicklung darunter
 function dxfLaser(){
   const D = makeDxf(), K = D.layer('KONTUR', 7), B = D.layer('BIEGELINIE', 1), T = D.layer('BESCHRIFTUNG', 3);
-  const plates = state.shapes.filter(s => s.type === 'rect' || s.type === 'disc');
+  const plates = state.shapes.filter(s => (s.type === 'rect' || s.type === 'disc') && !s.equip);
   const holes = state.shapes.filter(s => s.type === 'hole');
   plates.forEach(p => {
     if (p.type === 'rect') D.poly(K, rectOutline(p).map(([x, y]) => { const w = localToWorld(p, x, y); return [w.x, w.y]; }), true);
@@ -4942,13 +5025,13 @@ function guideSteps(ents){
   const touch = (a, b) => a.min.x <= b.max.x + 1 && b.min.x <= a.max.x + 1 && a.min.y <= b.max.y + 1 && b.min.y <= a.max.y + 1 && a.min.z <= b.max.z + 1 && b.min.z <= a.max.z + 1;
   const gs = [...map.values()];
   gs.forEach(g => { g.lvE = g.lv; g.late = 0; if (g.sup) return; gs.forEach(o => { if (o !== g && o.vol > g.vol && o.ps.some(q => g.ps.some(p => touch(p.b, q.b)))){ g.lvE = Math.max(g.lvE, o.lv); g.late = 1; } }); });
-  const welded = ents.some(e => e.sh.type === 'weld') || (!ents.some(e => e.sh.type === 'screw') && parts.filter(p => p.e.sh.mat !== 'HOLZ' && p.e.sh.mat !== 'GR').length >= 2), steps = [];
+  const welded = ents.some(e => e.sh.type === 'weld') || (!ents.some(e => e.sh.type === 'screw') && parts.filter(p => p.e.sh.mat !== 'HOLZ' && p.e.sh.mat !== 'GR' && !p.e.sh.equip).length >= 2), steps = [];
   const rowsOf = list => bomRows(list).map(r => ({qty:r.qty, name:r.name, dim:r.dim}));
   gs.sort((a, b) => a.lvE - b.lvE || a.late - b.late || b.sup - a.sup || b.vol - a.vol).forEach((g, i) => {
     const s0 = g.list[0], n = g.list.length, base = guideBase(s0), lab = s0.type === 'profile' ? `${PROFILES[s0.kind].name} ${s0.size}` : (bomRows([s0])[0] || {}).name || TYPENAMES[s0.type];
     const what = base ? (s0.type === 'profile' ? `${base} – ${lab}` : base) : lab;
-    const verb = i === 0 ? 'Auslegen' : welded ? 'Anlegen und heften' : 'Aufsetzen und ausrichten';
-    const hint = i === 0 ? 'Auf ebener Unterlage (Richtplatte, Schweißtisch) auslegen und ausrichten. Maße prüfen.'
+    const verb = s0.equip ? 'Aufstellen' : i === 0 ? 'Auslegen' : welded ? 'Anlegen und heften' : 'Aufsetzen und ausrichten';
+    const hint = s0.equip ? 'Zukaufteil aufstellen, ausrichten und befestigen (Fundament, Dübel und Abstände nach Datenblatt).' : i === 0 ? 'Auf ebener Unterlage (Richtplatte, Schweißtisch) auslegen und ausrichten. Maße prüfen.'
       : welded ? 'Anlegen, mit Winkel und Maßband ausrichten (Diagonalen gleich lang?) und an den Stößen heften.' : 'Aufsetzen, ausrichten und Bohrungen zueinander prüfen.';
     steps.push({title:`${verb}: ${n} × ${what}`, hint, ids:new Set(g.list.map(s => s.id)), rows:rowsOf(g.list)});
   });
@@ -5163,6 +5246,10 @@ function build3d(){
   rects.forEach((r, i) => {
     let z = 0; if (!isElev(r)) rects.slice(0, i).forEach(q => { if (!isElev(q) && over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });
     base.set(r.id, z);
+    if (r.equip && r.equip.kind === 'robot'){ dg.add(robotMesh(r, z, mesh)); return; }
+    if (r.equip){ const g = new THREE.BoxGeometry(r.w, r.h, r.t); g.translate(r.w/2, r.h/2, r.t/2); g.rotateZ((r.rot || 0) * Math.PI / 180); g.translate(r.x, r.y, z); const m = mesh(g, r, 'plate');
+      if (r.equip.kind === 'fence' || r.equip.kind === 'box'){ m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = r.equip.kind === 'fence' ? .45 : .8; m.material.depthWrite = r.equip.kind !== 'fence'; }
+      dg.add(m); return; }
     if (r.type === 'disc'){
       const sh = new THREE.Shape(); sh.absarc(0, 0, r.d/2, 0, Math.PI*2, false);
       if (r.di > 0){ const p = new THREE.Path(); p.absarc(0, 0, r.di/2, 0, Math.PI*2, true); sh.holes.push(p); }
@@ -5445,6 +5532,20 @@ function build3d(){
   }
 }
 // Bemaßung in 3D: Maßlinien mit Pfeilen und Hilfslinien an Länge, Breite und Höhe
+// Roboter-Platzhalter: Fuß, Drehteil, Oberarm, Unterarm, Handgelenk – Proportionen aus Aufstellfläche, Höhe und Reichweite
+function robotMesh(s, z0, mesh){
+  const g = new THREE.Group(), H = s.t, R = s.equip.reach || 1000, F = Math.min(s.w, s.h), a = Math.max(30, Math.min(F * .34, H * .13)), c = localToWorld(s, s.w/2, s.h/2);
+  const cyl = (r, h, z, ax) => { const q = new THREE.CylinderGeometry(r, r, h, 32); if (ax === 'z') q.rotateX(Math.PI/2); return q.translate(0, 0, z); };
+  const box = (x0, x1, y0, y1, za, zb) => new THREE.BoxGeometry(x1 - x0, y1 - y0, zb - za).translate((x0 + x1)/2, (y0 + y1)/2, (za + zb)/2);
+  const hb = H * .12, ht = H * .16, zs = hb + ht + a * .5, ze = H - a * .55, la = Math.max(R * .55, a * 3);
+  [cyl(F * .48, hb, hb/2, 'z'), cyl(F * .36, ht, hb + ht/2, 'z'), box(-a*.65, a*.65, -a*.75, a*.75, hb + ht, zs + a*.25), cyl(a*.6, a*1.6, zs),
+   box(-a/2, a/2, -a*.42, a*.42, zs, ze), cyl(a*.58, a*1.15, ze), box(0, la, -a*.36, a*.36, ze - a*.36, ze + a*.36), cyl(a*.3, a*.7, ze - a*.36 - a*.35, 'z').translate(la - a*.3, 0, 0)]
+    .forEach(q => g.add(mesh(q, s, 'plate')));
+  const ring = []; for (let i = 0; i <= 96; i++){ const t = i / 96 * Math.PI * 2; ring.push(new THREE.Vector3(R * Math.cos(t), R * Math.sin(t), 1)); }
+  g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ring), new THREE.LineBasicMaterial({color:0xf59e0b})));
+  g.rotation.z = (s.rot || 0) * Math.PI / 180; g.position.set(c.x, c.y, z0); g.userData.id = s.id;
+  return g;
+}
 function dims3dLines(root, b, color){
   const S = b.getSize(new THREE.Vector3()), o = Math.max(S.x, S.y, S.z, 20) * .09, L = [], mids = [];
   const mat = new THREE.MeshBasicMaterial({color, depthTest:false, transparent:true}), V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -6005,9 +6106,9 @@ function runAfter(a){
   else if (a === 'guide') guideStart();
   else if (a === 'wp') openWp();
 }
-const afterChips = () => `<div class="askq">Danach gleich …</div><div class="chips aft">${Object.entries(CHAT_AFTER).map(([k, [l]]) => `<button type="button" class="chip${chat.after === k ? ' on' : ''}" data-act="after-${k}" aria-pressed="${chat.after === k}">${l}</button>`).join('')}</div>`;
-const CHAT_EX = [['Blech 200 × 100 × 10', 'Blech 200x100x10'], ['Flansch Ø200 innen 60', 'Ronde 200 innen 60'], ['Rahmen 800 × 600', 'Rahmen 800x600'], ['4 Bohrungen M10', '4 Bohrungen M10 Lochkreis 100'], ['Geländer 3 m', 'Geländer 3 m'], ['Tisch 1200 × 700', 'Tisch 1200x700']];
-const PART_WORDS = /blech|platte|rechteck|quadrat|ronde|flansch|scheibe|kreis|bohrung|loch|gewinde|langloch|schraube|mutter|stift|lager|sicherungs|rohr|profil|winkel|stahl|flach|rund|vierkant|\bu\s?\d|welle|kant|text|rahmen|gel(ä|ae)nder|\btor\b|treppe|podest|tisch|werkbank|regal|leiter|konsole|naht/i;
+const afterChips = () => `<div class="askq">Danach gleich …</div><div class="chips aft scroll">${Object.entries(CHAT_AFTER).map(([k, [l]]) => `<button type="button" class="chip${chat.after === k ? ' on' : ''}" data-act="after-${k}" aria-pressed="${chat.after === k}">${l}</button>`).join('')}</div>`;
+const CHAT_EX = [['Blech 200 × 100 × 10', 'Blech 200x100x10'], ['Rahmen 800 × 600', 'Rahmen 800x600'], ['IPE 200, 3 m', 'IPE 200 3 m'], ['ABB-Roboter', 'ABB Roboter'], ['Europalette', 'Europalette'], ['Flansch Ø200', 'Ronde 200 innen 60'], ['Geländer 3 m', 'Geländer 3 m'], ['Tisch 1200 × 700', 'Tisch 1200x700']];
+const PART_WORDS = /roboter|robot|cobot|\babb\b|\birb\b|kuka|fanuc|\bur\s?\d|palette|gitterbox|\bklt\b|schaltschrank|schutzzaun|\bipe\b|\bhea\b|\bheb\b|träger|alu-?profil|systemprofil|blech|platte|rechteck|quadrat|ronde|flansch|scheibe|kreis|bohrung|loch|gewinde|langloch|schraube|mutter|stift|lager|sicherungs|rohr|profil|winkel|stahl|flach|rund|vierkant|\bu\s?\d|welle|kant|text|rahmen|gel(ä|ae)nder|\btor\b|treppe|podest|tisch|werkbank|regal|leiter|konsole|naht/i;
 // cmdParse braucht einen Zustand (Einheit usw.) – auf der Startseite gibt es evtl. noch keinen
 const withState = f => { const tmp = !state; if (tmp) state = freshState('leer'); try { return f(); } finally { if (tmp) state = undefined; } };
 const chatParse = t => withState(() => cmdParse(t));
@@ -6021,8 +6122,7 @@ function chatSay(who, html, extra = ''){
 const chips = (opts, cls = '') => `<div class="chips${cls ? ' ' + cls : ''}">${opts.map(([l, c, k]) => `<button type="button" class="chip${k ? ' ' + k : ''}" ${c[0] === '#' ? `data-act="${c.slice(1)}"` : `data-c="${esc(c)}"`}>${esc(String(l))}</button>`).join('')}</div>`;
 function chatHello(){
   $('#chatLog').innerHTML = '';
-  chatSay('bot', 'Hallo! Was soll ich dir zeichnen? Sag es einfach oder tippe es ein – z. B.:', chips(CHAT_EX));
-  chatSay('bot', 'Danach kann ich auch gleich ein <b>PDF mit Bauanleitung</b>, die <b>technische Zeichnung</b>, die <b>Bauanleitung in 3D</b> oder den <b>Arbeitsplan</b> machen – sag es einfach dazu, z. B. „Rahmen 800 × 600 mit Zeichnung“.');
+  chatSay('bot', 'Was soll ich zeichnen?', chips(CHAT_EX, 'scroll'));
 }
 // Antwort verstehen: neues Teil oder Ergänzung zur letzten Eingabe („Dicke 5“, „aus Edelstahl“, „3 Stück“)
 function chatInput(text){
@@ -6059,13 +6159,14 @@ function partCard(r){
   return `<div class="pcard">${rows.map(x => `<div class="r"><span><b>${x.qty} ×</b> ${esc(x.name)}<small>${esc(x.dim)}</small></span>${x.mass ? `<em>${dec((x.mass * x.qty).toFixed(2))} kg</em>` : ''}</div>`).join('')}${holes ? `<div class="r"><span>+ ${holes} Bohrung${holes > 1 ? 'en' : ''}</span></div>` : ''}</div>`;
 }
 function chatAnswer(r, t){
-  const asks = r && r.ask ? r.ask.map(a => `<div class="askq">${a.q}</div>${chips(a.o)}`).join('') : '';
+  const asks = r && r.ask ? r.ask.map(a => `<div class="askq">${a.q}</div>${chips(a.o, 'scroll')}`).join('') : '';
   if (!r){ chatSay('bot', 'Das habe ich nicht verstanden. Sag z. B. was es ist und die Maße:', chips(CHAT_EX)); return; }
   const n = chat.items.length;
-  const acts = chips([['✓ Erstellen', '#make', 'go'], ['+ Noch ein Teil dazu', '#add'], ['Neu anfangen', '#reset', 'ghost']], 'acts') + afterChips();
+  const acts = chips([['✓ Erstellen', '#make', 'go'], ['+ Noch ein Teil dazu', '#add'], ['Neu', '#reset', 'ghost']], 'acts') + afterChips();
   if (r.make){
     chat.cur = t; chat.r = r;
-    chatSay('bot', `Verstanden: ${r.desc}`, partCard(r) + (asks ? `<div class="askq">Passt das? Sonst antippen:</div>${asks.replace('<div class="askq">', '<div class="askq sub">')}` : '') + acts);
+    const card = partCard(r);
+    chatSay('bot', `Verstanden: ${card ? r.desc.replace(/\s*<small>.*?<\/small>/g, '') : r.desc}`, card + (asks ? `<div class="askq">Passt das? Sonst antippen:</div>${asks.replace('<div class="askq">', '<div class="askq sub">')}` : '') + acts);
   } else if (r.wiz){
     chat.cur = t; chat.r = r;
     chatSay('bot', `${r.desc.replace(' (öffnet das Formular)', '')}${Object.keys(r.wiz.v).length ? '<br><small>Nach dem Erstellen öffnet sich der Baukasten – dort Profil usw. wählen.</small>' : ''}`, asks + (Object.keys(r.wiz.v).length ? acts : ''));
@@ -6545,8 +6646,8 @@ $('#codeForm').addEventListener('submit', async e => {
 
 /* ---------- Bibliothek: Teile für alle speichern und einfügen ---------- */
 const LIB_API = '/api/library', LS_LIB = 'wz-bibliothek';
-const LIB_CATS = ['Wellen', 'Bleche & Biegeteile', 'Profile', 'Verbindungselemente', 'Baugruppen', 'Sonstiges'];
-const catFor = list => list.length > 1 ? 'Baugruppen' : ({shaft:'Wellen', rect:'Bleche & Biegeteile', bend:'Bleche & Biegeteile', profile:'Profile', screw:'Verbindungselemente', hole:'Verbindungselemente'}[list[0].type] || 'Sonstiges');
+const LIB_CATS = ['Wellen', 'Bleche & Biegeteile', 'Profile', 'Verbindungselemente', 'Baugruppen', 'Industrie & Zukaufteile', 'Sonstiges'];
+const catFor = list => list.some(s => s.equip) ? 'Industrie & Zukaufteile' : list.length > 1 ? 'Baugruppen' : ({shaft:'Wellen', rect:'Bleche & Biegeteile', bend:'Bleche & Biegeteile', profile:'Profile', screw:'Verbindungselemente', hole:'Verbindungselemente'}[list[0].type] || 'Sonstiges');
 const LibLocal = {
   all(){ try { return JSON.parse(lsGet(LS_LIB) || '[]'); } catch(e){ return []; } },
   put(rec){ lsSet(LS_LIB, JSON.stringify([rec, ...LibLocal.all().filter(x => x.id !== rec.id)])); },
@@ -6632,7 +6733,9 @@ function stdLib(){
   add('Bleche & Biegeteile', 'Z-Blech 30×40×30, t=2', [{type:'bend', name:'Z-Blech', x:0, y:0, rot:0, legs:[30,40,30], angles:[90,-90], t:2, r:3, w:100, mat:'S235JR'}]);
   // Profile (Länge 1 m)
   Object.entries(PROFILES).forEach(([k, pr]) => Object.keys(pr.sizes).forEach(sz =>
-    add('Profile', `${pr.name} ${sz}`, [{type:'profile', kind:k, size:sz, len:1000, view:'side', mat:'S235JR', rot:0, x:0, y:0}], `${pr.norm}, Länge 1000 mm (anpassbar)`)));
+    add('Profile', `${pr.name} ${sz}`, [{type:'profile', kind:k, size:sz, len:1000, view:'side', mat:k === 'ALU' ? 'AlMgSi' : 'S235JR', rot:0, x:0, y:0}], `${pr.norm}, Länge 1000 mm (anpassbar)`)));
+  // Industrie: Roboter, Paletten, KLT, Schaltschränke, Schutzzaun (Platzhalter mit ca.-Werten)
+  EQ.forEach(e => add('Industrie & Zukaufteile', e.name, [eqShape(e)], `${e.info} – Platzhalter, Datenblatt prüfen`));
   // Ronden, Flansche
   [[100,0,10],[150,0,10],[200,0,10],[200,0,15],[300,0,20]].forEach(([d, di, t]) => add('Bleche & Biegeteile', `Ronde Ø${d} × ${t}`, [{type:'disc', name:'Ronde', x:0, y:0, d, di, t, mat:'S235JR'}]));
   [[140,61,16,100,4,'M12'],[165,77,18,125,4,'M16'],[200,90,18,160,8,'M16']].forEach(([d, di, t, k, n, m]) => {
