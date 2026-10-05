@@ -118,9 +118,37 @@ html.locked,html.locked body{overflow:hidden}
 .scanbtns .btn{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;justify-content:flex-start}
 .scanbtns .btn span{display:grid}.scanbtns .btn small{color:var(--muted);font-size:.78rem}
 .scanpanel .note{margin:0}
-.start-grid{grid-template-areas:"new list" "scan list"}
+.start-grid{grid-template-areas:"chat chat" "new list" "scan list"}
 .newform{grid-area:new}.scanpanel{grid-area:scan}.plist-panel{grid-area:list}
-@media (max-width: 760px){ .start-grid{grid-template-areas:"new" "scan" "list"} }
+@media (max-width: 760px){ .start-grid{grid-template-areas:"chat" "new" "scan" "list"} }
+.chatpanel{grid-area:chat;display:grid;gap:12px}
+.chathead{display:flex;gap:12px;align-items:center}.chathead h3{margin:0 0 2px}.chathead .note{margin:0}
+.chatico{width:42px;height:42px;flex:none;border-radius:13px;background:var(--sel-soft);color:var(--sel);display:grid;place-items:center}
+.chatlog{display:flex;flex-direction:column;gap:10px;max-height:min(52vh,460px);min-height:120px;overflow:auto;padding:4px 2px;overscroll-behavior:contain}
+.msg{display:flex;flex-direction:column;gap:6px;max-width:min(92%,560px)}
+.msg.bot{align-self:flex-start}.msg.me{align-self:flex-end;align-items:flex-end}
+.bub{padding:10px 14px;border-radius:18px;line-height:1.45;font-size:.95rem}
+.bub small{color:var(--muted)}
+.bot .bub{background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:6px}
+.me .bub{background:var(--sel);color:#fff;border-bottom-right-radius:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line-strong);background:var(--raised);color:var(--fg);border-radius:999px;padding:8px 14px;font:inherit;font-size:.88rem;cursor:pointer;min-height:40px;transition:transform .1s,background .15s}
+.chip:hover{background:var(--surface)}.chip:active{transform:scale(.96)}
+.chip.go{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+.chip.ghost{border-style:dashed;color:var(--muted)}
+.chips.acts{margin-top:4px}
+.askq{font-size:.8rem;color:var(--muted);margin:2px 0 -2px 4px}
+.pcard{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--raised);font-size:.86rem;display:grid;gap:6px}
+.pcard .r{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.pcard small{display:block;color:var(--muted);font-family:var(--f-mono);font-size:.74rem}.pcard em{font-style:normal;color:var(--muted);white-space:nowrap}
+.chatin{display:flex;gap:8px;align-items:center}
+.chatin .txt{flex:1;min-width:0;height:48px;border-radius:999px;padding:0 18px;font-size:16px}
+.chatmic,.chatsend{width:48px;height:48px;flex:none;border-radius:50%;display:grid;place-items:center;cursor:pointer;border:1px solid var(--line)}
+.chatmic{background:var(--sel);border-color:var(--sel);color:#fff}
+.chatmic.rec{background:#dc2626;border-color:#dc2626;animation:micpulse 1.2s infinite}
+.chatsend{background:var(--surface);color:var(--fg)}
+@keyframes micpulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}70%{box-shadow:0 0 0 14px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}
+@media (max-width: 760px){ .chatlog{max-height:46vh} .bub{font-size:1rem} }
 .plist-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
 .plist-head input{max-width:220px;width:100%}
 .plist{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
@@ -335,6 +363,15 @@ aside{background:var(--bg);border-left:1px solid var(--line);overflow:auto;min-w
 aside section{padding:18px 20px;border-bottom:1px solid var(--line)}
 aside h2{font:600 .72rem/1 var(--f-body);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px}
 aside h2 .btn{text-transform:none;letter-spacing:0;font-size:.78rem;padding:4px 10px;color:var(--fg)}
+/* einklappbare Abschnitte: weniger auf einmal sehen */
+aside section.fold > h2{cursor:pointer;user-select:none;justify-content:flex-start}
+aside section.fold > h2 > :last-child:not(:first-child){margin-left:auto}
+aside section.fold > h2::before{content:'';width:6px;height:6px;flex:none;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(45deg);margin:-4px 4px 0 1px;transition:transform .15s}
+aside section.fold.shut > h2::before{transform:rotate(-45deg);margin-top:0}
+aside section.fold.shut{padding-block:14px}
+aside section.fold.shut > h2{margin-bottom:0}
+aside section.fold.shut > :not(h2){display:none}
+aside section.fold.shut > h2 .btn{display:none}
 .props{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 14px;align-items:center}
 .props label{font-size:.84rem;color:var(--muted)}
 .props label em{font-style:normal;font-family:var(--f-mono);font-size:.72rem;opacity:.75}
@@ -421,7 +458,16 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
   .tool{padding:7px 6px}
   .actions{margin-left:auto}
 }
-@media (max-width: 640px){ .brandtxt span{max-width:calc(100vw - 90px)} .titleblock{display:none} #bProjects span,#bLib span{display:none} .brandtxt h1{font-size:.9rem} }
+@media (max-width: 640px){ .brandtxt span{max-width:calc(100vw - 90px)} .titleblock{display:none} #bProjects span,#bLib span,#bWiz span{display:none} .brandtxt h1{font-size:.9rem} .actions{gap:6px} }
+/* Handy: Werkzeuge und Optionen je in einer Zeile zum Wischen statt mehrerer Reihen */
+@media (max-width: 900px){
+  .tools{flex-wrap:nowrap;overflow-x:auto;min-width:0;max-width:calc(100vw - 32px);justify-content:flex-start;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+  .tools::-webkit-scrollbar,.toolopts::-webkit-scrollbar{display:none}
+  .tool{flex:none;padding:9px 11px;scroll-snap-align:start}
+  .toolopts{flex-wrap:nowrap;overflow-x:auto;min-width:0;max-width:calc(100vw - 32px);scrollbar-width:none;white-space:nowrap;padding-bottom:2px}
+  .toolopts > *{flex:none}
+}
+@media (hover: none) and (pointer: coarse){ #bKeys{display:none} .hint{font-size:.78rem} }
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
@@ -480,6 +526,11 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <p class="err" id="codeErr"></p>
       </form>
       <div class="start-grid">
+        <section class="panel chatpanel" id="chatPanel" aria-label="Sag, was du bauen willst">
+          <div class="chathead"><div class="chatico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></div><div><h3>Sag, was du bauen willst</h3><p class="note">Sprechen oder tippen – die App fragt nach, wenn etwas fehlt, und legt das Projekt an.</p></div></div>
+          <div class="chatlog" id="chatLog" aria-live="polite"></div>
+          <form class="chatin" id="chatForm" autocomplete="off"><input id="chatTxt" class="txt" placeholder="z. B. Blech 200 mal 100 mal 10" enterkeyhint="send" aria-label="Was soll gezeichnet werden?"><button type="button" class="chatmic" id="chatMic" aria-label="Sprechen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></button><button type="submit" class="chatsend" aria-label="Senden"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button></form>
+        </section>
         <form class="panel newform" id="newForm" novalidate>
           <h3>Neues Projekt</h3>
           <label for="npName">Projektname</label>
@@ -625,6 +676,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <label class="opt"><input type="checkbox" id="ex2d" checked> 2D-Zeichnung mit Maßen</label>
         <label class="opt"><input type="checkbox" id="ex3d" checked> 3D-Ansicht</label>
         <label class="opt"><input type="checkbox" id="exBom" checked> Stückliste</label>
+        <label class="opt" id="exGuideRow"><input type="checkbox" id="exGuide" checked> <span>Bauanleitung – eine Seite je Schritt mit Teileliste (nur PDF)</span></label>
         <label class="opt" id="exCadRow" hidden><input type="checkbox" id="exCad"> CAD-Modell in der 3D-Ansicht mitnehmen</label>
       </fieldset>
       <p class="note" id="expNote">Die 3D-Ansicht wird so exportiert, wie sie gerade gedreht ist. Ohne 3D-Ansicht offen wird sie automatisch eingepasst.</p>
@@ -714,6 +766,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Schraube</b> (Normteile): Sechskant-, Zylinder- und Senkschraube, Gewindestift, Mutter, Sicherungsmutter, Scheibe, Zylinderstift, Sicherungsring, Kugellager.</li>
             <li><b>Schraube</b>: tippen. Auf einer Bohrung rastet sie mittig ein. Art, Größe und Länge oben wählen.</li>
             <li><b>Ronde</b>: runde Bleche und Flansche mit Innenloch. <b>Kreis</b>: Kreis, Bogen oder Lochkreis mit gleichmäßig verteilten Bohrungen.</li>
+            <li><b>Start-Chat</b>: Auf der Startseite oben sagen oder tippen, was du bauen willst (z. B. „Blech 200 mal 100“). Die App fragt nach, du antwortest („Dicke 5“, „aus Edelstahl“, „3 Stück“) oder tippst eine Option an. „Erstellen“ legt das Projekt an.</li>
             <li><b>Foto entzerren</b>: Teil auf ein A4-Blatt legen und von oben fotografieren. Datei → „Foto als Vorlage“, dann in der Foto-Leiste „Entzerren“ und die 4 Blattecken antippen. Das Foto wird gerade gerechnet und ist 1:1 – jetzt mit „Maß“ messen oder nachzeichnen.</li>
             <li><b>Messen in 3D</b>: Lineal-Knopf rechts, unten die Messart wählen – Abstand, Durchmesser (3 Punkte am Rand), Winkel, Dicke (Fläche → Punkt) oder Blech (3 Ecken). Durchmesser und Blech lassen sich direkt als Teil übernehmen. Bei Scans ohne LiDAR erst eine bekannte Strecke messen und „Maßstab setzen“.</li>
             <li><b>Arbeitsplan</b>: In der Stückliste auf „Arbeitsplan“ tippen. Die App plant Sägen, Schneiden, Bohren, Gewinde, Kanten, Schweißen, Oberfläche und Montage mit groben Zeiten. Stückzahl und Oberfläche oben einstellen, als PDF speichern.</li>
@@ -751,11 +804,11 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <h2>Eigenschaften <small id="selInfo"></small></h2>
         <div id="props"></div>
       </section>
-      <section>
+      <section class="fold" data-fold="pins">
         <h2>Kommentare <small id="pinCount"></small> <button class="btn" type="button" id="bPinsVis">Ausblenden</button></h2>
         <div class="pins" id="pins"></div>
       </section>
-      <section>
+      <section class="fold" data-fold="layers">
         <h2>Ebenen <button class="btn" type="button" id="bLayerAdd">+ Neue Ebene</button></h2>
         <div class="layers" id="layers"></div>
       </section>
@@ -763,7 +816,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <h2>Stückliste <span class="row"><button class="btn" type="button" id="bCut">Zuschnitt</button><button class="btn" type="button" id="bWp">Arbeitsplan</button><button class="btn" type="button" id="bGuide">Bauanleitung</button><button class="btn" type="button" id="bCopyBom">Kopieren</button></span></h2>
         <div id="bom"></div>
       </section>
-      <section>
+      <section class="fold" data-fold="title">
         <h2>Schriftfeld</h2>
         <div class="props" id="tprops"></div>
         <p class="note">Alles wird automatisch im Projekt gespeichert.</p>
@@ -1665,6 +1718,9 @@ const TOOLS = [
   {k:'line', n:'Linie', key:'L', hint:'Linie von Punkt zu Punkt ziehen.'},
   {k:'dim', n:'Maß', key:'M', hint:'Von Punkt zu Punkt ziehen. Der Abstand wird automatisch angezeigt.'},
 ];
+// Touch-Geräte: Hinweise ohne Maus und Shift
+const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
+if (TOUCH) TOOLS[0].hint = 'Teil antippen · lange drücken = dazu wählen · leere Fläche wischen = verschieben · zwei Finger = zoomen';
 function renderTools(){
   $('#tools').innerHTML = TOOLS.map(t => `<button type="button" class="tool" data-tool="${t.k}" aria-pressed="${tool === t.k}" title="${t.n} (${t.key})"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[t.k]}</svg><span>${t.n}</span><kbd>${t.key}</kbd></button>`).join('');
   $('#hint').textContent = TOOLS.find(t => t.k === tool).hint;
@@ -3268,6 +3324,17 @@ function placeNew(shapes){
   const T0 = mkT(view, W, H), off = T0.x(vb.x0) < 0 || T0.x(vb.x1) > W || T0.y(vb.y0) > H || T0.y(vb.y1) < 0;
   if (off || (vb.x1 - vb.x0) * view.z > W * .9 || (vb.y1 - vb.y0) * view.z > H * .9){ fit(); render(); }
 }
+// Ergebnis der Eingabezeile → Teile (n Stück nebeneinander)
+function cmdShapes(r){
+  const shapes = [];
+  for (let i = 0; i < r.n; i++){
+    const one = r.make();
+    if (i){ const b0 = shapes.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)})), b1 = one.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), x1:Math.max(a.x1, q.x1)}));
+      one.forEach(o => moveBy(o, r2(b0.x1 + 20 - b1.x0), 0)); }
+    shapes.push(...one);
+  }
+  return shapes;
+}
 function cmdRun(){
   const v = $('#cmd').value, r = cmdParse(v);
   if (!r || (!r.make && !r.wiz)){ cmdPreview(); return; }
@@ -3276,14 +3343,7 @@ function cmdRun(){
   if (r.wiz){ WIZ.tab = r.wiz.tab; Object.assign(WIZ[r.wiz.tab], r.wiz.v); $('#cmd').value = ''; cmdShow(''); $('#cmd').blur(); openWiz(); return; }
   if (is3()) setMode('2d');
   snapshot();
-  let shapes = [];
-  for (let i = 0; i < r.n; i++){
-    const one = r.make();
-    if (i){ const b0 = shapes.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)})), b1 = one.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), x1:Math.max(a.x1, q.x1)}));
-      one.forEach(o => moveBy(o, r2(b0.x1 + 20 - b1.x0), 0)); }
-    shapes.push(...one);
-  }
-  placeNew(shapes);
+  placeNew(cmdShapes(r));
   $('#hint').innerHTML = `Gezeichnet: ${r.desc.replace(/<small>.*?<\/small>/g, '')}. Mit Auswahl verschieben, rechts genau einstellen.`;
   $('#cmd').value = ''; cmdShow('');
 }
@@ -3642,6 +3702,34 @@ async function image3d(withCad){
     build3d(); draw3d();
   }
 }
+// Bauanleitung für den PDF-Export: je Schritt ein Bild (Demo-Farben, hell), ohne die Ansicht zu verändern
+async function guideImages(){
+  if (!state.shapes.some(s => isVis(s) && (GUIDE_PART.includes(s.type) || s.type === 'screw'))) return null;
+  await loadThree();
+  const root = document.documentElement, prevTheme = root.dataset.theme, wasOpen = is3() && three, prevGuide = guide, prevMode = mode, savedCad = cad;
+  init3d();
+  const o = three.orb, orb0 = {t:o.t.clone(), r:o.r, az:o.az, el:o.el}, out = [];
+  root.dataset.theme = 'light'; cad = null; mode = 'demo';
+  const W3 = 1500, H3 = 1050, r = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+  r.setPixelRatio(1); r.setSize(W3, H3, false); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+  try {
+    guide = {k:0, steps:[], play:false};
+    build3d();
+    if (!wasOpen){ fit3d(); o.r *= .8; }
+    for (let i = 0; i < guide.steps.length; i++){
+      guide.k = i; build3d();
+      const cam = three.camera.clone(); cam.aspect = W3 / H3; placeCam(cam); r.render(three.scene, cam);
+      const c = document.createElement('canvas'); c.width = W3; c.height = H3; c.getContext('2d').drawImage(r.domElement, 0, 0);
+      out.push({st:guide.steps[i], img:c});
+    }
+  } finally {
+    r.dispose(); if (r.forceContextLoss) r.forceContextLoss();
+    guide = prevGuide; mode = prevMode; cad = savedCad; Object.assign(o, {r:orb0.r, az:orb0.az, el:orb0.el}); o.t.copy(orb0.t);
+    if (prevTheme) root.dataset.theme = prevTheme; else delete root.dataset.theme;
+    build3d(); draw3d(); renderGuide();
+  }
+  return out.length ? out : null;
+}
 // Stückliste nach Baugruppen gegliedert: zuerst jede Baugruppe, dann die Einzelteile
 function bomSections(){
   const gs = groupsOf().filter(g => state.shapes.some(x => x.group === g.id));
@@ -3702,6 +3790,7 @@ async function exportPDF(opt, imgs){
   if (imgs.d2) pages.push({title:'Zeichnung', img:imgs.d2});
   if (imgs.d3) pages.push({title:'3D-Ansicht', img:imgs.d3});
   if (opt.bom) pages.push({title:'Stückliste', bom:true});
+  (imgs.guide || []).forEach((g, i, a) => pages.push({title:`Bauanleitung – Schritt ${i + 1} von ${a.length}`, guide:g, k:i}));
   const PW = 297, PH = 210, M = 12;
   const frame = (p, i) => {
     if (i) doc.addPage();
@@ -3725,6 +3814,25 @@ async function exportPDF(opt, imgs){
   pages.forEach((p, i) => {
     frame(p, i);
     if (p.img){ fitImg(p.img, M, M + 9, PW - 2*M, PH - 2*M - 30); return; }
+    if (p.guide){
+      const st = p.guide.st, X = 196, Wc = PW - M - X;
+      doc.addImage(p.guide.img, 'JPEG', M, M + 10, 180, 126, undefined, 'FAST');
+      doc.setDrawColor(200); doc.rect(M, M + 10, 180, 126); doc.setDrawColor(20);
+      let y = M + 14;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.splitTextToSize(`${p.k + 1}. ${st.title}`, Wc).forEach(l => { doc.text(l, X, y); y += 5.5; }); doc.setFont('helvetica', 'normal');
+      y += 1; doc.setFontSize(9); doc.setTextColor(70); doc.splitTextToSize(st.hint, Wc).forEach(l => { doc.text(l, X, y); y += 4.4; }); doc.setTextColor(20);
+      y += 4;
+      if (st.rows.length){
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.text('Teile in diesem Schritt', X, y); doc.setFont('helvetica', 'normal'); y += 1.8; doc.setLineWidth(.2); doc.line(X, y, PW - M, y); y += 4.5;
+        st.rows.forEach(rw => {
+          if (y > PH - M - 30) return;
+          doc.setFontSize(9); doc.text(`${rw.qty} ×`, X, y); doc.splitTextToSize(rw.name, Wc - 11).slice(0, 2).forEach(l => { doc.text(l, X + 10, y); y += 4; });
+          doc.setFontSize(7.5); doc.setTextColor(100); doc.splitTextToSize(rw.dim, Wc - 11).slice(0, 2).forEach(l => { doc.text(l, X + 10, y); y += 3.4; }); doc.setTextColor(20); y += 1.8;
+        });
+      } else if (st.done){ doc.setFontSize(9); doc.text(`${st.total} Teile verbaut.`, X, y); }
+      doc.setFontSize(7); doc.setTextColor(120); doc.text('Neu in diesem Schritt = farbig, schon verbaut = grau', M, M + 141); doc.setTextColor(20);
+      return;
+    }
     pdfBom(doc, M, PW - M, M + 14, PH - M - 24, () => { frame({title:'Stückliste (Forts.)'}, 1); return M + 14; });
   });
   doc.save(fileBase() + '.pdf');
@@ -4351,7 +4459,7 @@ $('#expCancel').onclick = () => { $('#expDlg').hidden = true; };
 $('#expDlg').addEventListener('click', e => { if (e.target.id === 'expDlg') $('#expDlg').hidden = true; });
 $('#expForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const opt = {fmt:document.querySelector('input[name="expFmt"]:checked').value, d2:$('#ex2d').checked, d3:$('#ex3d').checked, bom:$('#exBom').checked, cad:$('#exCad').checked};
+  const opt = {fmt:document.querySelector('input[name="expFmt"]:checked').value, d2:$('#ex2d').checked, d3:$('#ex3d').checked, bom:$('#exBom').checked, cad:$('#exCad').checked, guide:$('#exGuide').checked};
   if (opt.fmt === 'dxf'){
     const laser = document.querySelector('input[name="dxfMode"]:checked').value === 'laser';
     if (laser && !state.shapes.some(s => ['rect','disc','bend'].includes(s.type))){ $('#expErr').textContent = 'Für den Laser-Zuschnitt braucht es Bleche, Ronden oder Biegeteile.'; return; }
@@ -4379,10 +4487,10 @@ $('#expForm').addEventListener('submit', async e => {
     } finally { btn.disabled = false; btn.textContent = 'Exportieren'; }
     return;
   }
-  if (!opt.d2 && !opt.d3 && !opt.bom){ $('#expErr').textContent = 'Bitte mindestens einen Inhalt ankreuzen.'; return; }
+  if (!opt.d2 && !opt.d3 && !opt.bom && !(opt.guide && opt.fmt === 'pdf')){ $('#expErr').textContent = 'Bitte mindestens einen Inhalt ankreuzen.'; return; }
   const btn = $('#expGo'); btn.disabled = true; btn.textContent = 'Wird erstellt …'; $('#expErr').textContent = '';
   try {
-    const imgs = {d2:opt.d2 ? await image2d() : null, d3:opt.d3 ? await image3d(opt.cad) : null};
+    const imgs = {d2:opt.d2 ? await image2d() : null, d3:opt.d3 ? await image3d(opt.cad) : null, guide:opt.guide && opt.fmt === 'pdf' ? await guideImages() : null};
     if (opt.fmt === 'pdf') await exportPDF(opt, imgs); else await exportPNG(opt, imgs);
     $('#expDlg').hidden = true;
   } catch(err){
@@ -4473,7 +4581,7 @@ async function setMode(m){
     if (mode !== m) return;
     const first = !three;
     init3d(); build3d(); if (first || refit3d){ fit3d(); refit3d = false; } draw3d();
-    $('#hint').textContent = m === 'demo' ? 'Ziehen = drehen · Rechte Maustaste = Ansicht schieben · Teil antippen = Farbe wählen' : 'Ziehen = drehen · Rechte Maustaste = Ansicht schieben · ausgewähltes Teil ziehen = verschieben, mit Shift = anheben';
+    $('#hint').textContent = m === 'demo' ? (TOUCH ? 'Wischen = drehen · zwei Finger = zoomen · Teil antippen = Farbe wählen' : 'Ziehen = drehen · Rechte Maustaste = Ansicht schieben · Teil antippen = Farbe wählen') : (TOUCH ? 'Wischen = drehen · zwei Finger = zoomen · ausgewähltes Teil ziehen = verschieben' : 'Ziehen = drehen · Rechte Maustaste = Ansicht schieben · ausgewähltes Teil ziehen = verschieben, mit Shift = anheben');
     if (m === 'demo' || was === 'demo') renderProps();
     if (m === '3d' && cad && selId == null) renderCadInfo();
     if (m === '3d' && measureOn) updateMeasure();
@@ -5527,7 +5635,7 @@ function updateMeasure(){
   }
   three.mres = res;
   const H = MEAS_HINT[measMode];
-  $('#hint').textContent = !measureOn ? 'Ziehen = drehen · Rechte Maustaste oder Shift = verschieben · Mausrad = zoomen'
+  $('#hint').textContent = !measureOn ? (TOUCH ? 'Wischen = drehen · zwei Finger = zoomen' : 'Ziehen = drehen · Rechte Maustaste oder Shift = verschieben · Mausrad = zoomen')
     : res.done ? 'Gemessen. Nächster Klick startet eine neue Messung. Oben andere Messart wählen.' : `${MEAS[measMode][1]}: ${H[mPts.length]} anklicken.${mPts.length ? '' : ' Ecken rasten ein.'}`;
   renderMeasBar(res);
   draw3d();
@@ -5849,6 +5957,132 @@ $('#spScan').onclick = () => $('#spScanIn').click();
 $('#spPhotoIn').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; if (await autoProject(niceName(f, 'Foto'))) setTimeout(() => loadPhoto(f), 80); };
 $('#spScanIn').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const er = scanTypeErr(f.name); if (er || /\.(stp|step)$/i.test(f.name)){ $('#spErr').textContent = er || 'STEP-Dateien bitte im Projekt über Datei → „CAD-Modell ansehen“ öffnen.'; return; } if (await autoProject(niceName(f, 'Scan'))) setTimeout(() => openScan(f, {keep:$('#spKeep').checked}), 80); };
 
+/* ---------- Seitenleiste: Abschnitte einklappen (Zustand wird gemerkt) ---------- */
+(function(){
+  const KEY = 'wz-fold', def = {pins:true, layers:true, title:true};
+  let st = {}; try { st = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e){}
+  document.querySelectorAll('aside section.fold').forEach(sec => {
+    const k = sec.dataset.fold; sec.classList.toggle('shut', st[k] ?? def[k]);
+    const h = sec.querySelector('h2'); h.setAttribute('role', 'button'); h.tabIndex = 0; h.setAttribute('aria-expanded', !sec.classList.contains('shut'));
+    const tog = () => { sec.classList.toggle('shut'); st[k] = sec.classList.contains('shut'); h.setAttribute('aria-expanded', !st[k]); try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){} };
+    h.addEventListener('click', e => { if (!e.target.closest('button, input, select')) tog(); });
+    h.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === h){ e.preventDefault(); tog(); } });
+  });
+})();
+/* ---------- Start-Chat: sagen oder tippen, was gebaut werden soll – mit Rückfragen ---------- */
+const chat = {cur:'', r:null, items:[], wait:null};
+const CHAT_EX = [['Blech 200 × 100 × 10', 'Blech 200x100x10'], ['Flansch Ø200 innen 60', 'Ronde 200 innen 60'], ['Rahmen 800 × 600', 'Rahmen 800x600'], ['4 Bohrungen M10', '4 Bohrungen M10 Lochkreis 100'], ['Geländer 3 m', 'Geländer 3 m'], ['Tisch 1200 × 700', 'Tisch 1200x700']];
+const PART_WORDS = /blech|platte|rechteck|quadrat|ronde|flansch|scheibe|kreis|bohrung|loch|gewinde|langloch|schraube|mutter|stift|lager|sicherungs|rohr|profil|winkel|stahl|flach|rund|vierkant|\bu\s?\d|welle|kant|text|rahmen|gel(ä|ae)nder|\btor\b|treppe|podest|tisch|werkbank|regal|leiter|konsole|naht/i;
+// cmdParse braucht einen Zustand (Einheit usw.) – auf der Startseite gibt es evtl. noch keinen
+const withState = f => { const tmp = !state; if (tmp) state = freshState('leer'); try { return f(); } finally { if (tmp) state = undefined; } };
+const chatParse = t => withState(() => cmdParse(t));
+const plain = h => String(h).replace(/<small>.*?<\/small>/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+function chatSay(who, html, extra = ''){
+  const el = document.createElement('div'); el.className = 'msg ' + who;
+  el.innerHTML = `<div class="bub">${html}</div>${extra}`;
+  const log = $('#chatLog'); log.appendChild(el); log.scrollTop = log.scrollHeight;
+  return el;
+}
+const chips = (opts, cls = '') => `<div class="chips${cls ? ' ' + cls : ''}">${opts.map(([l, c, k]) => `<button type="button" class="chip${k ? ' ' + k : ''}" ${c[0] === '#' ? `data-act="${c.slice(1)}"` : `data-c="${esc(c)}"`}>${esc(String(l))}</button>`).join('')}</div>`;
+function chatHello(){
+  $('#chatLog').innerHTML = '';
+  chatSay('bot', 'Hallo! Was soll ich dir zeichnen? Sag es einfach oder tippe es ein – z. B.:', chips(CHAT_EX));
+}
+// Antwort verstehen: neues Teil oder Ergänzung zur letzten Eingabe („Dicke 5“, „aus Edelstahl“, „3 Stück“)
+function chatInput(text){
+  text = String(text).trim(); if (!text) return;
+  chatSay('me', esc(text));
+  if (chat.wait === 'name'){ chat.wait = null; $('#npBy').value = text; lsSet(LS_BY, text); chatSay('bot', `Danke, ${esc(text)}!`); chatCreate(); return; }
+  let t = text, m;
+  const cnt = text.match(/^(\d{1,2})\s*(stück|stk\.?|x|mal)?$/i);
+  const good = r => r && (r.make || r.wiz);
+  if (cnt && chat.cur) t = cnt[1] + ' ' + chat.cur.replace(/^\s*\d{1,2}\s*(stück|stk\.?|x)?\s+/i, '');
+  else if (chat.cur && (!PART_WORDS.test(text) || !good(chatParse(text)))){
+    // nur übernehmen, wenn die Ergänzung wirklich etwas ändert
+    const r0 = chatParse(chat.cur), r2 = chatParse(chat.cur + ' ' + text);
+    if (good(r2) && (!r0 || plain(r2.desc) !== plain(r0.desc))) t = chat.cur + ' ' + text;
+    else if (!good(chatParse(text))){ chatSay('bot', 'Das habe ich nicht verstanden. Du kannst z. B. sagen: „Dicke 5“, „aus Edelstahl“, „3 Stück“ – oder ein neues Teil:', chips(CHAT_EX)); return; }
+  }
+  chatAnswer(chatParse(t), t);
+}
+function partCard(r){
+  const sh = withState(() => cmdShapes(r)), rows = withState(() => bomRows(sh));
+  const holes = sh.filter(s => s.type === 'hole').length;
+  if (!rows.length) return holes ? `<div class="pcard"><div class="r"><span>${holes} × Bohrung</span></div></div>` : '';
+  return `<div class="pcard">${rows.map(x => `<div class="r"><span><b>${x.qty} ×</b> ${esc(x.name)}<small>${esc(x.dim)}</small></span>${x.mass ? `<em>${dec((x.mass * x.qty).toFixed(2))} kg</em>` : ''}</div>`).join('')}${holes ? `<div class="r"><span>+ ${holes} Bohrung${holes > 1 ? 'en' : ''}</span></div>` : ''}</div>`;
+}
+function chatAnswer(r, t){
+  const asks = r && r.ask ? r.ask.map(a => `<div class="askq">${a.q}</div>${chips(a.o)}`).join('') : '';
+  if (!r){ chatSay('bot', 'Das habe ich nicht verstanden. Sag z. B. was es ist und die Maße:', chips(CHAT_EX)); return; }
+  const n = chat.items.length;
+  const acts = chips([['✓ Erstellen', '#make', 'go'], ['+ Noch ein Teil dazu', '#add'], ...(n ? [] : []), ['Neu anfangen', '#reset', 'ghost']], 'acts');
+  if (r.make){
+    chat.cur = t; chat.r = r;
+    chatSay('bot', `Verstanden: ${r.desc}`, partCard(r) + (asks ? `<div class="askq">Passt das? Sonst antippen:</div>${asks.replace('<div class="askq">', '<div class="askq sub">')}` : '') + acts);
+  } else if (r.wiz){
+    chat.cur = t; chat.r = r;
+    chatSay('bot', `${r.desc.replace(' (öffnet das Formular)', '')}${Object.keys(r.wiz.v).length ? '<br><small>Nach dem Erstellen öffnet sich der Baukasten – dort Profil usw. wählen.</small>' : ''}`, asks + (Object.keys(r.wiz.v).length ? acts : ''));
+  } else {
+    chat.cur = t;
+    chatSay('bot', r.desc, asks);
+  }
+}
+function chatAct(a){
+  if (a === 'reset'){ chat.cur = ''; chat.r = null; chat.items = []; chatHello(); return; }
+  if (a === 'add'){
+    if (chat.r){ chat.items.push({r:chat.r, t:chat.cur}); chat.r = null; chat.cur = ''; }
+    chatSay('bot', `Gemerkt – ${chat.items.length} Teil${chat.items.length > 1 ? 'e' : ''} im Projekt. Was kommt noch dazu?`, chips([['✓ Jetzt erstellen', '#make', 'go'], ...CHAT_EX.slice(0, 3)]));
+    return;
+  }
+  if (a === 'make'){ if (chat.r){ chat.items.push({r:chat.r, t:chat.cur}); chat.r = null; chat.cur = ''; } chatCreate(); }
+}
+async function chatCreate(){
+  const items = chat.items; if (!items.length){ chatSay('bot', 'Sag mir zuerst, was ich zeichnen soll.', chips(CHAT_EX)); return; }
+  const by = $('#npBy').value.trim() || lsGet(LS_BY) || '';
+  if (!by){ chat.wait = 'name'; chatSay('bot', 'Wie heißt du? Das kommt ins Schriftfeld der Zeichnung.'); $('#chatTxt').placeholder = 'Dein Vor- und Nachname'; $('#chatTxt').focus(); return; }
+  $('#npBy').value = by;
+  const first = plain(items[0].r.desc).replace(/^\d+\s*×\s*/, '').replace(/^Baukasten\s+/, '').replace(/\s*\(.*?\)\s*/g, ' ').replace(/^→\s*/, '').trim();
+  const name = (first.charAt(0).toUpperCase() + first.slice(1)).slice(0, 60) + (items.length > 1 ? ` + ${items.length - 1} weitere${items.length > 2 ? '' : 's'} Teil${items.length > 2 ? 'e' : ''}` : '');
+  chatSay('bot', `Ich lege das Projekt „${esc(name)}“ an …`);
+  if (!await autoProject(name)){ chatSay('bot', esc($('#spErr').textContent || 'Das hat nicht geklappt.')); return; }
+  const list = items.slice(); chat.items = []; chat.r = null; chat.cur = '';
+  setTimeout(() => {
+    const parts = list.filter(x => x.r.make), wz = list.find(x => x.r.wiz);
+    if (parts.length){
+      // Teile untereinander, mit Platz für die Maße
+      const all = []; let y = 0;
+      parts.forEach(x => { const sh = cmdShapes(x.r), b = sh.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), y1:Math.max(a.y1, q.y1)})); sh.forEach(o => moveBy(o, -b.x0, y - b.y1)); y -= (b.y1 - b.y0) + Math.max(60, (b.y1 - b.y0) * .4); all.push(...sh); });
+      snapshot(); placeNew(all); fit(); render();
+    }
+    $('#hint').textContent = `Aus dem Chat erstellt: ${list.map(x => plain(x.r.desc)).join(' · ')}. Rechts genau einstellen, in 3D ansehen.`;
+    if (wz){ WIZ.tab = wz.r.wiz.tab; Object.assign(WIZ[wz.r.wiz.tab], wz.r.wiz.v); openWiz(); }
+    chatHello(); $('#chatTxt').placeholder = 'z. B. Blech 200 mal 100 mal 10';
+  }, 120);
+}
+$('#chatForm').addEventListener('submit', e => { e.preventDefault(); const v = $('#chatTxt').value; $('#chatTxt').value = ''; chatInput(v); });
+$('#chatLog').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  if (b.dataset.act){ chatAct(b.dataset.act); return; }
+  chatSay('me', esc(b.textContent));
+  chatAnswer(chatParse(b.dataset.c), b.dataset.c);
+});
+// Sprechen: antippen, sprechen, fertig – das Gesagte wird automatisch geschickt
+(function(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition, btn = $('#chatMic');
+  if (!SR){ btn.hidden = true; $('#chatTxt').placeholder = 'Tippen – oder die Diktier-Taste 🎤 der Handy-Tastatur'; return; }
+  let rec = null, said = '';
+  btn.onclick = () => {
+    if (rec){ rec.stop(); return; }
+    rec = new SR(); rec.lang = 'de-DE'; rec.interimResults = true; rec.maxAlternatives = 1; said = '';
+    btn.classList.add('rec'); btn.setAttribute('aria-label', 'Aufnahme beenden'); $('#chatTxt').placeholder = 'Ich höre zu …';
+    rec.onresult = ev => { said = [...ev.results].map(x => x[0].transcript).join(' '); $('#chatTxt').value = said; };
+    rec.onend = () => { btn.classList.remove('rec'); btn.setAttribute('aria-label', 'Sprechen'); $('#chatTxt').placeholder = 'z. B. Blech 200 mal 100 mal 10'; rec = null; if (said.trim()){ $('#chatTxt').value = ''; chatInput(said); } };
+    rec.onerror = ev => { if (ev.error === 'not-allowed') chatSay('bot', 'Ich darf das Mikrofon nicht benutzen. Bitte in den Einstellungen erlauben – oder einfach tippen.'); };
+    rec.start();
+  };
+})();
+chatHello();
+
 async function openCad(file){
   $('#fileMenu').open = false;
   if (mode !== '3d') await setMode('3d');
@@ -5858,7 +6092,7 @@ async function openCad(file){
     const meshes = await readStep(await file.arrayBuffer());
     if (!meshes.length) throw new Error('leer');
     setCad(file.name, meshes);
-    $('#hint').textContent = 'Ziehen = drehen · Rechte Maustaste oder Shift = verschieben · Mausrad = zoomen';
+    $('#hint').textContent = TOUCH ? 'Wischen = drehen · zwei Finger = zoomen' : 'Ziehen = drehen · Rechte Maustaste oder Shift = verschieben · Mausrad = zoomen';
   } catch(e){
     $('#hint').textContent = 'Das CAD-Modell konnte nicht gelesen werden. Möglich sind STEP-Dateien (.stp, .step). Beim ersten Mal braucht die Seite Internet.';
   }
