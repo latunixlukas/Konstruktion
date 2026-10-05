@@ -4391,8 +4391,8 @@ function meshToFaces(tris){
 }
 async function exportStep(ids){
   await loadThree();
-  const savedCad = cad, savedCut = cut3d.on, bodies = [];
-  init3d(); cad = null; cut3d.on = false;
+  const savedCad = cad, savedCut = cut3d.on, savedExp = explodeF, bodies = [];
+  init3d(); cad = null; cut3d.on = false; explodeF = 0;   // immer zusammengebaut exportieren
   try {
     build3d(); three.root.updateMatrixWorld(true);
     const rootId = ch => ch.userData.id != null ? ch.userData.id : (ch.children.find(c => c.userData.id != null) || {userData:{}}).userData.id;
@@ -4408,7 +4408,7 @@ async function exportStep(ids){
         bodies.push({name:nm + (part++ ? ' ' + part : ''), ...meshToFaces(tris)});
       });
     });
-  } finally { cad = savedCad; cut3d.on = savedCut; build3d(); draw3d(); }
+  } finally { cad = savedCad; cut3d.on = savedCut; explodeF = savedExp; build3d(); draw3d(); }
   if (!bodies.length) throw new Error('leer');
   const L = []; let nid = 0; const E = txt => { L.push(`#${++nid}=${txt};`); return '#' + nid; };
   const P3 = v => E(`CARTESIAN_POINT('',(${stepNum(v.x)},${stepNum(v.y)},${stepNum(v.z)}))`);
