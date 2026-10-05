@@ -267,7 +267,7 @@ input[type="color"]{width:100%;height:34px;padding:2px;border:1px solid var(--li
 .keysgrid dt{min-width:0}.keysgrid dt kbd{white-space:nowrap;display:inline-block;margin:1px 0}.keysgrid dd{margin:0;color:var(--ink);min-width:0}
 .holdkind{display:grid;gap:6px;margin:0 0 12px}
 .holdset input{width:5em}.holdset select{max-width:16em}
-#holdDlg[data-k="kontur"] .hk-nest,#holdDlg[data-k="nest"] .hk-kontur,#holdDlg[data-k="pins"] .hk-nest,#holdDlg[data-k="pins"] .hk-kontur,#holdDlg[data-k="pins"] .hk-depth{display:none}
+#holdDlg[data-k="kontur"] .hk-nest,#holdDlg[data-k="nest"] .hk-kontur,#holdDlg[data-k="pins"] .hk-nest,#holdDlg[data-k="pins"] .hk-kontur,#holdDlg[data-k="pins"] .hk-depth,#holdDlg[data-k="block"] .hk-kontur,#holdDlg[data-k="block"] .hk-lay{display:none}
 .holdvar{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;margin:0 0 12px;scroll-snap-type:x mandatory}
 .holdvar button{flex:0 0 168px;scroll-snap-align:start;text-align:left;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--raised);padding:8px;cursor:pointer;color:inherit;font:inherit}
 .holdvar button.on{border-color:var(--sel,#2563eb);box-shadow:0 0 0 2px color-mix(in srgb,var(--sel,#2563eb) 30%,transparent)}
@@ -690,6 +690,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       <div class="holdkind">
         <label class="opt"><input type="radio" name="holdKind" value="kontur" checked> <span><b>Konturplatten</b> · Grundplatte + aufgestellte Platten, Oberkante folgt der Bauteilform (wie im Vorrichtungsbau)</span></label>
         <label class="opt"><input type="radio" name="holdKind" value="nest"> <span><b>Nest / Einlegeaufnahme</b> · Grundplatte + Rahmen mit Tasche in Bauteilform, für flache Teile</span></label>
+        <label class="opt"><input type="radio" name="holdKind" value="block"> <span><b>Block mit Tasche</b> · ein Stück, die Bauteilform wird als Tasche eingefräst – gut zum Fräsen oder 3D-Drucken</span></label>
         <label class="opt"><input type="radio" name="holdKind" value="pins"> <span><b>Anschläge 3-2-1</b> · Bauteil liegt auf der Grundplatte, 3 Zylinderstifte geben die Lage vor – einfachste Lösung, zum Spannen Schnellspanner dazu</span></label>
       </div>
       <div class="cutset holdset">
@@ -700,7 +701,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <label class="hk-kontur">Plattendicke <input id="hdTp" value="15" inputmode="decimal"> mm</label>
         <label class="hk-kontur">Bauteil über Grundplatte <input id="hdLift" value="20" inputmode="decimal"> mm</label>
         <label class="hk-depth">Einfasstiefe <input id="hdDepth" value="" placeholder="auto" inputmode="decimal"> mm</label>
-        <label class="hk-nest">Lagen (konturgenau) <input id="hdLay" value="1" inputmode="numeric"></label>
+        <label class="hk-nest hk-lay">Lagen (konturgenau) <input id="hdLay" value="1" inputmode="numeric"></label>
         <label class="hk-nest">Wand rundum <input id="hdWall" value="20" inputmode="decimal"> mm</label>
         <label>Grundplatte <input id="hdTb" value="15" inputmode="decimal"> mm</label>
         <label>Werkstoff <select id="hdMat"></select></label>
@@ -2674,7 +2675,7 @@ function holdOrient(src, lage, plan, kind){
   let best = null;
   (lage === 'auto' ? ['asis','x90','x-90','y90','y-90','x180'] : [lage]).forEach(k => { const R = holdRot(k), s = sizeOf(R); if (!best || s.z < best.s.z - .5) best = {k, R, s}; });
   const R = best.R.clone();
-  const turn = plan === '90' || (plan === 'auto' && (kind === 'nest' ? best.s.y > best.s.x + .5 : best.s.x > best.s.y + .5));
+  const turn = plan === '90' || (plan === 'auto' && (kind !== 'kontur' ? best.s.y > best.s.x + .5 : best.s.x > best.s.y + .5));
   if (turn) R.premultiply(new THREE.Matrix4().makeRotationZ(Math.PI / 2));
   const e = R.elements, T = [], b = new THREE.Box3(), v = new THREE.Vector3();
   src.tris.forEach(t => { const q = t.map(p => { v.copy(p).applyMatrix4(R); b.expandByPoint(v); return [v.x, v.y, v.z]; }); T.push(q); });
@@ -2727,8 +2728,8 @@ function holdBolts(X0, Y0, X1, Y1, e, top, len){
 // Hauptrechnung: liefert die Teile der Halterung (im Lagesystem des Bauteils, Unterkante Bauteil = 0)
 function holdCalc(O, o){
   const {T, size} = O, gap = Math.max(0, o.gap), mat = o.mat, tb = o.tb, down = holdDown(T), info = [], shapes = [];
-  if (o.kind === 'nest'){
-    const D = o.depth > 0 ? o.depth : Math.min(40, Math.max(5, size.z * .4)), n = Math.max(1, Math.min(6, o.layers | 0)), tl = holdT(D / n), wall = Math.max(8, o.wall);
+  if (o.kind === 'nest' || o.kind === 'block'){
+    const blk = o.kind === 'block', D = o.depth > 0 ? o.depth : Math.min(40, Math.max(5, size.z * .4)), n = blk ? 1 : Math.max(1, Math.min(6, o.layers | 0)), tl = blk ? r2(D) : holdT(D / n), wall = Math.max(8, o.wall);
     const pockets = [];
     for (let k = 1; k <= n; k++){
       const zt = Math.min(k * tl, size.z + 1), polys = [];
@@ -2743,6 +2744,16 @@ function holdCalc(O, o){
       const hit = [];
       top.forEach(P => P.forEach((p, i) => { const q = P[(i + 1) % P.length], a = alongX ? p[0] - cx : p[1] - cy, bq = alongX ? q[0] - cx : q[1] - cy; if (a * bq <= 0 && a !== bq){ const f = a / (a - bq); hit.push(alongX ? p[1] + f * (q[1] - p[1]) : p[0] + f * (q[0] - p[0])); } }));
       if (hit.length >= 2 && r > 4){ const lo = Math.min(...hit), hi = Math.max(...hit); grips = alongX ? [circPts(cx, lo, r, 40), circPts(cx, hi, r, 40)] : [circPts(lo, cy, r, 40), circPts(hi, cy, r, 40)]; }
+    }
+    if (blk){
+      // ein Block, die Bauteilform als Tasche von oben eingefräst (Boden = Grundplattendicke)
+      const T = r2(tb + tl);
+      shapes.push({type:'rect', name:'Aufnahmeblock', x:r2(X0), y:r2(Y0), w:r2(X1 - X0), h:r2(Y1 - Y0), t:T, mat, rot:0, hbase:1});
+      holdOuter(clipRun(ClipperLib.ClipType.ctUnion, [...top, ...grips])).forEach(P => { const b = polyBox([P]), cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+        shapes.push({type:'cutout', name:'Tasche', x:r2(cx), y:r2(cy), w:r2(b.x1 - b.x0), h:r2(b.y1 - b.y0), r:0, rot:0, depth:tl, pts:P.map(([x, y]) => [r2(x - cx), r2(y - cy)])}); });
+      if (o.bolt && wall >= 13) shapes.push(...holdBolts(X0, Y0, X1, Y1, wall / 2, T, LENGTHS.find(l => l >= T + 12) || 200));
+      info.push(`Tasche ${dec(tl)} mm tief in Bauteilform, ${dec(gap)} mm Spiel – aus einem Stück (fräsen oder 3D-drucken)`, `Block ${num(X1 - X0)} × ${num(Y1 - Y0)} × ${num(T)} mm`);
+      return {shapes, info, ox:-X0, oy:-Y0, oz:-tl, lift:0, sections:[], foot:top};
     }
     shapes.push({type:'rect', name:'Grundplatte', x:r2(X0), y:r2(Y0), w:r2(X1 - X0), h:r2(Y1 - Y0), t:tb, mat, rot:0, hbase:1});
     const R = [[X0, Y0], [X1, Y0], [X1, Y1], [X0, Y1]];
@@ -2822,6 +2833,7 @@ function holdSvg(res, O){
     if (s.tx){ const yc = s.y + s.h / 2; top += `<rect x="${f1(tx(s.x))}" y="${f1(ty(yc + s.t / 2))}" width="${f1(s.w * k)}" height="${f1(Math.max(1, s.t * k))}" fill="${cs}" fill-opacity=".55"/>`; }
     else top += `<path d="${path(s.outline, s.x, s.y)}" fill="${cs}" fill-opacity=".12" stroke="${cs}" stroke-width=".8"/>`;
   });
+  res.shapes.filter(s => s.type === 'cutout').forEach(c => { top += `<path d="${path(c.pts, c.x, c.y)}" fill="none" stroke="${cs}" stroke-width="1" stroke-dasharray="5 3"/>`; });
   res.shapes.filter(s => s.type === 'hole').forEach(h => { top += `<circle cx="${f1(tx(h.x))}" cy="${f1(ty(h.y))}" r="${f1(Math.max(1.5, h.d / 2 * k))}" fill="none" stroke="${cs}"/>`; });
   const svgTop = `<svg viewBox="0 0 ${f1(W * k + 2 * pad)} ${f1(H * k + 2 * pad)}" role="img" aria-label="Draufsicht">${top}</svg>`;
   let side = '';
@@ -2837,6 +2849,7 @@ const HOLD_VAR = [
   {k:'k3', l:'Konturplatten × 3', o:{kind:'kontur', n:3}, why:'für lange oder weiche Teile – stützt auch in der Mitte'},
   {k:'n1', l:'Nest', o:{kind:'nest', layers:1}, why:'einfach zu fertigen, gut für flache Teile'},
   {k:'n3', l:'Nest konturgenau', o:{kind:'nest', layers:3}, why:'3 Lagen folgen der Form – sitzt spielarm'},
+  {k:'b', l:'Block mit Tasche', o:{kind:'block'}, why:'ein Stück – fräsen oder 3D-drucken, Teil sitzt in der Form'},
   {k:'p', l:'Anschläge 3-2-1', o:{kind:'pins'}, why:'am billigsten, Bauteil wird nur angelegt'},
 ];
 const holdO = (lage, plan, kind) => { const k = [lage, plan, kind].join('|'); return HOLD.oc[k] || (HOLD.oc[k] = holdOrient(HOLD.src, lage, plan, kind)); };
@@ -2847,6 +2860,7 @@ function holdMini(res){
   s += (res.foot || []).map(P => `<path d="M${P.map(([x, y]) => X(x) + ',' + Y(y)).join('L')}Z" fill="#f59e0b" fill-opacity=".45"/>`).join('');
   res.shapes.forEach(q => {
     if (q.type === 'rect' && !q.hbase){ if (q.tx) s += `<rect x="${X(q.x)}" y="${Y(q.y + q.h / 2 + q.t / 2)}" width="${f1(q.w * k)}" height="${f1(Math.max(1, q.t * k))}" fill="${cs}" fill-opacity=".6"/>`; else s += `<path d="M${q.outline.map(([x, y]) => X(x + q.x) + ',' + Y(y + q.y)).join('L')}Z" fill="${cs}" fill-opacity=".15"/>`; }
+    if (q.type === 'cutout') s += `<path d="M${q.pts.map(([x, y]) => X(x + q.x) + ',' + Y(y + q.y)).join('L')}Z" fill="none" stroke="${cs}" stroke-dasharray="3 2"/>`;
     if (q.type === 'screw' && q.kind === 'pin') s += `<circle cx="${X(q.x)}" cy="${Y(q.y)}" r="2.5" fill="${cs}"/>`;
   });
   return `<svg viewBox="0 0 150 84" aria-hidden="true">${s}</svg>`;
@@ -2931,7 +2945,7 @@ function holdMake(){
   g.holder = {R:O.R.toArray().map(v => Math.round(v * 1e6) / 1e6), ox:r2(res.ox), oy:r2(res.oy), oz:r2(res.oz), show:o.show, ...(src.cad ? {cad:src.cad, cadName:src.cadName} : {ids:src.ids})};
   // CAD-Modell in Originallage: Halterung direkt darunter bauen
   if (src.cad && O.ident){
-    const dz = -(o.tb + res.oz) + O.min.z;
+    const dz = -(o.tb + res.lift) + O.min.z;
     shapes.forEach(s => { moveBy(s, O.min.x, O.min.y); if (Z_TYPES.includes(s.type)) s.z = r2(dz); s.id = nextId++; s.layer = state.activeLayer || 'L1'; state.shapes.push(s); });
     g.holder.show = false; setSel(shapes.map(s => s.id)); changed();
   } else placeNew(shapes);
@@ -2949,7 +2963,7 @@ function holdParse(t){
   if (!/\b(halterung|halter|vorrichtung|aufnahme|konturplatten?|nest|anschläge)\b/.test(t)) return null;
   const o = {}, W = {ein:1, eine:1, zwei:2, drei:3, vier:4, fünf:5, sechs:6}, m = t.match(/\b(\d|ein|eine|zwei|drei|vier|fünf|sechs)\s*(kontur)?(platten|platte|auflagen|stützen)\b/);
   if (m) o.n = W[m[1]] || +m[1];
-  if (/anschl|stifte|3-2-1|321/.test(t)) o.kind = 'pins'; else if (/\b(nest|tasche|einlege|rahmen)/.test(t)) o.kind = 'nest'; else if (/kontur|platten|auflage/.test(t)) o.kind = 'kontur';
+  if (/anschl|stifte|3-2-1|321/.test(t)) o.kind = 'pins'; else if (/\bblock|klotz|eingefräst|einfräsen/.test(t)) o.kind = 'block'; else if (/\b(nest|tasche|einlege|rahmen)/.test(t)) o.kind = 'nest'; else if (/kontur|platten|auflage/.test(t)) o.kind = 'kontur';
   if (/hochkant|stehend|aufrecht/.test(t)) o.lage = 'y90'; else if (/(auf der|auf die) seite/.test(t)) o.lage = 'x90'; else if (/umgedreht|kopfüber/.test(t)) o.lage = 'x180'; else if (/wie gezeichnet|wie im modell|so wie/.test(t)) o.lage = 'asis'; else if (/flach|liegend|automatisch/.test(t)) o.lage = 'auto';
   const v = re => { const q = t.match(re); return q ? +q[1] : null; };
   const gap = v(/spiel\s*(\d+(?:\.\d+)?)/); if (gap != null) o.gap = gap;
@@ -2957,7 +2971,7 @@ function holdParse(t){
   const lift = v(/(?:abstand|höhe|über (?:der )?grundplatte)\s*(\d+(?:\.\d+)?)/); if (lift != null) o.lift = lift;
   const dp = v(/(?:tiefe|tief|eingefasst)\s*(\d+(?:\.\d+)?)/); if (dp != null) o.depth = dp;
   const ly = v(/(\d)\s*lagen/); if (ly != null) o.layers = ly;
-  const parts = [o.kind === 'nest' ? 'als Nest' : o.kind === 'pins' ? 'mit Anschlägen 3-2-1' : `${o.n || 2} Konturplatten`, o.lage ? (HOLD_LAGE.find(l => l[0] === o.lage) || [])[1] : null, o.gap != null ? `Spiel ${dec(o.gap)} mm` : null].filter(Boolean);
+  const parts = [o.kind === 'nest' ? 'als Nest' : o.kind === 'pins' ? 'mit Anschlägen 3-2-1' : o.kind === 'block' ? 'als Block mit Tasche' : `${o.n || 2} Konturplatten`, o.lage ? (HOLD_LAGE.find(l => l[0] === o.lage) || [])[1] : null, o.gap != null ? `Spiel ${dec(o.gap)} mm` : null].filter(Boolean);
   return {hold:o, n:1, desc:`Halterung für das ausgewählte Bauteil – ${parts.join(', ')} (öffnet die Berechnung)`};
 }
 // Kontur als Tasche: Ausschnitt mit Tiefe von oben, Teil sitzt danach in der Tasche
@@ -6024,7 +6038,10 @@ $('#props').addEventListener('click', e => {
 });
 // Blech mit Taschen als ein geschlossener Körper: Boden, Deckfläche mit Taschen, Taschenböden, Wände
 function pocketSolid(sh, pockets, t){
-  const V = a => a.map(v => [v.x, v.y]), outer = V(sh.getPoints(24)), holes = sh.holes.map(h => V(h.getPoints(24)));
+  // doppelte Endpunkte weg – sonst passen die Dreiecks-Nummern nicht zu den Punkten
+  const nd = P => { P = P.filter((q, i) => !i || Math.hypot(q[0] - P[i - 1][0], q[1] - P[i - 1][1]) > 1e-7); return P.length > 2 && Math.hypot(P[0][0] - P[P.length - 1][0], P[0][1] - P[P.length - 1][1]) < 1e-7 ? P.slice(0, -1) : P; };
+  const V = a => nd(a.map(v => [v.x, v.y])), outer = V(sh.getPoints(24)), holes = sh.holes.map(h => V(h.getPoints(24)));
+  pockets = pockets.map(q => ({p:nd(q.p), d:q.d}));
   const cw = P => THREE.ShapeUtils.isClockWise(P.map(([x, y]) => new THREE.Vector2(x, y)));
   const ccwP = P => cw(P) ? P.slice().reverse() : P, cwP = P => cw(P) ? P : P.slice().reverse();
   const O = ccwP(outer), pk = pockets.map(q => ({p:cwP(q.p), d:Math.min(q.d, t - .01)}));
