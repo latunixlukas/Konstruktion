@@ -529,7 +529,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <button id="bSave" type="button">Als Datei sichern (.json)</button>
           <button id="bOpen" type="button">Datei öffnen (.json, .stp) …</button>
           <hr>
-          <button id="bExport" type="button">Exportieren (PDF, Zeichnung, STEP, 3D-Druck …) …</button>
+          <button id="bExport" type="button">Exportieren (PDF, Zeichnung, STEP, CATIA, 3D-Druck …) …</button>
           <button id="bSvg" type="button">Als Vektorgrafik (SVG)</button>
           <hr>
           <button id="bCad" type="button">CAD-Modell oder 3D-Scan ansehen (.stp, .obj, .stl, .glb, .ply) …</button>
@@ -679,12 +679,21 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <label class="opt"><input type="radio" name="expFmt" value="png"> <span><b>PNG-Bild</b> · alles untereinander in einem Bild</span></label>
         <label class="opt"><input type="radio" name="expFmt" value="dxf"> <span><b>DXF</b> · für CAD, Laser, Plasma, Wasserstrahl</span></label>
         <label class="opt"><input type="radio" name="expFmt" value="step"> <span><b>STEP</b> · 3D-Modell für CATIA, SolidWorks, Inventor, Fusion, FreeCAD</span></label>
+        <label class="opt"><input type="radio" name="expFmt" value="catia"> <span><b>CATIA-Bauteile (Makro)</b> · CATIA baut Produkt und Parts mit Strukturbaum: Skizze, Block, Tasche, Welle, Bohrung mit Gewinde</span></label>
         <label class="opt"><input type="radio" name="expFmt" value="print"> <span><b>3D-Druck</b> · STL oder 3MF für Bambu Studio, PrusaSlicer, Cura – mit Maßstab</span></label>
       </fieldset>
       <fieldset id="dxfSet" hidden>
         <legend>DXF-Inhalt</legend>
         <label class="opt"><input type="radio" name="dxfMode" value="laser" checked> <span><b>Laser-Zuschnitt</b> · nur Bleche, Ronden und Abwicklungen der Biegeteile mit Bohrungen, Maßstab 1:1</span></label>
         <label class="opt"><input type="radio" name="dxfMode" value="draw"> <span><b>Ganze Zeichnung</b> · alle Linien, Mittellinien, Maße und Texte</span></label>
+      </fieldset>
+      <fieldset id="catiaSet" hidden>
+        <legend>CATIA V5</legend>
+        <label class="opt"><input type="checkbox" id="caFeat" checked> <span>Bohrungen und Ausschnitte als <b>eigene Features</b> (Tasche) – sonst in der Skizze des Blocks</span></label>
+        <label class="opt"><input type="checkbox" id="caThr" checked> <span>Gewindebohrungen als CATIA-<b>Bohrung mit Gewinde</b> (M6, M8 …)</span></label>
+        <label class="opt"><input type="checkbox" id="caInst" checked> <span>Gleiche Teile nur <b>einmal als Part</b>, sonst als Instanz (wie Normteile)</span></label>
+        <label class="opt" id="caSelRow" hidden><input type="checkbox" id="caSel"> <span id="caSelTxt">Nur die Auswahl</span></label>
+        <p class="note">Speichert eine Makro-Datei <b>.CATScript</b>. In CATIA V5: <b>Tools → Makro → Makros…</b> (Alt + F8) → <b>Makrobibliotheken…</b> → Verzeichnis mit der Datei hinzufügen → Makro auswählen → <b>Ausführen</b>. CATIA erzeugt dann alle Parts und das Produkt; danach <b>Datei → Alles speichern unter</b>. Schweißnähte, Texte und Maße kommen nicht mit.</p>
       </fieldset>
       <fieldset id="printSet" hidden>
         <legend>3D-Druck</legend>
@@ -814,6 +823,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Foto entzerren</b>: Teil auf ein A4-Blatt legen und von oben fotografieren. Datei → „Foto als Vorlage“, dann in der Foto-Leiste „Entzerren“ und die 4 Blattecken antippen. Das Foto wird gerade gerechnet und ist 1:1 – jetzt mit „Maß“ messen oder nachzeichnen.</li>
             <li><b>Messen in 3D</b>: Lineal-Knopf rechts, unten die Messart wählen – Abstand, Durchmesser (3 Punkte am Rand), Winkel, Dicke (Fläche → Punkt) oder Blech (3 Ecken). Durchmesser und Blech lassen sich direkt als Teil übernehmen. Bei Scans ohne LiDAR erst eine bekannte Strecke messen und „Maßstab setzen“.</li>
             <li><b>Bleche zusammenführen / Kontur abziehen</b>: Mehrere Teile mit Shift + Klick auswählen. Rechts unter „Bleche bearbeiten“: <i>Zusammenführen</i> macht aus sich berührenden Blechen ein Blech. <i>Kontur abziehen</i> schneidet die Form des gewählten Teils (z. B. Rohr, Ronde, Profil) mit Spiel aus den Blechen aus – bei Schrauben entsteht die Durchgangsbohrung.</li>
+            <li><b>CATIA-Bauteile</b>: Datei → Exportieren → „CATIA-Bauteile (Makro)“. In CATIA V5 mit Alt + F8 → Makrobibliotheken → Verzeichnis hinzufügen → Ausführen. CATIA baut alle Parts mit Strukturbaum (Block, Tasche, Bohrung, Welle) und das Produkt; dann Datei → Alles speichern unter.</li>
             <li><b>3D-Druck</b>: Datei → Exportieren → 3D-Druck. 3MF oder STL, Maßstab wählen. Bei 1 : 1 mit echten Gewinden an Schrauben, Muttern und Gewindebohrungen (Spiel 0,2 mm für FDM).</li>
             <li><b>Arbeitsplan</b>: In der Stückliste auf „Arbeitsplan“ tippen. Die App plant Sägen, Schneiden, Bohren, Gewinde, Kanten, Schweißen, Oberfläche und Montage mit groben Zeiten. Stückzahl und Oberfläche oben einstellen, als PDF speichern.</li>
             <li><b>Bauanleitung</b>: In der Stückliste auf „Bauanleitung“ tippen. Die 3D-Ansicht zeigt Schritt für Schritt, welches Teil wann dazukommt (neu = farbig, schon verbaut = grau), mit Teileliste je Schritt. Weiter/Zurück unten links oder mit den Pfeiltasten.</li>
@@ -4604,6 +4614,7 @@ function openExport(fmtPick){
   $('#shSelRow').hidden = !sel.length; $('#shSel').checked = fmtPick === 'sheet' && sel.length > 0;
   $('#shSelTxt').textContent = sel.length === 1 ? `Nur dieses Teil als Einzelteil-Zeichnung (${sel[0].name || TYPENAMES[sel[0].type]}), mit Bohrungsmaßen` : `Nur die ${sel.length} ausgewählten Teile zeichnen`;
   $('#stSelRow').hidden = !sel.length; $('#stSel').checked = false; $('#stSelTxt').textContent = `Nur die Auswahl (${sel.length} Teil${sel.length === 1 ? '' : 'e'})`;
+  $('#caSelRow').hidden = !sel.length; $('#caSel').checked = false; $('#caSelTxt').textContent = `Nur die Auswahl (${sel.length} Teil${sel.length === 1 ? '' : 'e'})`;
   $('#prSelRow').hidden = !sel.length; $('#prSel').checked = false; $('#prSelTxt').textContent = `Nur die Auswahl (${sel.length} Teil${sel.length === 1 ? '' : 'e'}) – z. B. ein einzelnes Teil drucken`;
   if (fmtPick){ const r = document.querySelector(`input[name="expFmt"][value="${fmtPick}"]`); r.checked = true; r.dispatchEvent(new Event('change')); }
   $('#exCadRow').hidden = !cad; $('#exCad').checked = false; $('#shCadRow').hidden = !cad; $('#shCad').checked = false;
@@ -4612,8 +4623,8 @@ function openExport(fmtPick){
 }
 $('#bExport').onclick = () => openExport();
 document.querySelectorAll('input[name="expFmt"]').forEach(r => r.addEventListener('change', () => {
-  const f = document.querySelector('input[name="expFmt"]:checked').value, dxf = f === 'dxf', sheet = f === 'sheet', step = f === 'step', print = f === 'print';
-  $('#dxfSet').hidden = !dxf; $('#sheetSet').hidden = !sheet; $('#stepSet').hidden = !step; $('#printSet').hidden = !print; $('#expContent').hidden = dxf || sheet || step || print; $('#expNote').hidden = dxf || sheet || step || print;
+  const f = document.querySelector('input[name="expFmt"]:checked').value, dxf = f === 'dxf', sheet = f === 'sheet', step = f === 'step', print = f === 'print', catia = f === 'catia';
+  $('#dxfSet').hidden = !dxf; $('#sheetSet').hidden = !sheet; $('#stepSet').hidden = !step; $('#printSet').hidden = !print; $('#catiaSet').hidden = !catia; $('#expContent').hidden = dxf || sheet || step || print || catia; $('#expNote').hidden = dxf || sheet || step || print || catia;
 }));
 
 /* ---------- 3D-Druck: STL (binär) und 3MF (mit einzelnen Teilen) ---------- */
@@ -4702,6 +4713,147 @@ async function export3dPrint(o){
   const blob = o.fmt === '3mf' ? mf3Blob(parts, k) : stlBlob(parts, k);
   download(fileBase() + (o.ids ? '_auswahl' : '') + (k !== 1 ? `_1zu${dec(+(1 / k).toFixed(1))}` : '') + '.' + o.fmt, blob);
   return {n:parts.length, k, size:size.clone().multiplyScalar(k), thin, thr:thrOn, thrSkip:o.threads && k !== 1};
+}
+
+/* ---------- CATIA-Makro (.CATScript): CATIA baut die Bauteile selbst – mit Strukturbaum ---------- */
+// Drehteile (Stift, Gewindestift, Senkschraube, Sicherungsring, Lager): Profil [Radius, Achse]
+function revProf(s){
+  if (s.kind === 'pin'){ const r = +s.size/2; return [[0,-s.len],[r,-s.len],[r,0],[0,0]]; }
+  if (s.kind === 'circlip'){ const d1 = +s.size, [t, d2] = CLIPS[s.size], R = (d1 + 2*(.12*d1 + 2))/2; return [[d2/2,0],[R,0],[R,t],[d2/2,t]]; }
+  if (s.kind === 'bearing'){ const [d, D, B] = BEARINGS[s.size]; return [[d/2,0],[D/2,0],[D/2,B],[d/2,B]]; }
+  const g = NORM[s.size];
+  if (s.kind === 'csk'){ const [dk, k] = CSK[s.size]; return [[0,-s.len],[g.d/2,-s.len],[g.d/2,-k],[dk/2,0],[0,0]]; }
+  if (s.kind === 'set') return [[0,-s.len],[g.d/2,-s.len],[g.d/2,0],[0,0]];
+  return null;
+}
+const vbN = v => { const r = Math.round(v * 1e4) / 1e4; return (Object.is(r, -0) ? 0 : r).toString(); };
+const vbS = t => '"' + String(t).replace(/"/g, '""').replace(/[–—]/g, '-') + '"';
+const vbArr = pts => 'Array(' + pts.map(([x, y]) => vbN(x) + ', ' + vbN(y)).join(', ') + ')';
+const hexPts = sw => { const R = sw / Math.sqrt(3); return [0, 1, 2, 3, 4, 5].map(i => [R * Math.cos(i * Math.PI / 3), R * Math.sin(i * Math.PI / 3)]); };
+// Bauteil → VB-Zeilen im lokalen System (Teil liegt im Ursprung, Lage kommt über die Matrix)
+function catDef(s, o){
+  const L = [], sk = (z, fill) => { L.push(`  Set sk = SkZ(part1, body1, ${vbN(z)})`, '  Set f = sk.OpenEdition()', ...fill, '  sk.CloseEdition', '  part1.InWorkObject = body1'); };
+  const pad = (len, nm) => L.push(`  Set ft = sf.AddNewPad(sk, ${vbN(len)})`, `  ft.Name = ${vbS(nm)}`);
+  const pocket = (len, nm) => L.push(`  Set ft = sf.AddNewPocket(sk, ${vbN(len)})`, `  ft.SecondLimit.Dimension.Value = ${vbN(len)}`, `  ft.Name = ${vbS(nm)}`);
+  const poly = p => `  Poly f, ${vbArr(p)}`, circ = (x, y, r) => `  f.CreateClosedCircle ${vbN(x)}, ${vbN(y)}, ${vbN(r)}`;
+  const plateCuts = (t, toLocal, inside) => {
+    const holes = state.shapes.filter(h => h.type === 'hole' && isVis(h) && inside(h)), by = new Map(), thr = [], fill = [];
+    holes.forEach(h => { const q = toLocal(h.x, h.y), g = (h.fit || '').startsWith('G-') && o.thread ? h.fit.slice(2) : null;
+      if (g) thr.push({q, g, d:h.d}); else { const k = h.d + (h.tol ? ' ' + h.tol : '') + (h.fit && h.fit.startsWith('G-') ? ' G' + h.fit.slice(2) : ''); if (!by.has(k)) by.set(k, {d:h.d, h, list:[]}); by.get(k).list.push(q); } });
+    const cuts = state.shapes.filter(c => (c.type === 'slot' || c.type === 'cutout') && isVis(c) && inside(c)).map(c => ({c, p:cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y), q = toLocal(w.x, w.y); return [q.x, q.y]; })}));
+    if (!o.feat){ by.forEach(g => g.list.forEach(q => fill.push(circ(q.x, q.y, g.d/2)))); cuts.forEach(c => fill.push(poly(c.p))); thr.forEach(h => fill.push(circ(h.q.x, h.q.y, h.d/2))); return {fill, after:() => {}}; }
+    return {fill, after:() => {
+      by.forEach(g => { sk(0, g.list.map(q => circ(q.x, q.y, g.d/2))); pocket(t, `Bohrung Ø${dec(r2(g.d))}${g.h.tol ? ' ' + g.h.tol : ''}${g.h.fit && g.h.fit.startsWith('G-') ? ' (Kernloch ' + g.h.fit.slice(2) + ')' : ''}${g.list.length > 1 ? ' (' + g.list.length + '×)' : ''}`); });
+      cuts.forEach(c => { sk(0, [poly(c.p)]); pocket(t, c.c.type === 'slot' ? `Langloch ${dec(r2(c.c.l))} × ${dec(r2(c.c.b))}` : `Ausschnitt ${dec(r2(c.c.w))} × ${dec(r2(c.c.h))}`); });
+      thr.forEach(h => { const P = PITCH[h.g] || 1;
+        L.push(`  ThrHole part1, body1, sf, ${vbN(h.q.x)}, ${vbN(h.q.y)}, ${vbN(t)}, ${vbN(h.d)}, ${vbS(h.g)}, ${vbN(P)}`); });
+    }};
+  };
+  if (s.type === 'rect' || s.type === 'disc'){
+    const isR = s.type === 'rect', cutsI = plateCuts(s.t, isR ? (x, y) => worldToLocal(s, {x, y}) : (x, y) => ({x:x - s.x, y:y - s.y}), c => inRect(s, c.x, c.y));
+    if (s.equip){ sk(0, [poly([[0,0],[s.w,0],[s.w,s.h],[0,s.h]])]); pad(s.t, `${s.name} – Platzhalter (Aufstellfläche)`); return L; }
+    sk(0, [isR ? poly(rectOutline(s)) : circ(0, 0, s.d/2), ...(!isR && s.di > 0 ? [circ(0, 0, s.di/2)] : []), ...cutsI.fill]);
+    pad(s.t, `${isR ? 'Blech' : 'Ronde'} t=${dec(s.t)}`); cutsI.after(); return L;
+  }
+  if (s.type === 'profile'){
+    const q = section(s);
+    sk(0, [poly(q.outer), ...(q.hole ? [poly(q.hole)] : [])]); pad(s.len, `${PROFILES[s.kind].name} ${s.size} L=${dec(s.len)}`);
+    if (hasMiter(s)){
+      const w = q.w, H = q.h + 10, mit = (a, end) => { const t = Math.tan(Math.abs(a) * Math.PI / 180), off = u => a > 0 ? t * u : t * (w - u), z = u => end ? s.len - off(u) : off(u), E = end ? s.len + 5 + t * w : -5 - t * w;
+        // Skizze auf der ZX-Ebene: H = Länge (z), V = Breite (u)
+        L.push('  Set sk = body1.Sketches.Add(part1.CreateReferenceFromObject(part1.OriginElements.PlaneZX))', '  Set f = sk.OpenEdition()', poly([[z(-1), -1], [z(w + 1), w + 1], [E, w + 1], [E, -1]]), '  sk.CloseEdition', '  part1.InWorkObject = body1');
+        pocket(H, `Gehrung ${dec(Math.abs(a))}° ${end ? 'Ende' : 'Anfang'}`); };
+      if (s.cutA) mit(s.cutA, false); if (s.cutB) mit(s.cutB, true);
+    }
+    return L;
+  }
+  if (s.type === 'bend'){ sk(0, [poly(bendOutline(s))]); pad(s.w, `Biegeteil t=${dec(s.t)}`); return L; }
+  if (s.type === 'shaft'){
+    let x = 0; const pts = [[0, 0]]; s.steps.forEach(t => { pts.push([x, t.d/2], [x + t.l, t.d/2]); x += t.l; }); pts.push([x, 0]);
+    L.push(`  Set sk = SkZ(part1, body1, 0)`, '  Set f = sk.OpenEdition()', `  Poly f, ${vbArr(pts)}`, `  Set ax = f.CreateLine(-5, 0, ${vbN(x + 5)}, 0)`, '  sk.CenterLine = ax', '  sk.CloseEdition', '  part1.InWorkObject = body1',
+      '  Set ft = sf.AddNewShaft(sk)', `  ft.Name = ${vbS('Welle ' + stepsText(s))}`);
+    return L;
+  }
+  if (s.type === 'screw'){
+    const g = NORM[s.size], rp = revProf(s);
+    if (rp){
+      const pts = rp.map(([r, y]) => [y, r]), ax = Math.min(...pts.map(p => p[0])) - 5, bx = Math.max(...pts.map(p => p[0])) + 5;
+      L.push(`  Set sk = SkZ(part1, body1, 0)`, '  Set f = sk.OpenEdition()', `  Poly f, ${vbArr(pts.map(([a, r]) => [a, Math.max(r, 0)]))}`, `  Set ax = f.CreateLine(${vbN(ax)}, 0, ${vbN(bx)}, 0)`, '  sk.CenterLine = ax', '  sk.CloseEdition', '  part1.InWorkObject = body1',
+        '  Set ft = sf.AddNewShaft(sk)', `  ft.Name = ${vbS(KINDS[s.kind].name + ' ' + s.size)}`);
+      return L;
+    }
+    if (s.kind === 'hex' || s.kind === 'cyl'){
+      sk(0, [circ(0, 0, g.d/2)]); pad(s.len, `Schaft ${s.size} × ${s.len} (Gewinde ${s.size})`);
+      if (s.kind === 'hex'){ sk(s.len, [poly(hexPts(g.s))]); pad(g.k, `Sechskantkopf SW ${dec(g.s)}`); }
+      else { sk(s.len, [circ(0, 0, g.dk/2)]); pad(g.d, `Zylinderkopf Ø${dec(g.dk)}`); }
+      return L;
+    }
+    if (s.kind === 'nut' || s.kind === 'lock'){ sk(0, [poly(hexPts(g.s)), circ(0, 0, g.d/2)]); pad(s.kind === 'lock' ? LOCKM[s.size] : g.m, `${KINDS[s.kind].name} ${s.size}`); return L; }
+    if (s.kind === 'washer'){ sk(0, [circ(0, 0, g.d2/2), circ(0, 0, g.d1/2)]); pad(g.h, `Scheibe ${s.size}`); return L; }
+  }
+  return null;
+}
+async function exportCatia(o){
+  await loadThree();
+  const savedCad = cad, savedCut = cut3d.on, savedExp = explodeF, savedGuide = guide, W = new Map();
+  init3d(); cad = null; cut3d.on = false; explodeF = 0; guide = null;
+  try {
+    build3d(); three.root.updateMatrixWorld(true);
+    (three.dg ? three.dg.children : []).forEach(ch => ch.traverse(ob => {
+      if (!ob.userData.L) return;
+      const id = ob.userData.id != null ? ob.userData.id : (ob.children.find(c => c.userData.id != null) || {userData:{}}).userData.id;
+      if (id != null && !W.has(id)) W.set(id, ob.matrixWorld.clone().multiply(ob.userData.L));
+    }));
+  } finally { cad = savedCad; cut3d.on = savedCut; explodeF = savedExp; guide = savedGuide; build3d(); draw3d(); }
+  const list = state.shapes.filter(s => isVis(s) && W.has(s.id) && (!o.ids || o.ids.includes(s.id)));
+  const defs = [], inst = [], skipped = [], used = new Set();
+  list.forEach(s => {
+    const body = catDef(s, o); if (!body){ skipped.push(s); return; }
+    let M = W.get(s.id).clone();
+    if (s.type === 'screw' && revProf(s)) M.multiply(new THREE.Matrix4().makeRotationZ(Math.PI / 2));          // Drehachse X → Achse des Drehteils
+    if (s.type === 'screw' && (s.kind === 'hex' || s.kind === 'cyl')) M.multiply(new THREE.Matrix4().makeTranslation(0, 0, -s.len));   // Schaft 0..L, Kopf darüber
+    const key = body.join('\n'), base = (s.type === 'screw' ? `${KINDS[s.kind].name} ${s.size}${KINDS[s.kind].len ? 'x' + s.len : ''}` : s.type === 'profile' ? `${s.name ? s.name + ' ' : ''}${PROFILES[s.kind].name} ${s.size}` : s.name || TYPENAMES[s.type]).replace(/[^\wäöüÄÖÜß ×Ø.,()=-]+/g, ' ').trim().slice(0, 60);
+    let d = o.inst ? defs.find(x => x.key === key) : null;
+    if (!d){ let pn = base, n = 2; while (used.has(pn)) pn = `${base} (${n++})`; used.add(pn); d = {key, pn, body, i:defs.length + 1}; defs.push(d); }
+    const e = M.elements;   // spaltenweise: X-Achse, Y-Achse, Z-Achse, Ursprung
+    inst.push({d, m:[e[0], e[1], e[2], e[4], e[5], e[6], e[8], e[9], e[10], e[12], e[13], e[14]]});
+  });
+  if (!inst.length) throw new Error('leer');
+  const V = [];
+  V.push('Language="VBSCRIPT"', `' Erzeugt mit Werkstatt-Zeichenbrett am ${today} – Projekt: ${state.title.name || ''}`,
+    "' In CATIA V5: Tools > Makro > Makros... (Alt+F8) > Makrobibliotheken > Verzeichnis mit dieser Datei hinzufügen > Makro wählen > Ausführen.",
+    "' CATIA baut daraus ein Produkt mit allen Bauteilen (Skizze, Block, Tasche, Welle, Bohrung). Danach: Datei > Alles speichern unter.", '',
+    'Dim root, fails', ...defs.map(d => `Dim R${d.i}`), '',
+    'Sub CATMain()', '  Dim doc, c', '  Set doc = CATIA.Documents.Add("Product")', '  Set root = doc.Product', `  root.PartNumber = ${vbS((state.title.name || 'Baugruppe').replace(/[^\wäöüÄÖÜß -]+/g, ' ').trim() || 'Baugruppe')}`, '  fails = ""');
+  const firstSeen = new Set();
+  inst.forEach(({d, m}) => {
+    V.push('  On Error Resume Next');
+    if (!firstSeen.has(d.i)){ firstSeen.add(d.i); V.push(`  Set c = root.Products.AddNewComponent("Part", ${vbS(d.pn)})`, `  Def${d.i} c`, `  If Err.Number <> 0 Then fails = fails & vbCrLf & ${vbS(d.pn)} & ": " & Err.Description : Err.Clear`, `  Set R${d.i} = c.ReferenceProduct`); }
+    else V.push(`  Set c = root.Products.AddComponent(R${d.i})`);
+    V.push(`  c.Move.Apply Array(${m.map(vbN).join(', ')})`, '  If Err.Number <> 0 Then fails = fails & vbCrLf & "Lage: " & Err.Description : Err.Clear', '  On Error GoTo 0');
+  });
+  V.push('  root.Update', '  CATIA.ActiveWindow.ActiveViewer.Reframe',
+    `  If fails = "" Then MsgBox ${vbS(`Fertig: ${inst.length} Bauteile (${defs.length} verschiedene Parts). Speichern mit Datei > Alles speichern unter.`)} Else MsgBox "Fertig, aber mit Fehlern bei:" & fails`, 'End Sub', '',
+    'Function SkZ(part1, body1, z)', '  Dim ref, hsf, pl, gs', '  If z = 0 Then', '    Set ref = part1.CreateReferenceFromObject(part1.OriginElements.PlaneXY)', '  Else',
+    '    Set hsf = part1.HybridShapeFactory', '    Set pl = hsf.AddNewPlaneOffset(part1.CreateReferenceFromObject(part1.OriginElements.PlaneXY), z, False)',
+    '    If part1.HybridBodies.Count = 0 Then', '      Set gs = part1.HybridBodies.Add()', '      gs.Name = "Hilfsebenen"', '    Else', '      Set gs = part1.HybridBodies.Item(1)', '    End If',
+    '    gs.AppendHybridShape pl', '    part1.InWorkObject = body1', '    part1.Update', '    Set ref = part1.CreateReferenceFromObject(pl)', '  End If', '  Set SkZ = body1.Sketches.Add(ref)', 'End Function', '',
+    "' geschlossener Linienzug mit verbundenen Endpunkten", 'Sub Poly(f, c)', '  Dim n, i, j, pts(), ln', '  n = (UBound(c) + 1) / 2', '  ReDim pts(n - 1)',
+    '  For i = 0 To n - 1', '    Set pts(i) = f.CreatePoint(c(2 * i), c(2 * i + 1))', '  Next', '  For i = 0 To n - 1', '    j = (i + 1) Mod n',
+    '    Set ln = f.CreateLine(c(2 * i), c(2 * i + 1), c(2 * j), c(2 * j + 1))', '    ln.StartPoint = pts(i)', '    ln.EndPoint = pts(j)', '  Next', 'End Sub', '',
+    "' Gewindebohrung als CATIA-Bohrung mit Gewinde; wenn das nicht geht: Tasche mit Kernloch-Durchmesser",
+    'Sub ThrHole(part1, body1, sf, x, y, t, dk, nm, p)', '  Dim sk, f, ft, ok', '  ok = False', '  On Error Resume Next', '  Set sk = SkZ(part1, body1, t)', '  Set f = sk.OpenEdition()', '  f.CreatePoint x, y', '  sk.CloseEdition', '  part1.InWorkObject = body1',
+    '  Set ft = sf.AddNewHoleFromSketch(sk, t)', '  If Err.Number = 0 Then', '    ft.Diameter.Value = dk', '    ft.ThreadingMode = 0', '    ft.CreateStandardThreadDesignTable 1', '    ft.HoleThreadDescription.Value = nm', '    ft.ThreadDepth.Value = t',
+    '    ft.Name = "Gewindebohrung " & nm', '    part1.Update', '    If Err.Number = 0 Then ok = True', '  End If', '  Err.Clear', '  On Error GoTo 0',
+    '  If Not ok Then', '    Set sk = SkZ(part1, body1, 0)', '    Set f = sk.OpenEdition()', '    f.CreateClosedCircle x, y, dk / 2', '    sk.CloseEdition', '    part1.InWorkObject = body1',
+    '    Set ft = sf.AddNewPocket(sk, t)', '    ft.SecondLimit.Dimension.Value = t', '    ft.Name = "Kernloch " & nm & " (Gewinde nachtragen)"', '  End If', 'End Sub', '');
+  defs.forEach(d => V.push(`Sub Def${d.i}(comp)`, '  Dim pd, part1, body1, sf, sk, f, ft, ax', '  Set pd = comp.ReferenceProduct.Parent', '  Set part1 = pd.Part', '  Set body1 = part1.MainBody',
+    '  part1.InWorkObject = body1', '  Set sf = part1.ShapeFactory', ...d.body, '  part1.Update', 'End Sub', ''));
+  // CATIA erwartet Windows-1252 (ANSI) – Umlaute, Ø, ×, ° bleiben erhalten
+  const txt = V.join('\r\n'), CP = {'€':0x80,'‚':0x82,'„':0x84,'…':0x85,'–':0x96,'—':0x97,'‘':0x91,'’':0x92,'“':0x93,'”':0x94}, bytes = new Uint8Array(txt.length);
+  for (let i = 0; i < txt.length; i++){ const ch = txt[i], c = ch.charCodeAt(0); bytes[i] = c < 256 ? c : CP[ch] || 63; }
+  download(fileBase() + (o.ids ? '_auswahl' : '') + '.CATScript', new Blob([bytes], {type:'text/plain'}));
+  return {n:inst.length, parts:defs.length, skipped:skipped.length};
 }
 
 /* ---------- DXF (R12, Millimeter) ---------- */
@@ -4817,6 +4969,16 @@ $('#expForm').addEventListener('submit', async e => {
     if (laser && !state.shapes.some(s => ['rect','disc','bend'].includes(s.type))){ $('#expErr').textContent = 'Für den Laser-Zuschnitt braucht es Bleche, Ronden oder Biegeteile.'; return; }
     try { download(fileBase() + (laser ? '_laser' : '') + '.dxf', new Blob([laser ? dxfLaser() : dxfDrawing()], {type:'application/dxf'})); $('#expDlg').hidden = true; }
     catch(err){ $('#expErr').textContent = 'DXF-Export hat nicht geklappt.'; }
+    return;
+  }
+  if (opt.fmt === 'catia'){
+    const btn = $('#expGo'); btn.disabled = true; btn.textContent = 'Wird erstellt …'; $('#expErr').textContent = '';
+    try {
+      const r = await exportCatia({feat:$('#caFeat').checked, thread:$('#caThr').checked, inst:$('#caInst').checked, ids:$('#caSel').checked ? selShapes().map(s => s.id) : null});
+      $('#expDlg').hidden = true;
+      $('#hint').textContent = `CATIA-Makro gespeichert: ${r.n} Bauteile (${r.parts} verschiedene Parts)${r.skipped ? `, ${r.skipped} ohne Volumen (Naht, Text …) weggelassen` : ''}. In CATIA mit Alt + F8 ausführen.`;
+    } catch(err){ console.error(err); $('#expErr').textContent = err.message === 'leer' ? 'Noch keine Bauteile für CATIA da.' : 'CATIA-Export hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.'; }
+    finally { btn.disabled = false; btn.textContent = 'Exportieren'; }
     return;
   }
   if (opt.fmt === 'print'){
@@ -5512,7 +5674,7 @@ function build3d(){
     if (r.equip && r.equip.kind === 'robot'){ dg.add(robotMesh(r, z, mesh)); return; }
     if (r.equip){ const g = new THREE.BoxGeometry(r.w, r.h, r.t); g.translate(r.w/2, r.h/2, r.t/2); g.rotateZ((r.rot || 0) * Math.PI / 180); g.translate(r.x, r.y, z); const m = mesh(g, r, 'plate');
       if (r.equip.kind === 'fence' || r.equip.kind === 'box'){ m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = r.equip.kind === 'fence' ? .45 : .8; m.material.depthWrite = r.equip.kind !== 'fence'; }
-      dg.add(m); return; }
+      dg.add(withL(m, locM(r.x, r.y, z, r.rot))); return; }
     if (r.type === 'disc'){
       const sh = new THREE.Shape(); sh.absarc(0, 0, r.d/2, 0, Math.PI*2, false);
       if (r.di > 0){ const p = new THREE.Path(); p.absarc(0, 0, r.di/2, 0, Math.PI*2, true); sh.holes.push(p); }
@@ -5522,7 +5684,7 @@ function build3d(){
       });
       cuts.filter(c => inRect(r, c.x, c.y)).forEach(c => sh.holes.push(new THREE.Path(cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y); return new THREE.Vector2(w.x - r.x, w.y - r.y); }))));
       const g = extrude(sh, r.t); g.translate(r.x, r.y, z);
-      dg.add(mesh(g, r, 'plate')); return;
+      dg.add(withL(mesh(g, r, 'plate'), locM(r.x, r.y, z, 0))); return;
     }
     // im lokalen System des Blechs bauen, dann drehen und verschieben
     const sh = new THREE.Shape(rectOutline(r).map(([x, y]) => new THREE.Vector2(x, y)));
@@ -5534,7 +5696,7 @@ function build3d(){
       }
     });
     const g = extrude(sh, r.t); g.rotateZ((r.rot || 0) * Math.PI / 180); g.translate(r.x, r.y, z);
-    dg.add(mesh(g, r, 'plate'));
+    dg.add(withL(mesh(g, r, 'plate'), locM(r.x, r.y, z, r.rot)));
   });
   thrRings.forEach(([h, r, z]) => { const g = threadRing(h.fit.slice(2), r.t, printThreads.c); g.translate(h.x, h.y, z); dg.add(mesh(g, r, 'plate')); });
   const inR = (r, x, y) => !isElev(r) && inRect(r, x, y);
@@ -5574,12 +5736,12 @@ function build3d(){
           geo.rotateZ(rot);
           const zz = s.kind === 'lock' ? bottom - LOCKM[s.size] : z0;
           geo.translate(s.x, s.y, zz);
-          dg.add(mesh(geo, s, 'metal'));
+          dg.add(withL(mesh(geo, s, 'metal'), locM(s.x, s.y, zz, s.rot, s.kind === 'lock' ? null : new THREE.Matrix4().makeRotationX(Math.PI/2))));
         });
       } else {
         const grp = new THREE.Group();
         geos.forEach(geo => { if (s.kind === 'lock') geo.rotateX(-Math.PI/2); grp.add(mesh(geo, s, 'metal')); });
-        grp.rotation.z = rot; grp.position.set(s.x, s.y, topAt(s.x, s.y) + R);
+        grp.rotation.z = rot; grp.position.set(s.x, s.y, topAt(s.x, s.y) + R); grp.userData.L = s.kind === 'lock' ? new THREE.Matrix4().makeRotationX(-Math.PI/2) : new THREE.Matrix4();
         dg.add(grp);
       }
       return;
@@ -5593,16 +5755,16 @@ function build3d(){
       if (s.kind === 'hex' || s.kind === 'cyl'){
         const head = s.kind === 'hex' ? extrude(hexShape(g.s), g.k) : extrude(ringShape(g.dk/2, 0), d);
         if (s.kind === 'cyl'){ const sock = extrude(hexShape(g.sw), g.sw*.6); place(sock, z0 + lift + d - g.sw*.6 + .02); }
-        dg.add(mesh(place(head, z0 + lift), s, 'metal'));
+        dg.add(withL(mesh(place(head, z0 + lift), s, 'metal'), locM(s.x, s.y, z0 + lift, s.rot)));
         if (printThreads && PITCH[s.size]) dg.add(mesh(place(threadRod(s.size, s.len, printThreads.c), z0 + lift - s.len), s, 'metal'));
         else { const sh = new THREE.CylinderGeometry(d/2, d/2, s.len, 28); sh.rotateX(Math.PI/2); dg.add(mesh(place(sh, z0 + lift - s.len/2), s, 'metal')); }
       } else if (s.kind === 'nut'){
         const thr = printThreads && PITCH[s.size];
-        dg.add(mesh(place(extrude(hexShape(g.s, thr ? thrHoleR(s.size) : d/2), g.m), bottom - g.m), s, 'metal'));
+        dg.add(withL(mesh(place(extrude(hexShape(g.s, thr ? thrHoleR(s.size) : d/2), g.m), bottom - g.m), s, 'metal'), locM(s.x, s.y, bottom - g.m, s.rot)));
         if (thr) dg.add(mesh(place(threadRing(s.size, g.m, printThreads.c), bottom - g.m), s, 'metal'));
       } else {
         const idx = washers.filter(w => screws.indexOf(w) < screws.indexOf(s)).length;
-        dg.add(mesh(place(extrude(ringShape(g.d2/2, g.d1/2), g.h), z0 + idx*g.h), s, 'metal'));
+        dg.add(withL(mesh(place(extrude(ringShape(g.d2/2, g.d1/2), g.h), z0 + idx*g.h), s, 'metal'), locM(s.x, s.y, z0 + idx*g.h, s.rot)));
       }
     } else {
       // Seitenansicht: Schraube liegt flach, Achse in der Zeichenebene
@@ -5616,7 +5778,7 @@ function build3d(){
         else { const sh = new THREE.CylinderGeometry(d/2, d/2, s.len, 28); sh.translate(0, -s.len/2, 0); grp.add(mesh(sh, s, 'metal')); }
       } else if (s.kind === 'nut') grp.add(mesh(alongY(extrude(hexShape(g.s, d/2), g.m), 0), s, 'metal'));
       else { grp.add(mesh(alongY(extrude(ringShape(g.d2/2, g.d1/2), g.h), 0), s, 'metal')); R = g.d2/2; }
-      grp.rotation.z = rot; grp.position.set(s.x, s.y, topAt(s.x, s.y) + R);
+      grp.rotation.z = rot; grp.position.set(s.x, s.y, topAt(s.x, s.y) + R); grp.userData.L = new THREE.Matrix4().makeRotationX(-Math.PI/2);
       dg.add(grp);
     }
   });
@@ -5626,7 +5788,7 @@ function build3d(){
   SH.filter(s => s.type === 'bend').forEach(s => {
     const sh = new THREE.Shape(bendOutline(s).map(([x, y]) => new THREE.Vector2(x, y)));
     const g = extrude(sh, s.w); g.rotateZ((s.rot || 0) * Math.PI / 180); g.translate(s.x, s.y, topAt(s.x, s.y));
-    dg.add(mesh(g, s, 'plate'));
+    dg.add(withL(mesh(g, s, 'plate'), locM(s.x, s.y, topAt(s.x, s.y), s.rot)));
   });
   // Wellen: Zylinder je Absatz, Passfeder als dunkler Einsatz
   SH.filter(s => s.type === 'shaft').forEach(s => {
@@ -5642,7 +5804,7 @@ function build3d(){
     // Achshöhe so, dass jeder Absatz auf seiner Unterlage aufliegt (z. B. Lagersitz auf dem Lagerbock)
     let z = r, x0 = 0;
     s.steps.forEach(t => { for (let i = 0; i <= 4; i++){ const w = localToWorld(s, x0 + t.l*i/4, 0); z = Math.max(z, topAt(w.x, w.y) + t.d/2); } x0 += t.l; });
-    grp.position.set(s.x, s.y, z);
+    grp.position.set(s.x, s.y, z); grp.userData.L = new THREE.Matrix4();
     dg.add(grp);
   });
   // Profile: Querschnitt entlang der Länge extrudiert
@@ -5657,9 +5819,9 @@ function build3d(){
       p.needsUpdate = true; g.computeVertexNormals();
     }
     if (s.view === 'side') g.applyMatrix4(new THREE.Matrix4().set(0,0,1,0, 1,0,0,0, 0,1,0,0, 0,0,0,1));
-    const c = localToWorld(s, q.w/2, q.h/2);
-    g.rotateZ((s.rot || 0) * Math.PI / 180); g.translate(s.x, s.y, isElev(s) ? 0 : s.view === 'side' ? topAlong(s, q.w/2, s.len) : topAt(c.x, c.y));
-    dg.add(mesh(g, s, 'plate'));
+    const c = localToWorld(s, q.w/2, q.h/2), zz = isElev(s) ? 0 : s.view === 'side' ? topAlong(s, q.w/2, s.len) : topAt(c.x, c.y);
+    g.rotateZ((s.rot || 0) * Math.PI / 180); g.translate(s.x, s.y, zz);
+    dg.add(withL(mesh(g, s, 'plate'), locM(s.x, s.y, zz, s.rot, s.view === 'side' ? new THREE.Matrix4().set(0,0,1,0, 1,0,0,0, 0,1,0,0, 0,0,0,1) : null)));
   });
   // Schweißnähte als Raupe auf der Kante
   const topNear = (x, y) => rects.reduce((m, r) => { const b = bbox(r); return (x >= b.x0 - 1 && x <= b.x1 + 1 && y >= b.y0 - 1 && y <= b.y1 + 1) ? Math.max(m, base.get(r.id) + r.t) : m; }, 0);
@@ -5834,6 +5996,9 @@ function threadRing(size, len, c){
   return bufGeo(pos, idx);
 }
 const thrHoleR = size => NORM[size].d / 2 + printThreads.c + .15;   // Loch im Bauteil für den Gewindering
+// Lage des Bauteil-Koordinatensystems merken (Verschieben · Drehen um Z) – wird beim CATIA-Export gebraucht
+const locM = (x, y, z, rot, extra) => { const m = new THREE.Matrix4().makeTranslation(x, y, z).multiply(new THREE.Matrix4().makeRotationZ((rot || 0) * Math.PI / 180)); return extra ? m.multiply(extra) : m; };
+const withL = (o, L) => { o.userData.L = L; return o; };
 // Roboter-Platzhalter: Fuß, Drehteil, Oberarm, Unterarm, Handgelenk – Proportionen aus Aufstellfläche, Höhe und Reichweite
 function robotMesh(s, z0, mesh){
   const g = new THREE.Group(), H = s.t, R = s.equip.reach || 1000, F = Math.min(s.w, s.h), a = Math.max(30, Math.min(F * .34, H * .13)), c = localToWorld(s, s.w/2, s.h/2);
@@ -5845,7 +6010,7 @@ function robotMesh(s, z0, mesh){
     .forEach(q => g.add(mesh(q, s, 'plate')));
   const ring = []; for (let i = 0; i <= 96; i++){ const t = i / 96 * Math.PI * 2; ring.push(new THREE.Vector3(R * Math.cos(t), R * Math.sin(t), 1)); }
   g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ring), new THREE.LineBasicMaterial({color:0xf59e0b})));
-  g.rotation.z = (s.rot || 0) * Math.PI / 180; g.position.set(c.x, c.y, z0); g.userData.id = s.id;
+  g.rotation.z = (s.rot || 0) * Math.PI / 180; g.position.set(c.x, c.y, z0); g.userData.id = s.id; g.userData.L = new THREE.Matrix4().makeTranslation(-s.w/2, -s.h/2, 0);
   return g;
 }
 function dims3dLines(root, b, color){
