@@ -529,7 +529,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <button id="bSave" type="button">Als Datei sichern (.json)</button>
           <button id="bOpen" type="button">Datei öffnen (.json, .stp) …</button>
           <hr>
-          <button id="bExport" type="button">Exportieren (PDF / PNG) …</button>
+          <button id="bExport" type="button">Exportieren (PDF, Zeichnung, STEP, 3D-Druck …) …</button>
           <button id="bSvg" type="button">Als Vektorgrafik (SVG)</button>
           <hr>
           <button id="bCad" type="button">CAD-Modell oder 3D-Scan ansehen (.stp, .obj, .stl, .glb, .ply) …</button>
@@ -679,11 +679,21 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <label class="opt"><input type="radio" name="expFmt" value="png"> <span><b>PNG-Bild</b> · alles untereinander in einem Bild</span></label>
         <label class="opt"><input type="radio" name="expFmt" value="dxf"> <span><b>DXF</b> · für CAD, Laser, Plasma, Wasserstrahl</span></label>
         <label class="opt"><input type="radio" name="expFmt" value="step"> <span><b>STEP</b> · 3D-Modell für CATIA, SolidWorks, Inventor, Fusion, FreeCAD</span></label>
+        <label class="opt"><input type="radio" name="expFmt" value="print"> <span><b>3D-Druck</b> · STL oder 3MF für Bambu Studio, PrusaSlicer, Cura – mit Maßstab</span></label>
       </fieldset>
       <fieldset id="dxfSet" hidden>
         <legend>DXF-Inhalt</legend>
         <label class="opt"><input type="radio" name="dxfMode" value="laser" checked> <span><b>Laser-Zuschnitt</b> · nur Bleche, Ronden und Abwicklungen der Biegeteile mit Bohrungen, Maßstab 1:1</span></label>
         <label class="opt"><input type="radio" name="dxfMode" value="draw"> <span><b>Ganze Zeichnung</b> · alle Linien, Mittellinien, Maße und Texte</span></label>
+      </fieldset>
+      <fieldset id="printSet" hidden>
+        <legend>3D-Druck</legend>
+        <label class="opt"><input type="radio" name="prFmt" value="3mf" checked> <span><b>3MF</b> · einzelne Teile mit Namen (Bambu Studio, PrusaSlicer, Cura, Orca)</span></label>
+        <label class="opt"><input type="radio" name="prFmt" value="stl"> <span><b>STL</b> · ein Netz, geht mit jedem Drucker</span></label>
+        <div class="props" style="margin-top:6px"><label for="prScale">Maßstab</label><select id="prScale"><option value="fit">aufs Druckbett einpassen</option><option value="1">1 : 1 (Originalgröße)</option><option value="2">1 : 2</option><option value="5">1 : 5</option><option value="10">1 : 10</option><option value="20">1 : 20</option><option value="50">1 : 50</option></select>
+          <label for="prBed">Druckbett</label><select id="prBed"><option value="180">180 mm (z. B. Bambu A1 mini)</option><option value="220" selected>220 mm (z. B. Ender 3, Prusa MK4 ≈ 250)</option><option value="256">256 mm (z. B. Bambu P1S / X1C)</option><option value="300">300 mm</option></select></div>
+        <label class="opt" id="prSelRow" hidden><input type="checkbox" id="prSel"> <span id="prSelTxt">Nur die Auswahl</span></label>
+        <p class="note">Alle eigenen Teile zusammengebaut, flach auf dem Druckbett (unterste Stelle auf 0), Maße in Millimetern. Runde Flächen bestehen aus vielen kleinen Flächen. Ein geladenes CAD-Modell kommt nie mit in die Datei.</p>
       </fieldset>
       <fieldset id="stepSet" hidden>
         <legend>STEP</legend>
@@ -4467,6 +4477,7 @@ function openExport(fmtPick){
   $('#shSelRow').hidden = !sel.length; $('#shSel').checked = fmtPick === 'sheet' && sel.length > 0;
   $('#shSelTxt').textContent = sel.length === 1 ? `Nur dieses Teil als Einzelteil-Zeichnung (${sel[0].name || TYPENAMES[sel[0].type]}), mit Bohrungsmaßen` : `Nur die ${sel.length} ausgewählten Teile zeichnen`;
   $('#stSelRow').hidden = !sel.length; $('#stSel').checked = false; $('#stSelTxt').textContent = `Nur die Auswahl (${sel.length} Teil${sel.length === 1 ? '' : 'e'})`;
+  $('#prSelRow').hidden = !sel.length; $('#prSel').checked = false; $('#prSelTxt').textContent = `Nur die Auswahl (${sel.length} Teil${sel.length === 1 ? '' : 'e'}) – z. B. ein einzelnes Teil drucken`;
   if (fmtPick){ const r = document.querySelector(`input[name="expFmt"][value="${fmtPick}"]`); r.checked = true; r.dispatchEvent(new Event('change')); }
   $('#exCadRow').hidden = !cad; $('#exCad').checked = false; $('#shCadRow').hidden = !cad; $('#shCad').checked = false;
   $('#expErr').textContent = ''; $('#expDlg').hidden = false;
@@ -4474,9 +4485,93 @@ function openExport(fmtPick){
 }
 $('#bExport').onclick = () => openExport();
 document.querySelectorAll('input[name="expFmt"]').forEach(r => r.addEventListener('change', () => {
-  const f = document.querySelector('input[name="expFmt"]:checked').value, dxf = f === 'dxf', sheet = f === 'sheet', step = f === 'step';
-  $('#dxfSet').hidden = !dxf; $('#sheetSet').hidden = !sheet; $('#stepSet').hidden = !step; $('#expContent').hidden = dxf || sheet || step; $('#expNote').hidden = dxf || sheet || step;
+  const f = document.querySelector('input[name="expFmt"]:checked').value, dxf = f === 'dxf', sheet = f === 'sheet', step = f === 'step', print = f === 'print';
+  $('#dxfSet').hidden = !dxf; $('#sheetSet').hidden = !sheet; $('#stepSet').hidden = !step; $('#printSet').hidden = !print; $('#expContent').hidden = dxf || sheet || step || print; $('#expNote').hidden = dxf || sheet || step || print;
 }));
+
+/* ---------- 3D-Druck: STL (binär) und 3MF (mit einzelnen Teilen) ---------- */
+// alle eigenen Teile als Dreiecke in Welt-Koordinaten (mm), zusammengebaut, ohne CAD-Modell
+async function printMeshes(ids){
+  await loadThree();
+  const savedCad = cad, savedCut = cut3d.on, savedExp = explodeF, savedGuide = guide, parts = [];
+  init3d(); cad = null; cut3d.on = false; explodeF = 0; guide = null;
+  try {
+    build3d(); three.root.updateMatrixWorld(true);
+    const rootId = ch => ch.userData.id != null ? ch.userData.id : (ch.children.find(c => c.userData.id != null) || {userData:{}}).userData.id;
+    (three.dg ? three.dg.children : []).forEach(ch => {
+      const id = rootId(ch); if (id == null || (ids && !ids.includes(id))) return;
+      const sh = byId(id); if (!sh) return;
+      const nm = sh.name || (sh.type === 'screw' ? KINDS[sh.kind].name + ' ' + sh.size : sh.type === 'profile' ? PROFILES[sh.kind].name + ' ' + sh.size : TYPENAMES[sh.type]);
+      const tris = [];
+      ch.traverse(m => {
+        if (!m.isMesh || !m.geometry.attributes.position) return;
+        const g = m.geometry, pos = g.attributes.position, idx = g.index, n = idx ? idx.count : pos.count, flip = m.matrixWorld.determinant() < 0;
+        const P = i => new THREE.Vector3().fromBufferAttribute(pos, idx ? idx.getX(i) : i).applyMatrix4(m.matrixWorld);
+        for (let i = 0; i + 2 < n; i += 3){ const a = P(i), b = P(i + 1), c = P(i + 2); tris.push(flip ? [a, c, b] : [a, b, c]); }
+      });
+      if (tris.length) parts.push({name:nm, tris});
+    });
+  } finally { cad = savedCad; cut3d.on = savedCut; explodeF = savedExp; guide = savedGuide; build3d(); draw3d(); }
+  if (!parts.length) throw new Error('leer');
+  // aufs Druckbett: unterste Stelle auf z = 0, Mitte auf x/y = 0
+  const B = new THREE.Box3(); parts.forEach(p => p.tris.forEach(t => t.forEach(v => B.expandByPoint(v))));
+  const c = B.getCenter(new THREE.Vector3()); parts.forEach(p => p.tris.forEach(t => t.forEach(v => { v.x -= c.x; v.y -= c.y; v.z -= B.min.z; })));
+  return {parts, size:B.getSize(new THREE.Vector3())};
+}
+function stlBlob(parts, k){
+  const n = parts.reduce((a, p) => a + p.tris.length, 0), buf = new ArrayBuffer(84 + n * 50), dv = new DataView(buf);
+  const head = 'Werkstatt-Zeichenbrett STL, Einheit mm'; for (let i = 0; i < 80; i++) dv.setUint8(i, i < head.length ? head.charCodeAt(i) : 32);
+  dv.setUint32(80, n, true); let o = 84;
+  const e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
+  parts.forEach(p => p.tris.forEach(([a, b, c]) => {
+    const nr = e1.subVectors(b, a).cross(e2.subVectors(c, a)).normalize();
+    [nr, a, b, c].forEach((v, j) => { const s = j ? k : 1; dv.setFloat32(o, v.x * s, true); dv.setFloat32(o + 4, v.y * s, true); dv.setFloat32(o + 8, v.z * s, true); o += 12; });
+    dv.setUint16(o, 0, true); o += 2;
+  }));
+  return new Blob([buf], {type:'model/stl'});
+}
+// ZIP ohne Kompression (reicht für 3MF)
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u => { let c = ~0; for (let i = 0; i < u.length; i++) c = CRC_T[(c ^ u[i]) & 255] ^ (c >>> 8); return (~c) >>> 0; };
+function zipStore(files){
+  const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+  files.forEach(([name, text]) => {
+    const nb = enc.encode(name), data = enc.encode(text), crc = crc32(data), h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(8, 0, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, nb.length, true);
+    parts.push(h.buffer, nb, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, nb.length, true); c.setUint32(42, off, true);
+    cen.push(c.buffer, nb); off += 30 + nb.length + data.length;
+  });
+  const csize = cen.reduce((a, b) => a + b.byteLength, 0), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, csize, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...cen, end.buffer], {type:'model/3mf'});
+}
+function mf3Blob(parts, k){
+  const xe = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'), f = v => (Math.round(v * k * 1e4) / 1e4).toString();
+  let res = '', build = '';
+  parts.forEach((p, i) => {
+    const map = new Map(), vs = [], ts = [];
+    const vid = v => { const key = f(v.x) + ',' + f(v.y) + ',' + f(v.z); let id = map.get(key); if (id == null){ id = vs.length; map.set(key, id); vs.push(`<vertex x="${f(v.x)}" y="${f(v.y)}" z="${f(v.z)}"/>`); } return id; };
+    p.tris.forEach(([a, b, c]) => { const i1 = vid(a), i2 = vid(b), i3 = vid(c); if (i1 !== i2 && i2 !== i3 && i1 !== i3) ts.push(`<triangle v1="${i1}" v2="${i2}" v3="${i3}"/>`); });
+    res += `<object id="${i + 1}" name="${xe(p.name)}" type="model"><mesh><vertices>${vs.join('')}</vertices><triangles>${ts.join('')}</triangles></mesh></object>\n`;
+    build += `<item objectid="${i + 1}"/>`;
+  });
+  const model = `<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="de-DE" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">\n<metadata name="Title">${xe(state.title.name || 'Modell')}</metadata>\n<metadata name="Designer">${xe(state.title.by || '')}</metadata>\n<metadata name="Application">Werkstatt-Zeichenbrett</metadata>\n<resources>\n${res}</resources>\n<build>${build}</build>\n</model>`;
+  return zipStore([
+    ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>'],
+    ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>'],
+    ['3D/3dmodel.model', model]]);
+}
+async function export3dPrint(o){
+  const {parts, size} = await printMeshes(o.ids);
+  const maxD = Math.max(size.x, size.y, size.z), k = o.scale === 'fit' ? Math.min(1, (o.bed || 200) / maxD) : 1 / (+o.scale || 1);
+  // sehr dünne Teile nach dem Verkleinern melden (unter 0,8 mm ist schwer druckbar)
+  const thin = parts.filter(p => { const b = new THREE.Box3(); p.tris.forEach(t => t.forEach(v => b.expandByPoint(v))); const s = b.getSize(new THREE.Vector3()); return Math.min(s.x, s.y, s.z) * k < .8; }).length;
+  const blob = o.fmt === '3mf' ? mf3Blob(parts, k) : stlBlob(parts, k);
+  download(fileBase() + (o.ids ? '_auswahl' : '') + (k !== 1 ? `_1zu${dec(+(1 / k).toFixed(1))}` : '') + '.' + o.fmt, blob);
+  return {n:parts.length, k, size:size.clone().multiplyScalar(k), thin};
+}
 
 /* ---------- DXF (R12, Millimeter) ---------- */
 function dxfText(t){ return String(t).replace(/Ø/g, '%%c').replace(/°/g, '%%d').replace(/±/g, '%%p').replace(/×/g, 'x').replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue').replace(/ß/g, 'ss').replace(/[–−]/g, '-').replace(/[^\x20-\x7e]/g, ''); }
@@ -4591,6 +4686,16 @@ $('#expForm').addEventListener('submit', async e => {
     if (laser && !state.shapes.some(s => ['rect','disc','bend'].includes(s.type))){ $('#expErr').textContent = 'Für den Laser-Zuschnitt braucht es Bleche, Ronden oder Biegeteile.'; return; }
     try { download(fileBase() + (laser ? '_laser' : '') + '.dxf', new Blob([laser ? dxfLaser() : dxfDrawing()], {type:'application/dxf'})); $('#expDlg').hidden = true; }
     catch(err){ $('#expErr').textContent = 'DXF-Export hat nicht geklappt.'; }
+    return;
+  }
+  if (opt.fmt === 'print'){
+    const btn = $('#expGo'); btn.disabled = true; btn.textContent = 'Wird erstellt …'; $('#expErr').textContent = '';
+    try {
+      const r = await export3dPrint({fmt:document.querySelector('input[name="prFmt"]:checked').value, scale:$('#prScale').value, bed:+$('#prBed').value, ids:$('#prSel').checked ? selShapes().filter(s => Z_TYPES.includes(s.type)).map(s => s.id) : null});
+      $('#expDlg').hidden = true;
+      $('#hint').textContent = `3D-Druck-Datei gespeichert: ${r.n} Teil${r.n === 1 ? '' : 'e'}, Maßstab 1 : ${dec(+(1 / r.k).toFixed(1))}, Größe ${dec(r.size.x.toFixed(1))} × ${dec(r.size.y.toFixed(1))} × ${dec(r.size.z.toFixed(1))} mm.${r.thin ? ` Achtung: ${r.thin} Teil${r.thin === 1 ? ' ist' : 'e sind'} dünner als 0,8 mm – kleineren Maßstab wählen oder einzeln drucken.` : ''}`;
+    } catch(err){ console.error(err); $('#expErr').textContent = err.message === 'leer' ? 'Noch keine Teile für den 3D-Druck da.' : '3D-Druck-Export hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.'; }
+    finally { btn.disabled = false; btn.textContent = 'Exportieren'; }
     return;
   }
   if (opt.fmt === 'step'){
