@@ -263,7 +263,7 @@ input[type="color"]{width:100%;height:34px;padding:2px;border:1px solid var(--li
 
 /* Optionsleiste */
 .photobar{top:58px}.photobar.low{top:104px}
-.photobar #phLen{width:6em;padding:3px 6px}.photobar #phOp{width:90px}
+.photobar #phLen{width:6em;padding:3px 6px}.photobar #phRefA,.photobar #phRefB{width:4.5em;padding:3px 6px}.photobar select{padding:2px 6px;font-size:.78rem;border-radius:99px}.photobar #phOp{width:90px}
 .cmd{position:relative;display:flex;align-items:center;gap:6px;margin-left:auto;flex:1 1 320px;max-width:520px;padding:0 4px 0 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--raised);color:var(--muted)}
 .cmd:focus-within{border-color:var(--sel);color:var(--fg)}
 .cmd input{flex:1;min-width:0;border:0;background:none;padding:7px 0;font-size:.88rem;outline:none;color:var(--fg)}
@@ -302,6 +302,10 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
 .cutbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:4;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:6px 10px;font-size:.8rem;max-width:calc(100% - 28px)}
 .cutbar input[type=range]{width:min(260px,40vw);accent-color:var(--fg)}
 .cutbar select{padding:2px 6px;font-size:.78rem;border-radius:99px}
+#cutBar3:not([hidden]) ~ .measbar{bottom:62px}
+.photobar.busy label.chk,.photobar.busy #phRot,.photobar.busy #phOp,.photobar.busy #phHide,.photobar.busy #phDel{display:none}
+.photobar.rect #phCal{display:none}
+@media (max-width:600px){.measbar{top:134px;bottom:auto}}.measbar input{width:5.5em;padding:3px 6px}.measbar .btn{padding:4px 10px;font-size:.78rem}
 .cutpos{font-family:var(--f-mono);font-size:.74rem;color:var(--muted);min-width:7em}
 .cadbar{flex-wrap:wrap;position:absolute;left:14px;top:58px;z-index:4;display:flex;align-items:center;gap:10px;padding:5px 6px 5px 6px;font-size:.82rem;max-width:calc(100% - 90px)}
 .cadbar #cadName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -351,6 +355,7 @@ td .sub{display:block;font-family:var(--f-mono);font-size:.74rem;color:var(--mut
 tfoot td{font-weight:600;border-bottom:0;padding-top:10px}
 details#help summary{cursor:pointer;font:600 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);list-style:none;display:flex;justify-content:space-between;align-items:center}
 details#help summary::-webkit-details-marker{display:none}
+.sptips{font-size:.82rem;color:var(--muted);margin-top:6px}.sptips summary{cursor:pointer;font-weight:600;color:var(--fg)}.sptips p{margin:6px 0}
 details#help summary::after{content:"+";font:400 1.1rem var(--f-mono)}
 details#help[open] summary::after{content:"−"}
 details#help ul{margin:12px 0 0;padding-left:18px;font-size:.86rem;color:var(--fg)}
@@ -494,7 +499,11 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <button class="btn" type="button" id="spScan"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span><span><b>3D-Scan</b> laden</span><small>OBJ, STL, GLB, PLY vom Handy</small></span></button>
           </div>
           <label class="chk"><input type="checkbox" id="spKeep" checked> Scan auf diesem Gerät merken (wird nicht hochgeladen)</label>
-          <p class="note">Scan-Apps fürs Handy: z. B. Polycam, Scaniverse, RealityScan – dort als OBJ, GLB oder STL exportieren.</p>
+          <details class="sptips"><summary>Tipps: Teile mit dem iPhone messen</summary>
+            <p><b>Flache Teile (Bleche, Laschen, Flansche) – am genauesten, ca. 1 mm:</b> Teil auf ein A4-Blatt legen, senkrecht von oben fotografieren (ganzes Blatt im Bild, kein Schatten). Mit <b>Foto</b> laden, oben <b>Entzerren</b> und die 4 Blattecken antippen.</p>
+            <p><b>Räumliche Teile:</b> Scan-App wie <b>Scaniverse</b> (kostenlos) oder Polycam nehmen. Am besten den Objekt-/Fotomodus und langsam rundherum gehen (oben, Mitte, unten). Glänzende Teile mit etwas Kreidespray oder Puder matt machen. Als OBJ, GLB oder PLY exportieren und hier mit <b>3D-Scan</b> laden.</p>
+            <p><b>Messen im Scan:</b> in 3D das Lineal rechts antippen, unten die Messart wählen: Abstand, Durchmesser (3 Punkte am Rand), Winkel, Dicke oder Blech (3 Ecken → als Teil übernehmen). Ohne LiDAR erst eine bekannte Strecke messen und unten „Maßstab setzen“. Genauigkeit meist ±1–3 mm – Passungen weiter mit dem Messschieber.</p>
+          </details>
           <p class="err" id="spErr"></p>
           <input type="file" id="spPhotoIn" accept="image/*" hidden>
           <input type="file" id="spScanIn" accept=".obj,.stl,.glb,.gltf,.ply,.OBJ,.STL,.GLB,.GLTF,.PLY" hidden>
@@ -657,6 +666,11 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <span id="cutPos" class="cutpos"></span>
           <label class="chk"><input type="checkbox" id="cutFlip"> andere Seite</label>
         </div>
+        <div class="cutbar pill measbar" id="measBar" hidden>
+          <span class="cadtag">Messen</span>
+          <select id="measMode" aria-label="Messart"><option value="dist">Abstand (2 Punkte)</option><option value="dia">Durchmesser (3 Punkte am Rand)</option><option value="ang">Winkel (3 Punkte)</option><option value="plane">Dicke: Fläche → Punkt</option><option value="rect">Blech: 3 Ecken</option></select>
+          <b id="measOut"></b><span id="measAct" class="row"></span>
+        </div>
         <div id="pins3d"></div>
         <div class="guide" id="guideCard" hidden>
           <div class="ghead"><span class="gstep" id="gStep"></span><button type="button" class="btn icon" id="gClose" aria-label="Bauanleitung beenden" title="Bauanleitung beenden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -677,6 +691,9 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       <div class="cadbar pill photobar" id="photoBar" hidden>
         <span class="cadtag">Foto</span>
         <button type="button" id="phCal" title="Zwei Punkte mit bekanntem Abstand antippen">Maßstab festlegen</button>
+        <button type="button" id="phRect" title="Teil auf einem Blatt Papier fotografiert? 4 Ecken antippen – das Foto wird gerade gerechnet und maßstäblich">Entzerren</button>
+        <select id="phRef" aria-label="Bezug zum Entzerren"><option value="a4">A4-Blatt</option><option value="a3">A3-Blatt</option><option value="karte">Scheckkarte</option><option value="eigen">eigenes Rechteck</option></select>
+        <span id="phRefBox" hidden><input id="phRefA" inputmode="decimal" placeholder="Länge" aria-label="Länge des Rechtecks"> × <input id="phRefB" inputmode="decimal" placeholder="Breite" aria-label="Breite des Rechtecks"></span>
         <span id="phCalBox" hidden><input id="phLen" inputmode="decimal" placeholder="Länge" aria-label="Länge der Strecke"> <span id="phUnit">mm</span> <button type="button" id="phOk">OK</button></span>
         <label class="chk"><input type="checkbox" id="phMove"> verschieben</label>
         <button type="button" id="phRot" title="Foto um 90° drehen">↻ 90°</button>
@@ -697,6 +714,8 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Schraube</b> (Normteile): Sechskant-, Zylinder- und Senkschraube, Gewindestift, Mutter, Sicherungsmutter, Scheibe, Zylinderstift, Sicherungsring, Kugellager.</li>
             <li><b>Schraube</b>: tippen. Auf einer Bohrung rastet sie mittig ein. Art, Größe und Länge oben wählen.</li>
             <li><b>Ronde</b>: runde Bleche und Flansche mit Innenloch. <b>Kreis</b>: Kreis, Bogen oder Lochkreis mit gleichmäßig verteilten Bohrungen.</li>
+            <li><b>Foto entzerren</b>: Teil auf ein A4-Blatt legen und von oben fotografieren. Datei → „Foto als Vorlage“, dann in der Foto-Leiste „Entzerren“ und die 4 Blattecken antippen. Das Foto wird gerade gerechnet und ist 1:1 – jetzt mit „Maß“ messen oder nachzeichnen.</li>
+            <li><b>Messen in 3D</b>: Lineal-Knopf rechts, unten die Messart wählen – Abstand, Durchmesser (3 Punkte am Rand), Winkel, Dicke (Fläche → Punkt) oder Blech (3 Ecken). Durchmesser und Blech lassen sich direkt als Teil übernehmen. Bei Scans ohne LiDAR erst eine bekannte Strecke messen und „Maßstab setzen“.</li>
             <li><b>Arbeitsplan</b>: In der Stückliste auf „Arbeitsplan“ tippen. Die App plant Sägen, Schneiden, Bohren, Gewinde, Kanten, Schweißen, Oberfläche und Montage mit groben Zeiten. Stückzahl und Oberfläche oben einstellen, als PDF speichern.</li>
             <li><b>Bauanleitung</b>: In der Stückliste auf „Bauanleitung“ tippen. Die 3D-Ansicht zeigt Schritt für Schritt, welches Teil wann dazukommt (neu = farbig, schon verbaut = grau), mit Teileliste je Schritt. Weiter/Zurück unten links oder mit den Pfeiltasten.</li>
             <li><b>Biegeteil</b>: Schenkel als Außenmaße und Biegewinkel eintragen. Die gestreckte Länge (Zuschnitt) wird nach DIN 6935 berechnet.</li>
@@ -1592,6 +1611,10 @@ function render(){
     const a = photoCalib.pts[0], b = photoCalib.pts[1] || cursor || a;
     o += `<line class="calib" x1="${f1(T.x(a.x))}" y1="${f1(T.y(a.y))}" x2="${f1(T.x(b.x))}" y2="${f1(T.y(b.y))}"/>` + photoCalib.pts.map(q => `<circle class="calibpt" cx="${f1(T.x(q.x))}" cy="${f1(T.y(q.y))}" r="5"/>`).join('');
   }
+  if (photoRect && photoRect.pts.length){
+    const P = [...photoRect.pts, ...(cursor && photoRect.pts.length < 4 ? [cursor] : [])];
+    o += `<polygon class="calib" fill="none" points="${P.map(q => f1(T.x(q.x)) + ',' + f1(T.y(q.y))).join(' ')}"/>` + photoRect.pts.map(q => `<circle class="calibpt" cx="${f1(T.x(q.x))}" cy="${f1(T.y(q.y))}" r="6"/>`).join('');
+  }
   if (drag && drag.mode === 'box' && drag.cur){
     const a = drag.start, c = drag.cur, cross = c.x < a.x;
     o += `<rect class="${cross ? 'boxsel cross' : 'boxsel'}" x="${f1(Math.min(T.x(a.x), T.x(c.x)))}" y="${f1(Math.min(T.y(a.y), T.y(c.y)))}" width="${f1(Math.abs(c.x - a.x)*T.z)}" height="${f1(Math.abs(c.y - a.y)*T.z)}"/>`;
@@ -1787,11 +1810,19 @@ svg.addEventListener('pointerdown', e => {
     cancelLongPress();
     if (drag && drag.created) { state.shapes = state.shapes.filter(s => s !== drag.shape); undoStack.pop(); }
     drag = null; preview = '';
+    if (photoRect && photoRect.pts.length && performance.now() - photoRect.pts[photoRect.pts.length - 1].t < 400){ photoRect.pts.pop(); render(); }
     const [a, b] = [...pointers.values()];
     pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), mx:(a.x + b.x)/2, my:(a.y + b.y)/2};
     return;
   }
   const p = evtPoint(e), free = e.shiftKey, sp = tool === 'select' ? p : snapP(p, free);
+  if (photoRect && e.button === 0 && state.photo){
+    photoRect.pts.push({x:p.x, y:p.y, t:performance.now()});
+    const n = photoRect.pts.length;
+    $('#hint').textContent = n < 4 ? `Ecke ${n} von 4 gesetzt – nächste Ecke antippen.` : 'Wird entzerrt …';
+    render(); if (n === 4) setTimeout(applyRect, 30);
+    return;
+  }
   if (photoCalib && e.button === 0 && state.photo){
     if (photoCalib.pts.length >= 2) photoCalib.pts = [];
     photoCalib.pts.push({x:p.x, y:p.y});
@@ -3223,6 +3254,20 @@ function cmdPreview(){
     : `<div class="bad">Nicht verstanden. Probier z. B.:</div><div class="ex">${CMD_EX.slice(0, 10).map(x => `<button type="button" data-ex="${esc(x)}">${esc(x)}</button>`).join('')}</div>`);
 }
 const cmdHist = []; let cmdHi = -1;
+// neue Teile in die Mitte der Ansicht, aber nicht auf vorhandene Teile – dann darunter
+function placeNew(shapes){
+  const b = shapes.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
+  let dx = snapV(view.cx - (b.x0 + b.x1) / 2, false), dy = snapV(view.cy - (b.y0 + b.y1) / 2, false);
+  // nicht auf vorhandene Teile legen: dann unter die bisherige Zeichnung
+  const old = state.shapes.filter(o => isVis(o) && o.type !== 'pin');
+  const hitOld = old.some(o => { const q = bbox(o); return q.x0 < b.x1 + dx && b.x0 + dx < q.x1 && q.y0 < b.y1 + dy && b.y0 + dy < q.y1; });
+  if (hitOld){ const ab = old.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0)})); dx = snapV(ab.x0 - b.x0, false); dy = snapV(ab.y0 - 60 - b.y1, false); }
+  shapes.forEach(o => { moveBy(o, dx, dy); o.id = nextId++; o.layer = state.activeLayer || 'L1'; state.shapes.push(o); });
+  setSel(shapes.map(o => o.id)); if (!is3()) setTool('select'); changed();
+  const vb = shapes.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
+  const T0 = mkT(view, W, H), off = T0.x(vb.x0) < 0 || T0.x(vb.x1) > W || T0.y(vb.y0) > H || T0.y(vb.y1) < 0;
+  if (off || (vb.x1 - vb.x0) * view.z > W * .9 || (vb.y1 - vb.y0) * view.z > H * .9){ fit(); render(); }
+}
 function cmdRun(){
   const v = $('#cmd').value, r = cmdParse(v);
   if (!r || (!r.make && !r.wiz)){ cmdPreview(); return; }
@@ -3238,17 +3283,7 @@ function cmdRun(){
       one.forEach(o => moveBy(o, r2(b0.x1 + 20 - b1.x0), 0)); }
     shapes.push(...one);
   }
-  const b = shapes.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
-  let dx = snapV(view.cx - (b.x0 + b.x1) / 2, false), dy = snapV(view.cy - (b.y0 + b.y1) / 2, false);
-  // nicht auf vorhandene Teile legen: dann unter die bisherige Zeichnung
-  const old = state.shapes.filter(o => isVis(o) && o.type !== 'pin');
-  const hitOld = old.some(o => { const q = bbox(o); return q.x0 < b.x1 + dx && b.x0 + dx < q.x1 && q.y0 < b.y1 + dy && b.y0 + dy < q.y1; });
-  if (hitOld){ const ab = old.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0)})); dx = snapV(ab.x0 - b.x0, false); dy = snapV(ab.y0 - 60 - b.y1, false); }
-  shapes.forEach(o => { moveBy(o, dx, dy); o.id = nextId++; o.layer = state.activeLayer || 'L1'; state.shapes.push(o); });
-  setSel(shapes.map(o => o.id)); setTool('select'); changed();
-  const vb = shapes.map(bbox).reduce((a, q) => ({x0:Math.min(a.x0, q.x0), y0:Math.min(a.y0, q.y0), x1:Math.max(a.x1, q.x1), y1:Math.max(a.y1, q.y1)}));
-  const T0 = mkT(view, W, H), off = T0.x(vb.x0) < 0 || T0.x(vb.x1) > W || T0.y(vb.y0) > H || T0.y(vb.y1) < 0;
-  if (off || (vb.x1 - vb.x0) * view.z > W * .9 || (vb.y1 - vb.y0) * view.z > H * .9){ fit(); render(); }
+  placeNew(shapes);
   $('#hint').innerHTML = `Gezeichnet: ${r.desc.replace(/<small>.*?<\/small>/g, '')}. Mit Auswahl verschieben, rechts genau einstellen.`;
   $('#cmd').value = ''; cmdShow('');
 }
@@ -4427,6 +4462,7 @@ async function setMode(m){
   if (m === '2d' && cad){ requestAnimationFrame(() => { fit(); render(); }); }
   $('#zDims').hidden = m === '2d'; $('#zMeasure').hidden = m !== '3d'; $('#zCut').hidden = m !== '3d';
   $('#cutBar3').hidden = !(m === '3d' && cut3d.on);
+  if (m !== '3d') $('#measBar').hidden = true;
   if (m === 'demo' && measureOn){ measureOn = false; mPts = []; $('#zMeasure').setAttribute('aria-pressed', false); }
   if (m !== 'demo') demoSpin(false);
   if (m === 'demo' && was !== 'demo'){ clearSel(); cadSel = -1; }
@@ -4440,6 +4476,7 @@ async function setMode(m){
     $('#hint').textContent = m === 'demo' ? 'Ziehen = drehen · Rechte Maustaste = Ansicht schieben · Teil antippen = Farbe wählen' : 'Ziehen = drehen · Rechte Maustaste = Ansicht schieben · ausgewähltes Teil ziehen = verschieben, mit Shift = anheben';
     if (m === 'demo' || was === 'demo') renderProps();
     if (m === '3d' && cad && selId == null) renderCadInfo();
+    if (m === '3d' && measureOn) updateMeasure();
   } else {
     if (was === 'demo') renderProps();
     if (cad) renderProps();
@@ -4507,9 +4544,10 @@ function placeCam(c){
 }
 function placeMeasureLabel(){
   const el = $('#m3d');
-  if (!measureOn || mPts.length < 2){ el.hidden = true; return; }
-  const [a, b] = mPts, c = three.renderer.domElement, m = a.clone().add(b).multiplyScalar(.5).project(three.camera);
-  el.innerHTML = `${fmt(a.distanceTo(b))}<small>ΔX ${num(Math.abs(b.x - a.x))} · ΔY ${num(Math.abs(b.y - a.y))} · ΔZ ${num(Math.abs(b.z - a.z))}</small>`;
+  const res = three && three.mres;
+  if (!measureOn || !res || !res.done || !res.mid){ el.hidden = true; return; }
+  const c = three.renderer.domElement, m = res.mid.clone().project(three.camera);
+  el.innerHTML = `${esc(res.txt)}${res.sub ? `<small>${esc(res.sub)}</small>` : ''}`;
   el.hidden = m.z > 1; el.style.left = ((m.x + 1) / 2 * c.clientWidth) + 'px'; el.style.top = ((1 - m.y) / 2 * c.clientHeight) + 'px';
 }
 function placeDims3d(){
@@ -5392,6 +5430,40 @@ function applyCut(redraw = true){
 }
 
 // Messen: Punkt auf einer Fläche treffen, nahe Eckpunkte fangen
+// Messen in 3D: Abstand, Durchmesser (3 Punkte am Rand), Winkel, Dicke (Fläche → Punkt), Blech (3 Ecken)
+const MEAS = {dist:[2, 'Abstand'], dia:[3, 'Durchmesser'], ang:[3, 'Winkel'], plane:[2, 'Dicke / Höhe'], rect:[3, 'Blech']};
+const MEAS_HINT = {dist:['ersten Punkt', 'zweiten Punkt'], dia:['ersten Punkt am Rand der Bohrung / des Rohrs', 'zweiten Punkt am Rand', 'dritten Punkt am Rand (möglichst weit verteilt)'],
+  ang:['Punkt auf dem ersten Schenkel', 'Scheitelpunkt (Ecke)', 'Punkt auf dem zweiten Schenkel'], plane:['eine Fläche (z. B. Oberseite)', 'Punkt auf der Gegenseite'], rect:['eine Ecke', 'Ecke entlang der Länge', 'Ecke entlang der Breite']};
+let measMode = 'dist', mNs = [], measThk = 10;
+const V3 = () => new THREE.Vector3();
+function circle3(a, b, c){
+  const ab = b.clone().sub(a), ac = c.clone().sub(a), n = ab.clone().cross(ac), n2 = n.lengthSq();
+  if (n2 < 1e-9) return null;
+  const t1 = n.clone().cross(ab).multiplyScalar(ac.lengthSq()), t2 = ac.clone().cross(n).multiplyScalar(ab.lengthSq());
+  const ctr = a.clone().add(t1.add(t2).multiplyScalar(1 / (2 * n2)));
+  return {c:ctr, r:ctr.distanceTo(a), n:n.normalize()};
+}
+function measResult(){
+  const P = mPts, need = MEAS[measMode][0];
+  if (P.length < need) return {lines:P.length > 1 ? [P] : [], done:false};
+  if (measMode === 'dist'){ const [a, b] = P; return {done:true, val:a.distanceTo(b), txt:fmt(a.distanceTo(b)), sub:`ΔX ${num(Math.abs(b.x - a.x))} · ΔY ${num(Math.abs(b.y - a.y))} · ΔZ ${num(Math.abs(b.z - a.z))}`, mid:a.clone().add(b).multiplyScalar(.5), lines:[[a, b]]}; }
+  if (measMode === 'dia'){
+    const k = circle3(...P); if (!k) return {done:true, txt:'Punkte liegen auf einer Linie', mid:P[1], lines:[P]};
+    const u = P[0].clone().sub(k.c).normalize(), v = k.n.clone().cross(u), ring = [];
+    for (let i = 0; i <= 64; i++){ const t = i / 64 * Math.PI * 2; ring.push(k.c.clone().addScaledVector(u, k.r * Math.cos(t)).addScaledVector(v, k.r * Math.sin(t))); }
+    return {done:true, val:2 * k.r, txt:'Ø ' + fmt(2 * k.r), sub:'Radius ' + fmt(k.r), mid:k.c, lines:[ring]};
+  }
+  if (measMode === 'ang'){ const [a, b, c] = P, g = a.clone().sub(b).angleTo(c.clone().sub(b)) * 180 / Math.PI; return {done:true, val:g, txt:dec(g.toFixed(1)) + '°', sub:'Ergänzung ' + dec((180 - g).toFixed(1)) + '°', mid:b, lines:[[a, b, c]]}; }
+  if (measMode === 'plane'){
+    const [a, p] = P, n = mNs[0];
+    if (!n) return {done:true, val:a.distanceTo(p), txt:fmt(a.distanceTo(p)), sub:'(keine Fläche erkannt – gerader Abstand)', mid:a.clone().add(p).multiplyScalar(.5), lines:[[a, p]]};
+    const d = p.clone().sub(a).dot(n), foot = p.clone().addScaledVector(n, -d);
+    return {done:true, val:Math.abs(d), txt:fmt(Math.abs(d)), sub:'senkrecht zur ersten Fläche', mid:p.clone().add(foot).multiplyScalar(.5), lines:[[p, foot], [a, foot]]};
+  }
+  const [A, B, C] = P, L = A.distanceTo(B); if (L < 1e-6) return {done:true, txt:'–', mid:A, lines:[]};
+  const u = B.clone().sub(A).divideScalar(L), ac = C.clone().sub(A), w = ac.clone().addScaledVector(u, -ac.dot(u)), Bw = w.length();
+  return {done:true, L, B:Bw, txt:`${fmt(L)} × ${fmt(Bw)}`, sub:'Länge × Breite', mid:A.clone().add(B).add(C.clone().addScaledVector(u, -ac.dot(u) + L)).multiplyScalar(1/3), lines:[[A, B, B.clone().add(w), A.clone().add(w), A]]};
+}
 function measurePick(e){
   const r = three.renderer.domElement.getBoundingClientRect();
   const ray = new THREE.Raycaster();
@@ -5407,24 +5479,69 @@ function measurePick(e){
       if (d < best){ best = d; p = v; }
     });
   }
-  if (mPts.length >= 2) mPts = [];
-  mPts.push(p);
+  if (mPts.length >= MEAS[measMode][0]){ mPts = []; mNs = []; }
+  mPts.push(p); mNs.push(h.face ? h.face.normal.clone().transformDirection(h.object.matrixWorld).normalize() : null);
   updateMeasure();
 }
 function updateMeasure(){
   if (!three) return;
   if (three.mg){ three.scene.remove(three.mg); three.mg.traverse(o => { if (o.geometry) o.geometry.dispose(); }); three.mg = null; }
+  const res = measureOn ? measResult() : null;
   if (measureOn && mPts.length){
     const col = new THREE.Color(cssVar('--sel') || '#2563eb'), g = new THREE.Group();
     const pts = new THREE.Points(new THREE.BufferGeometry().setFromPoints(mPts), new THREE.PointsMaterial({color:col, size:9, sizeAttenuation:false, depthTest:false}));
     pts.renderOrder = 10; g.add(pts);
-    if (mPts.length === 2){ const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(mPts), new THREE.LineBasicMaterial({color:col, depthTest:false})); l.renderOrder = 10; g.add(l); }
+    res.lines.forEach(L => { if (L.length < 2) return; const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(L), new THREE.LineBasicMaterial({color:col, depthTest:false})); l.renderOrder = 10; g.add(l); });
     three.scene.add(g); three.mg = g;
   }
+  three.mres = res;
+  const H = MEAS_HINT[measMode];
   $('#hint').textContent = !measureOn ? 'Ziehen = drehen · Rechte Maustaste oder Shift = verschieben · Mausrad = zoomen'
-    : mPts.length === 1 ? 'Messen: zweiten Punkt anklicken.' : mPts.length === 2 ? 'Gemessen. Nächster Klick startet eine neue Messung.' : 'Messen: ersten Punkt anklicken. Ecken rasten ein.';
+    : res.done ? 'Gemessen. Nächster Klick startet eine neue Messung. Oben andere Messart wählen.' : `${MEAS[measMode][1]}: ${H[mPts.length]} anklicken.${mPts.length ? '' : ' Ecken rasten ein.'}`;
+  renderMeasBar(res);
   draw3d();
 }
+function renderMeasBar(res){
+  const bar = $('#measBar'); if (!bar) return;
+  bar.hidden = !(measureOn && mode === '3d'); if (bar.hidden) return;
+  $('#measMode').value = measMode;
+  const scan = cad && cad.scan, out = $('#measOut'), act = $('#measAct');
+  out.textContent = res && res.done ? res.txt : `${mPts.length} / ${MEAS[measMode][0]} Punkte`;
+  let h = '';
+  if (res && res.done && res.val != null || (res && res.done && measMode === 'rect')){
+    if (measMode === 'dist' && scan) h = `<label title="Bei Scans ohne LiDAR stimmt die Größe nicht – hier die echte Länge dieser Strecke eintragen">echt <input id="measLen" inputmode="decimal" placeholder="${num(res.val)}"> ${state.unit}</label><button type="button" class="btn" id="measScale">Maßstab setzen</button>`;
+    if (measMode === 'dia') h = `<button type="button" class="btn" id="measHole">Als Bohrung</button><button type="button" class="btn" id="measDisc">Als Ronde</button>`;
+    if (measMode === 'plane') h = `<button type="button" class="btn" id="measThk">Als Blechdicke merken</button>`;
+    if (measMode === 'rect') h = `<label>Dicke <input id="measT" inputmode="decimal" value="${num(measThk)}"> ${state.unit}</label><button type="button" class="btn primary" id="measPlate">Als Blech übernehmen</button>`;
+  }
+  act.innerHTML = h;
+}
+// Gemessenes als neues Teil in die Zeichnung (unter die vorhandenen Teile)
+function measTake(shapes, what){
+  if (!project) return;
+  snapshot(); placeNew(shapes);
+  mPts = []; mNs = []; updateMeasure();
+  $('#hint').textContent = `${what} übernommen – liegt in 2D unter der Zeichnung und steht in der Stückliste. Maße bei Bedarf rechts anpassen.`;
+}
+const r05 = v => Math.round(v * 10) / 10;
+$('#measMode').onchange = e => { measMode = e.target.value; mPts = []; mNs = []; updateMeasure(); };
+$('#measAct').addEventListener('click', e => {
+  const t = e.target.closest('button'), res = three && three.mres; if (!t || !res) return;
+  if (t.id === 'measScale'){
+    const L = parseLen($('#measLen').value); if (!(L > 0) || !(res.val > 0)){ flash('measLen'); return; }
+    const f = L / res.val; mPts = []; mNs = [];
+    scanXf(new THREE.Matrix4().makeScale(f, f, f), {}); updateMeasure();
+    $('#hint').textContent = `Maßstab gesetzt (Faktor ${dec(f.toFixed(4))}). Jetzt stimmen alle Messungen am Scan.`;
+  }
+  if (t.id === 'measHole') measTake([{type:'hole', x:0, y:0, d:r05(res.val), fit:'frei'}], `Bohrung Ø${num(r05(res.val))}`);
+  if (t.id === 'measDisc') measTake([{type:'disc', name:'Ronde', x:0, y:0, d:r05(res.val), di:0, t:r05(measThk), mat:'S235JR'}], `Ronde Ø${num(r05(res.val))}`);
+  if (t.id === 'measThk'){ measThk = r05(res.val); measMode = 'rect'; mPts = []; mNs = []; updateMeasure(); $('#hint').textContent = `Dicke ${fmt(measThk)} gemerkt. Jetzt die 3 Ecken des Blechs antippen.`; }
+  if (t.id === 'measPlate'){
+    const T = parseLen($('#measT').value); if (!(T > 0)){ flash('measT'); return; } measThk = T;
+    measTake([{type:'rect', name:'Blech (gemessen)', x:0, y:0, w:r05(res.L), h:r05(res.B), t:r05(T), mat:'S235JR'}], `Blech ${num(r05(res.L))} × ${num(r05(res.B))} × ${num(r05(T))}`);
+  }
+});
+$('#measAct').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); const b = $('#measScale') || $('#measPlate'); if (b) b.click(); } });
 function pick3d(e){
   if (measureOn){ measurePick(e); return; }
   const r = three.renderer.domElement.getBoundingClientRect();
@@ -5561,7 +5678,7 @@ async function loadPhoto(file){
 function startCalib(){
   if (!state.photo) return;
   photoCalib = {pts:[]}; photoMove = false; setTool('select');
-  $('#hint').textContent = 'Maßstab: Tippe den Anfang einer Strecke an, deren Länge du kennst (z. B. eine Kante oder ein Maßband im Foto).';
+  $('#hint').textContent = 'Maßstab: Tippe den Anfang einer Strecke an, deren Länge du kennst (z. B. eine Kante oder ein Maßband im Foto). Liegt das Teil auf einem A4-Blatt? Dann besser oben „Entzerren“.';
   render();
 }
 function applyCalib(){
@@ -5573,6 +5690,82 @@ function applyCalib(){
   photoCalib = null; $('#phLen').value = ''; save(); fit(); render();
   $('#hint').textContent = `Maßstab gesetzt – das Foto ist jetzt ${fmt(ph.w)} breit. Jetzt mit den Werkzeugen darüber zeichnen (z. B. Rechteck, Bohrung).`;
 }
+// Foto entzerren: 4 Ecken eines Blatts (A4, A3, Karte …) antippen → Draufsicht in echtem Maßstab
+const PH_REFS = {a4:[297, 210, 'A4-Blatt'], a3:[420, 297, 'A3-Blatt'], karte:[85.6, 54, 'Scheckkarte'], eigen:[0, 0, 'eigenes Rechteck']};
+let photoRect = null;   // {pts:[{x,y,t}]}
+function homography(src, dst){
+  // 8 Unbekannte: dst = H · src (h33 = 1)
+  const A = [], b = [];
+  src.forEach(([x, y], i) => { const [u, v] = dst[i]; A.push([x, y, 1, 0, 0, 0, -u*x, -u*y]); b.push(u); A.push([0, 0, 0, x, y, 1, -v*x, -v*y]); b.push(v); });
+  for (let c = 0; c < 8; c++){
+    let piv = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
+    [A[c], A[piv]] = [A[piv], A[c]]; [b[c], b[piv]] = [b[piv], b[c]];
+    if (Math.abs(A[c][c]) < 1e-12) return null;
+    for (let r = 0; r < 8; r++){ if (r === c) continue; const f = A[r][c] / A[c][c]; for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k]; b[r] -= f * b[c]; }
+  }
+  return [...b.map((v, i) => v / A[i][i]), 1];
+}
+const hApply = (h, x, y) => { const w = h[6]*x + h[7]*y + h[8]; return [(h[0]*x + h[1]*y + h[2]) / w, (h[3]*x + h[4]*y + h[5]) / w]; };
+// Weltpunkt → Pixel im gespeicherten Foto (berücksichtigt Lage, Größe und Drehung)
+function worldToPhotoPx(ph, img, p){
+  const th = (ph.rot || 0) * Math.PI / 180, dx = p.x - (ph.x + ph.w/2), dy = -(p.y - (ph.y + ph.h/2));
+  const lx = dx * Math.cos(th) - dy * Math.sin(th), ly = dx * Math.sin(th) + dy * Math.cos(th);
+  const sw = ph.w, sh = ph.h;
+  return [(lx + sw/2) / sw * img.naturalWidth, (ly + sh/2) / sh * img.naturalHeight];
+}
+function refSize(){
+  const k = $('#phRef').value;
+  if (k !== 'eigen') return PH_REFS[k];
+  const a = parseLen($('#phRefA').value), b = parseLen($('#phRefB').value);
+  return a > 0 && b > 0 ? [Math.max(a, b), Math.min(a, b), 'Rechteck'] : null;
+}
+function startRect(){
+  if (!state.photo) return;
+  photoRect = {pts:[]}; photoCalib = null; photoMove = false; setTool('select');
+  const r = refSize();
+  $('#hint').textContent = `Entzerren: Tippe die 4 Ecken vom ${r ? r[2] : 'Rechteck'} an (Reihenfolge egal). Vorher hineinzoomen, dann wird es genauer.`;
+  render();
+}
+async function applyRect(){
+  const ph = state.photo, img = photoImage(), ref = refSize();
+  if (!ph || !img || !photoRect || photoRect.pts.length < 4) return;
+  if (!ref){ $('#hint').textContent = 'Bitte Länge und Breite des eigenen Rechtecks eintragen.'; photoRect.pts = []; render(); return; }
+  // Ecken im Foto ordnen: oben links, oben rechts, unten rechts, unten links
+  let q = photoRect.pts.map(p => worldToPhotoPx(ph, img, p));
+  const cx = q.reduce((a, p) => a + p[0], 0) / 4, cy = q.reduce((a, p) => a + p[1], 0) / 4;
+  q.sort((a, b) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx));
+  const s0 = q.reduce((m, p, i) => p[0] + p[1] < q[m][0] + q[m][1] ? i : m, 0); q = [0, 1, 2, 3].map(i => q[(s0 + i) % 4]);
+  const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]), horiz = d(q[0], q[1]) + d(q[3], q[2]), vert = d(q[0], q[3]) + d(q[1], q[2]);
+  const [L, B] = ref, W = horiz >= vert ? L : B, Hh = horiz >= vert ? B : L;
+  const H = homography(q, [[0, 0], [W, 0], [W, Hh], [0, Hh]]), Hi = H && homography([[0, 0], [W, 0], [W, Hh], [0, Hh]], q);
+  if (!H || !Hi){ $('#hint').textContent = 'Die 4 Punkte ergeben kein Rechteck. Bitte nochmal die Ecken antippen.'; photoRect.pts = []; render(); return; }
+  // Ausschnitt: ganzes Foto, aber höchstens 2,5 × Blattgröße um das Blatt herum
+  const lim = Math.max(L, 120) * 2.5, nw = img.naturalWidth, nh = img.naturalHeight;
+  const cs = [[0, 0], [nw, 0], [nw, nh], [0, nh]].map(([x, y]) => hApply(H, x, y));
+  const okW = cs.every(c => isFinite(c[0]) && isFinite(c[1])) && [[0, 0], [nw, 0], [nw, nh], [0, nh]].every(([x, y]) => H[6]*x + H[7]*y + 1 > 0);
+  let x0 = W/2 - lim, x1 = W/2 + lim, y0 = Hh/2 - lim, y1 = Hh/2 + lim;
+  if (okW){ x0 = Math.max(x0, Math.min(...cs.map(c => c[0]))); x1 = Math.min(x1, Math.max(...cs.map(c => c[0]))); y0 = Math.max(y0, Math.min(...cs.map(c => c[1]))); y1 = Math.min(y1, Math.max(...cs.map(c => c[1]))); }
+  const k = Math.min(4, 2000 / Math.max(x1 - x0, y1 - y0)), ow = Math.round((x1 - x0) * k), oh = Math.round((y1 - y0) * k);
+  const sc = document.createElement('canvas'); sc.width = nw; sc.height = nh; const sg = sc.getContext('2d'); sg.drawImage(img, 0, 0);
+  const src = sg.getImageData(0, 0, nw, nh).data, oc = document.createElement('canvas'); oc.width = ow; oc.height = oh;
+  const og = oc.getContext('2d'), out = og.createImageData(ow, oh), o = out.data;
+  for (let j = 0; j < oh; j++){
+    const my = y0 + (j + .5) / k;
+    for (let i = 0; i < ow; i++){
+      const mx = x0 + (i + .5) / k, w = Hi[6]*mx + Hi[7]*my + 1, u = (Hi[0]*mx + Hi[1]*my + Hi[2]) / w - .5, v = (Hi[3]*mx + Hi[4]*my + Hi[5]) / w - .5, t = (j * ow + i) * 4;
+      if (w <= 0 || u < 0 || v < 0 || u >= nw - 1 || v >= nh - 1){ o[t] = o[t+1] = o[t+2] = 128; o[t+3] = 255; continue; }
+      const iu = u | 0, iv = v | 0, fu = u - iu, fv = v - iv, p = (iv * nw + iu) * 4, p2 = p + nw * 4;
+      for (let c = 0; c < 3; c++) o[t+c] = (src[p+c] * (1 - fu) + src[p+4+c] * fu) * (1 - fv) + (src[p2+c] * (1 - fu) + src[p2+4+c] * fu) * fv;
+      o[t+3] = 255;
+    }
+  }
+  og.putImageData(out, 0, 0);
+  // Blatt bleibt ungefähr dort, wo es im Foto lag
+  const a = photoRect.pts.reduce((m, p) => ({x:Math.min(m.x, p.x), y:Math.max(m.y, p.y)}), {x:Infinity, y:-Infinity});
+  state.photo = {src:oc.toDataURL('image/jpeg', .86), x:r2(a.x + x0), y:r2(a.y - y1), w:r2(x1 - x0), h:r2(y1 - y0), op:ph.op ?? .6, rot:0, cal:true, rect:{ref:$('#phRef').value, L, B, x:r2(a.x), y:r2(a.y)}};
+  photoRect = null; save(); fit(); render();
+  $('#hint').textContent = `Entzerrt und im Maßstab 1:1 (${ref[2]} ${dec(L)} × ${dec(B)} mm). Jetzt mit „Maß“ messen oder mit Rechteck/Bohrung nachzeichnen – Teile, die flach auf dem Blatt liegen, sind auf ca. 1 mm genau.`;
+}
 function renderPhotoBar(){
   const bar = $('#photoBar'); if (!bar) return;
   const ph = state && state.photo, show = !!(ph && mode === '2d' && project);
@@ -5582,8 +5775,13 @@ function renderPhotoBar(){
   $('#phMove').checked = photoMove; $('#phOp').value = Math.round((ph.op ?? .6) * 100);
   $('#phHide').textContent = ph.on === false ? 'Einblenden' : 'Ausblenden';
   $('#phCal').textContent = photoCalib ? 'Abbrechen' : (ph.cal ? 'Maßstab neu' : 'Maßstab festlegen');
+  $('#phRect').textContent = photoRect ? `Abbrechen (${photoRect.pts.length}/4)` : 'Entzerren';
+  $('#phRefBox').hidden = $('#phRef').value !== 'eigen';
+  bar.classList.toggle('busy', !!(photoRect || photoCalib)); bar.classList.toggle('rect', !!photoRect); bar.classList.toggle('calib', !!photoCalib);
 }
-$('#phCal').onclick = () => { if (photoCalib){ photoCalib = null; render(); $('#hint').textContent = 'Maßstab abgebrochen.'; } else startCalib(); };
+$('#phRect').onclick = () => { if (photoRect){ photoRect = null; render(); $('#hint').textContent = 'Entzerren abgebrochen.'; } else startRect(); };
+$('#phRef').onchange = () => { renderPhotoBar(); if (photoRect) startRect(); };
+$('#phCal').onclick = () => { photoRect = null; if (photoCalib){ photoCalib = null; render(); $('#hint').textContent = 'Maßstab abgebrochen.'; } else startCalib(); };
 $('#phOk').onclick = applyCalib;
 $('#phLen').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); applyCalib(); } });
 $('#phMove').onchange = e => { photoMove = e.target.checked; photoCalib = null; $('#hint').textContent = photoMove ? 'Foto verschieben: auf die Zeichenfläche tippen und ziehen. Danach den Haken wieder raus.' : ''; render(); };
@@ -5591,7 +5789,7 @@ $('#phRot').onclick = () => { const ph = state.photo; if (!ph) return; ph.rot = 
 $('#phOp').oninput = e => { if (!state.photo) return; state.photo.op = +e.target.value / 100; drawCadBg(); };
 $('#phOp').onchange = () => save();
 $('#phHide').onclick = () => { const ph = state.photo; if (!ph) return; ph.on = ph.on === false; save(); render(); };
-$('#phDel').onclick = () => { if (!state.photo) return; if ($('#phDel').dataset.arm !== '1'){ $('#phDel').dataset.arm = '1'; $('#phDel').textContent = 'Wirklich?'; setTimeout(() => { $('#phDel').dataset.arm = ''; $('#phDel').textContent = 'Entfernen'; }, 3000); return; } delete state.photo; photoCalib = null; photoMove = false; save(); render(); $('#phDel').dataset.arm = ''; $('#phDel').textContent = 'Entfernen'; };
+$('#phDel').onclick = () => { if (!state.photo) return; if ($('#phDel').dataset.arm !== '1'){ $('#phDel').dataset.arm = '1'; $('#phDel').textContent = 'Wirklich?'; setTimeout(() => { $('#phDel').dataset.arm = ''; $('#phDel').textContent = 'Entfernen'; }, 3000); return; } delete state.photo; photoCalib = null; photoRect = null; photoMove = false; save(); render(); $('#phDel').dataset.arm = ''; $('#phDel').textContent = 'Entfernen'; };
 // Startseite: Projekt aus Foto oder Scan automatisch anlegen
 async function autoProject(name){
   const by = $('#npBy').value.trim() || lsGet(LS_BY) || '', err = $('#spErr');
@@ -5745,7 +5943,7 @@ function renderCadInfo(){
     <p class="note">Die linke, vordere, untere Ecke des Modells liegt auf 0/0/0. In <b>2D</b> erscheint das Modell als Hintergrund. Oben in der CAD-Leiste wählst du die Ansicht, in der du deine Teile dazu zeichnest.</p>
     ${cad.scan ? `<div class="props" style="margin-top:10px"><label for="scUnit">Scan-Einheit</label>${optSelect('scUnit', [['1000', 'Meter (Handy-Apps)'], ['10', 'Zentimeter'], ['1', 'Millimeter']], String(cad.unit || 1))}</div>
       <div class="btnrow"><button class="btn" type="button" id="scRx">Aufrichten ↻ X</button><button class="btn" type="button" id="scRy">Kippen ↻ Y</button><button class="btn" type="button" id="scRz">Drehen ↻ Z</button></div>
-      <p class="note">Steht der Scan schief oder ist er zu groß/klein? Hier Einheit und Lage anpassen. ${cad.keep ? 'Der Scan ist nur auf diesem Gerät gemerkt und wird beim Öffnen des Projekts wieder geladen – nicht hochgeladen.' : 'Der Scan wird nicht gespeichert und nirgends hochgeladen.'}</p>`
+      <p class="note">Steht der Scan schief oder ist er zu groß/klein? Hier Einheit und Lage anpassen – oder mit dem Lineal eine bekannte Strecke messen und „Maßstab setzen“. ${cad.keep ? 'Der Scan ist nur auf diesem Gerät gemerkt und wird beim Öffnen des Projekts wieder geladen – nicht hochgeladen.' : 'Der Scan wird nicht gespeichert und nirgends hochgeladen.'}</p>`
       : '<p class="note">Das Modell wird nur angesehen. Es wird nicht gespeichert und nirgends hochgeladen.</p>'}
     <div class="btnrow"><button class="btn" type="button" id="cadClose2">${cad.scan ? 'Scan schließen' : 'CAD-Modell schließen'}</button>${cad.scan && cad.keep ? '<button class="btn danger" type="button" id="scForget">Scan vom Gerät löschen</button>' : ''}</div>`;
   $('#cadClose2').onclick = () => closeCad();
@@ -5769,7 +5967,7 @@ $('#cutAxis').onchange = e => { cut3d.axis = e.target.value; applyCut(); };
 $('#cutRange').oninput = e => { cut3d.pos = +e.target.value; applyCut(); };
 $('#cutFlip').onchange = e => { cut3d.flip = e.target.checked; applyCut(); };
 $('#zMeasure').onclick = () => {
-  measureOn = !measureOn; mPts = []; $('#zMeasure').setAttribute('aria-pressed', measureOn);
+  measureOn = !measureOn; mPts = []; mNs = []; $('#zMeasure').setAttribute('aria-pressed', measureOn);
   updateMeasure();
 };
 $('#zDims').onclick = () => {
@@ -5913,7 +6111,7 @@ function loadProject(rec){
   lsSet(LS_LAST, rec.id);
   $('#start').hidden = true; document.documentElement.classList.remove('locked');
   renderProjectName(); renderUnits(); renderTools(); setSaveState('saved');
-  photoCalib = null; photoMove = false;
+  photoCalib = null; photoRect = null; photoMove = false;
   requestAnimationFrame(() => {
     fit(); render(); renderProps(); renderBom(); renderTitle(); renderLayers(); renderPins();
     if (is3() && three){ build3d(); fit3d(); draw3d(); } else refit3d = true;
