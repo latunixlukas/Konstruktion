@@ -366,6 +366,15 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
 .val{font-family:var(--f-mono);font-size:.84rem;overflow-wrap:anywhere}
 [hidden]{display:none!important}
 .status{position:absolute;left:14px;bottom:14px;display:flex;flex-wrap:wrap;gap:4px 14px;font:500 .74rem var(--f-mono);color:var(--muted);padding:6px 12px;pointer-events:none;max-width:calc(100% - 28px)}
+.tools.rail{position:absolute;left:12px;top:56px;z-index:5;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:2px;padding:4px;margin:0;border-radius:14px;box-shadow:var(--shadow);background:var(--raised);max-height:calc(100% - 112px)}
+.tools.rail .tool{padding:8px;justify-content:center;position:relative}
+.tools.rail .tool span,.tools.rail .tool kbd{display:none}
+.tools.rail .tool svg{width:19px;height:19px}
+.tools.rail .tool:hover::after{content:attr(data-tip);position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--fg);color:var(--bg);padding:4px 9px;border-radius:7px;font:500 .78rem var(--f-body);white-space:nowrap;pointer-events:none;z-index:9;box-shadow:var(--shadow)}
+body.view3d .tools.rail{display:none}
+body:not(.view3d) .stage.hasrail .status,body:not(.view3d) .stage.hasrail .cadbar{left:66px}
+@media (min-width: 1100px) and (hover: hover) and (pointer: fine){ header .actions{margin-left:auto} }
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.dgrid .wide{grid-column:1 / -1}.dgrid .btn{justify-content:center}
 .zoom{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;padding:3px;border-radius:12px}
 .zoom button{border:0;background:transparent;width:34px;height:34px;border-radius:9px;cursor:pointer;display:grid;place-items:center;color:var(--fg)}
 .zoom button:hover{background:var(--surface)}
@@ -1768,12 +1777,21 @@ const TOOLS = [
 const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
 if (TOUCH) TOOLS[0].hint = 'Teil antippen · lange drücken = dazu wählen · leere Fläche wischen = verschieben · zwei Finger = zoomen';
 function renderTools(){
-  $('#tools').innerHTML = TOOLS.map(t => `<button type="button" class="tool" data-tool="${t.k}" aria-pressed="${tool === t.k}" title="${t.n} (${t.key})"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[t.k]}</svg><span>${t.n}</span><kbd>${t.key}</kbd></button>`).join('');
+  $('#tools').innerHTML = TOOLS.map(t => `<button type="button" class="tool" data-tool="${t.k}" aria-pressed="${tool === t.k}" title="${t.n} (${t.key})" data-tip="${t.n} · ${t.key}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[t.k]}</svg><span>${t.n}</span><kbd>${t.key}</kbd></button>`).join('');
   $('#hint').textContent = TOOLS.find(t => t.k === tool).hint;
   renderToolOpts();
 }
 function setTool(t){ if (is3()) setMode('2d'); tool = t; preview = ''; renderTools(); render(); }
 $('#tools').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); });
+// Laptop/PC mit Maus: Werkzeuge als senkrechte Leiste links in der Zeichenfläche → Kopfzeile nur noch eine Reihe
+const railMQ = matchMedia('(min-width: 1100px) and (hover: hover) and (pointer: fine)');
+function placeTools(){
+  const t = $('#tools'), st = $('#stage'), on = railMQ.matches;
+  if (on && t.parentNode !== st) st.appendChild(t);
+  if (!on && t.parentNode === st) document.querySelector('header .brand').after(t);
+  t.classList.toggle('rail', on); st.classList.toggle('hasrail', on); t.setAttribute('aria-orientation', on ? 'vertical' : 'horizontal');
+}
+railMQ.addEventListener('change', placeTools); placeTools();
 
 function optSelect(id, entries, val){ return `<select id="${id}">${entries.map(([v, l]) => `<option value="${esc(v)}"${String(v) === String(val) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`; }
 function renderToolOpts(){
@@ -4674,6 +4692,7 @@ async function setMode(m){
   const was = mode; mode = m; renderModeSeg();
   if (m === '2d' && guide){ clearTimeout(guide.timer); guide = null; $('#guideCard').hidden = true; document.body.classList.remove('guiding'); }
   const m3 = m !== '2d';
+  document.body.classList.toggle('view3d', m3);
   $('#v3').hidden = !m3; svg.style.visibility = m3 ? 'hidden' : '';
   if (m === '2d' && cad){ requestAnimationFrame(() => { fit(); render(); }); }
   $('#zDims').hidden = m === '2d'; $('#zMeasure').hidden = m !== '3d'; $('#zCut').hidden = m !== '3d';
@@ -4921,15 +4940,20 @@ function demoBg(){
   demoBgTex = new THREE.CanvasTexture(c); demoBgKey = k; return demoBgTex;
 }
 let spinOn = false, explodeF = 0, explodeAnim = 0;
-function applyExplode(){ if (three && three.expl) three.expl.forEach(x => x.o.position.copy(x.base).addScaledVector(x.off, explodeF)); }
+function applyExplode(moving){
+  if (!three || !three.expl) return;
+  three.expl.forEach(x => x.o.position.copy(x.base).addScaledVector(x.off, explodeF));
+  // Maßrahmen gehört zur alten Lage: beim Bewegen ausblenden, danach wird er neu gebaut
+  if (moving){ three.root.children.forEach(c => { if (c.userData.dimobj) c.visible = false; }); three.mbox = null; three.dimMids = null; }
+}
 function animateExplode(to){
   const from = explodeF, t0 = performance.now(), id = ++explodeAnim;
   const step = t => {
     if (id !== explodeAnim || mode !== 'demo') return;
     const k = Math.min(1, (t - t0) / 700), e = k < .5 ? 2*k*k : 1 - (-2*k + 2) ** 2 / 2;
-    explodeF = from + (to - from) * e; applyExplode(); draw3d();
+    explodeF = from + (to - from) * e; applyExplode(true); draw3d();
     const r = document.getElementById('dExp'); if (r) r.value = Math.round(explodeF * 100);
-    if (k < 1) requestAnimationFrame(step); else { const b = document.getElementById('dExpBtn'); if (b) b.textContent = explodeF > .5 ? 'Zusammenfahren' : 'Auseinanderfahren'; }
+    if (k < 1) requestAnimationFrame(step); else { build3d(); draw3d(); const b = document.getElementById('dExpBtn'); if (b) b.textContent = explodeF > .5 ? 'Zusammenfahren' : 'Auseinanderfahren'; }
   };
   requestAnimationFrame(step);
 }
@@ -4967,8 +4991,8 @@ function renderDemoPanel(){
       <label for="dWall">Wand</label>${optSelect('dWall', [['keine', 'keine'], ['hinten', 'hinten'], ['links', 'links (z. B. für Konsolen)']], env.wall)}
       <label for="dPerson">Person 1,80 m</label><label class="chk"><input type="checkbox" id="dPerson"${env.person ? ' checked' : ''}> zum Größenvergleich</label></div></div>`;
   h += `<div class="tblock" style="margin-top:14px"><div class="props"><label for="dExp">Explosion</label><input type="range" id="dExp" min="0" max="100" value="${Math.round(explodeF * 100)}"></div>
-    <div class="btnrow" style="margin-top:8px"><button class="btn primary" type="button" id="dExpBtn">${explodeF > .5 ? 'Zusammenfahren' : 'Auseinanderfahren'}</button></div></div>`;
-  h += `<div class="btnrow"><button class="btn" type="button" id="dTour">${tourOn ? 'Stopp' : 'Kamerafahrt'}</button><button class="btn" type="button" id="dVideo"${tourOn ? ' disabled' : ''}>Video speichern</button><button class="btn" type="button" id="dSpin" aria-pressed="${spinOn}">Langsam drehen</button><button class="btn" type="button" id="dShot">Bild speichern</button><button class="btn" type="button" id="dGuide">Bauanleitung</button>${list.length ? '' : '<button class="btn" type="button" id="dResetAll">Alle Farben zurücksetzen</button>'}</div>`;
+    <div class="btnrow" style="margin-top:8px"><button class="btn" type="button" id="dExpBtn">${explodeF > .5 ? 'Zusammenfahren' : 'Auseinanderfahren'}</button></div></div>`;
+  h += `<div class="dgrid"><button class="btn primary wide" type="button" id="dGuide">Bauanleitung Schritt für Schritt</button><button class="btn" type="button" id="dTour">${tourOn ? 'Stopp' : 'Kamerafahrt'}</button><button class="btn" type="button" id="dSpin" aria-pressed="${spinOn}">Langsam drehen</button><button class="btn" type="button" id="dShot">Bild speichern</button><button class="btn" type="button" id="dVideo"${tourOn ? ' disabled' : ''}>Video speichern</button>${list.length ? '' : '<button class="btn wide" type="button" id="dResetAll">Alle Farben zurücksetzen</button>'}</div>`;
   el.innerHTML = h;
 }
 function demoApply(targets, hex){ if (!targets.length) return; snapshot(); targets.forEach(s => { if (hex) s.color = hex; else delete s.color; }); changed(); }
@@ -4990,13 +5014,14 @@ $('#props').addEventListener('click', e => {
 });
 $('#props').addEventListener('input', e => {
   if (mode !== 'demo') return;
-  if (e.target.id === 'dExp'){ explodeAnim++; explodeF = +e.target.value / 100; applyExplode(); draw3d(); const b = $('#dExpBtn'); if (b) b.textContent = explodeF > .5 ? 'Zusammenfahren' : 'Auseinanderfahren'; return; }
+  if (e.target.id === 'dExp'){ explodeAnim++; explodeF = +e.target.value / 100; applyExplode(true); draw3d(); const b = $('#dExpBtn'); if (b) b.textContent = explodeF > .5 ? 'Zusammenfahren' : 'Auseinanderfahren'; return; }
   if (e.target.id === 'dCol'){ selShapes().filter(s => DEMO_TYPES.includes(s.type)).forEach(s => s.color = e.target.value); build3d(); draw3d(); }
   else if (e.target.dataset.type){ state.demoCols = state.demoCols || {}; state.demoCols[e.target.dataset.type] = e.target.value; build3d(); draw3d(); }
 });
 $('#props').addEventListener('change', e => {
   if (mode !== 'demo') return;
   const id = e.target.id, v = e.target.value, list = selShapes().filter(x => DEMO_TYPES.includes(x.type)), env = demoEnv();
+  if (id === 'dExp'){ build3d(); draw3d(); return; }
   if (id === 'dCol' || e.target.dataset.type){ save(); renderProps(); return; }
   if (id === 'dFin'){ snapshot(); list.forEach(x => { if (v) x.finish = v; else delete x.finish; }); changed(); return; }
   if (id === 'dRal'){ snapshot(); list.forEach(x => { x.finish = 'pulver'; x.ral = v; }); changed(); return; }
@@ -5471,7 +5496,7 @@ function build3d(){
     const C = all.getCenter(new THREE.Vector3()), S = all.getSize(new THREE.Vector3()), lift = Math.max(S.z, S.x * .15, S.y * .15, 40);
     three.expl = ents.map(e => {
       const c = boxOf(e.ch).getCenter(new THREE.Vector3());
-      const off = new THREE.Vector3((c.x - C.x) * .8, (c.y - C.y) * .8, (c.z - C.z) * 1.8 + (e.sh.type === 'screw' ? lift : 0));
+      const off = new THREE.Vector3((c.x - C.x) * .8, (c.y - C.y) * .8, (c.z - all.min.z) * 1.4 + (e.sh.type === 'screw' ? lift : 0));   // nur nach oben – nie unter den Boden
       return {o:e.ch, base:e.ch.position.clone(), off};
     });
     applyExplode();
@@ -5492,7 +5517,7 @@ function build3d(){
     });
     let whole = false;
     if (box.isEmpty() && three.dg){ three.dg.children.forEach(ch => box.expandByObject(ch)); whole = true; }
-    if (!box.isEmpty()){ three.mbox = box; if (!whole) root.add(new THREE.Box3Helper(box, selC)); dims3dLines(root, box, demo ? new THREE.Color(isDark() ? '#e5e7eb' : '#111827') : selC); }
+    if (!box.isEmpty()){ three.mbox = box; if (!whole){ const bh = new THREE.Box3Helper(box, selC); bh.userData.dimobj = true; root.add(bh); } dims3dLines(root, box, demo ? new THREE.Color(isDark() ? '#e5e7eb' : '#111827') : selC); }
   }
   // Boden-Raster
   const box = new THREE.Box3().setFromObject(root);
@@ -5556,7 +5581,7 @@ function dims3dLines(root, b, color){
     [[a, c], [c, a]].forEach(([tip, other]) => {
       const d = tip.clone().sub(other); if (d.lengthSq() < 1e-9) return; d.normalize();
       const h = Math.min(o * .32, tip.distanceTo(other) / 3), cone = new THREE.Mesh(new THREE.ConeGeometry(h * .3, h, 12), mat);
-      cone.position.copy(tip).addScaledVector(d, -h / 2); cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d); cone.renderOrder = 999; root.add(cone);
+      cone.position.copy(tip).addScaledVector(d, -h / 2); cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d); cone.renderOrder = 999; cone.userData.dimobj = true; root.add(cone);
     });
     mids.push(a.clone().add(c).multiplyScalar(.5));
   };
@@ -5565,7 +5590,7 @@ function dims3dLines(root, b, color){
   dim(V(M.x, m.y, m.z), V(M.x, M.y, m.z), V(o, 0, 0));
   dim(V(M.x, m.y, m.z), V(M.x, m.y, M.z), V(o * .7, -o * .7, 0));
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(L, 3));
-  const ls = new THREE.LineSegments(g, new THREE.LineBasicMaterial({color, depthTest:false, transparent:true})); ls.renderOrder = 999; root.add(ls);
+  const ls = new THREE.LineSegments(g, new THREE.LineBasicMaterial({color, depthTest:false, transparent:true})); ls.renderOrder = 999; ls.userData.dimobj = true; root.add(ls);
   three.dimMids = mids;
 }
 function fit3d(){
