@@ -267,7 +267,14 @@ input[type="color"]{width:100%;height:34px;padding:2px;border:1px solid var(--li
 .keysgrid dt{min-width:0}.keysgrid dt kbd{white-space:nowrap;display:inline-block;margin:1px 0}.keysgrid dd{margin:0;color:var(--ink);min-width:0}
 .holdkind{display:grid;gap:6px;margin:0 0 12px}
 .holdset input{width:5em}.holdset select{max-width:16em}
-#holdDlg[data-k="kontur"] .hk-nest,#holdDlg[data-k="nest"] .hk-kontur{display:none}
+#holdDlg[data-k="kontur"] .hk-nest,#holdDlg[data-k="nest"] .hk-kontur,#holdDlg[data-k="pins"] .hk-nest,#holdDlg[data-k="pins"] .hk-kontur,#holdDlg[data-k="pins"] .hk-depth{display:none}
+.holdvar{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;margin:0 0 12px;scroll-snap-type:x mandatory}
+.holdvar button{flex:0 0 168px;scroll-snap-align:start;text-align:left;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--raised);padding:8px;cursor:pointer;color:inherit;font:inherit}
+.holdvar button.on{border-color:var(--sel,#2563eb);box-shadow:0 0 0 2px color-mix(in srgb,var(--sel,#2563eb) 30%,transparent)}
+.holdvar button:disabled{opacity:.45;cursor:default}
+.holdvar svg{width:100%;height:84px;display:block;margin-bottom:6px;background:var(--paper);border-radius:4px}
+.holdvar b{display:block;font-size:.85rem}.holdvar small{display:block;color:var(--muted);font-size:.72rem;line-height:1.35;margin-top:2px}
+.holdvarh{font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
 .holdprev{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0 4px}.holdprev figure{margin:0;flex:1 1 220px;min-width:0}.holdprev figcaption{font-size:.72rem;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
 .holdprev svg{width:100%;height:auto;max-height:220px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r)}
 .cutset{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.85rem;color:var(--muted)}
@@ -439,6 +446,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
 .part{fill:var(--part);stroke:var(--ink);stroke-width:1.6}
 .metal{fill:var(--metal);stroke:var(--ink);stroke-width:1.4}
 .hole{fill:var(--paper);stroke:var(--ink);stroke-width:1.4}
+.pocket{fill:var(--paper);fill-opacity:.55;stroke:var(--ink);stroke-width:1.2;stroke-dasharray:6 3}
 .edge{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round}
 .thin{fill:none;stroke:var(--ink);stroke-width:.7}
 .center{fill:none;stroke:var(--ink);stroke-width:.6;stroke-dasharray:14 3 2 3;opacity:.8}
@@ -678,9 +686,11 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
     <div class="panel cutpanel" role="dialog" aria-labelledby="holdTitle">
       <div class="cuthead"><h3 id="holdTitle">Halterung bauen</h3><button class="btn icon" type="button" id="holdClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       <p class="note" id="holdSrc" style="margin-top:0"></p>
+      <div id="holdVar"></div>
       <div class="holdkind">
         <label class="opt"><input type="radio" name="holdKind" value="kontur" checked> <span><b>Konturplatten</b> · Grundplatte + aufgestellte Platten, Oberkante folgt der Bauteilform (wie im Vorrichtungsbau)</span></label>
         <label class="opt"><input type="radio" name="holdKind" value="nest"> <span><b>Nest / Einlegeaufnahme</b> · Grundplatte + Rahmen mit Tasche in Bauteilform, für flache Teile</span></label>
+        <label class="opt"><input type="radio" name="holdKind" value="pins"> <span><b>Anschläge 3-2-1</b> · Bauteil liegt auf der Grundplatte, 3 Zylinderstifte geben die Lage vor – einfachste Lösung, zum Spannen Schnellspanner dazu</span></label>
       </div>
       <div class="cutset holdset">
         <label>Lage des Bauteils <select id="hdLage"></select></label>
@@ -689,7 +699,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <label class="hk-kontur">Anzahl Konturplatten <input id="hdN" value="2" inputmode="numeric"></label>
         <label class="hk-kontur">Plattendicke <input id="hdTp" value="15" inputmode="decimal"> mm</label>
         <label class="hk-kontur">Bauteil über Grundplatte <input id="hdLift" value="20" inputmode="decimal"> mm</label>
-        <label>Einfasstiefe <input id="hdDepth" value="" placeholder="auto" inputmode="decimal"> mm</label>
+        <label class="hk-depth">Einfasstiefe <input id="hdDepth" value="" placeholder="auto" inputmode="decimal"> mm</label>
         <label class="hk-nest">Lagen (konturgenau) <input id="hdLay" value="1" inputmode="numeric"></label>
         <label class="hk-nest">Wand rundum <input id="hdWall" value="20" inputmode="decimal"> mm</label>
         <label>Grundplatte <input id="hdTb" value="15" inputmode="decimal"> mm</label>
@@ -1674,7 +1684,8 @@ function shapeMarkupInner(s, T, showDims){
     o += shaftMarkup(s, T, showDims);
   } else if (s.type === 'slot' || s.type === 'cutout'){
     const P = ([x, y]) => { const q = localToWorld(s, x, y); return f1(T.x(q.x)) + ',' + f1(T.y(q.y)); };
-    o += `<polygon class="hole" points="${cutOutline(s).map(P).join(' ')}"/>`;
+    o += `<polygon class="${isPocket(s) ? 'pocket' : 'hole'}" points="${cutOutline(s).map(P).join(' ')}"/>`;
+    if (isPocket(s)){ const bb = bbox(s); o += `<text class="lbl" x="${f1(T.x(bb.x0) + 3)}" y="${f1(T.y(bb.y0) - 4)}">Tasche ${num(s.depth)} tief</text>`; }
     const ex = (s.type === 'slot' ? s.l : s.w)/2 + 6/T.z, ey = (s.type === 'slot' ? s.b : s.h)/2 + 6/T.z;
     const a = P([-ex, 0]).split(','), b = P([ex, 0]).split(','), c = P([0, -ey]).split(','), d = P([0, ey]).split(',');
     o += `<line class="center" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/><line class="center" x1="${c[0]}" y1="${c[1]}" x2="${d[0]}" y2="${d[1]}"/>`;
@@ -2296,7 +2307,7 @@ function fieldsForBase(s){
     {k:'rot', l:'Drehung', kind:'deg'},
     len('x', 'X Ecke'), len('y', 'Y Ecke')];
   if (s.type === 'slot') return [len('l', 'Länge über alles'), len('b', 'Breite'), {k:'rot', l:'Drehung', kind:'deg'}, len('x', 'X Mitte'), len('y', 'Y Mitte')];
-  if (s.type === 'cutout') return [len('w', 'Breite'), len('h', 'Höhe'), len('r', 'Eckradius'), {k:'rot', l:'Drehung', kind:'deg'}, len('x', 'X Mitte'), len('y', 'Y Mitte')];
+  if (s.type === 'cutout') return [len('w', 'Breite'), len('h', 'Höhe'), len('depth', 'Tiefe (0 = durch)'), len('r', 'Eckradius'), {k:'rot', l:'Drehung', kind:'deg'}, len('x', 'X Mitte'), len('y', 'Y Mitte')];
   if (s.type === 'hole') return [
     {k:'fit', l:'Art', kind:'select', o:Object.entries(FITS)}, len('d', 'Durchmesser'),
     ...(s.fit && s.fit.startsWith('G-') ? [] : [{k:'tol', l:'Toleranz', kind:'select', o:[['','–'], ...HOLE_TOLS.map(t => [t, t])]}]),
@@ -2606,7 +2617,8 @@ async function mergePlates(list){
   setSel(made.filter(o => o.type === 'rect').map(o => o.id)); changed();
   return r.plates.length > 1 ? `Zusammengeführt – die Bleche berühren sich nicht überall, es sind ${r.plates.length} Bleche geblieben. Für ein Teil müssen sie sich überlappen oder berühren.` : `Zu einem Blech zusammengeführt (${fmt(r.plates[0].w)} × ${fmt(r.plates[0].h)}). Bohrungen und Ausschnitte bleiben erhalten.`;
 }
-async function subtractContour(tool, targets, gap, keep){
+async function subtractContour(tool, targets, gap, keep, depth){
+  if (depth > 0) return pocketContour(tool, targets, gap, depth, keep);
   targets = targets.filter(p => isPlate(p) && p !== tool);
   if (!targets.length) return 'Bitte mindestens ein Blech oder eine Ronde mit auswählen, aus dem die Kontur ausgeschnitten wird.';
   snapshot();
@@ -2743,6 +2755,23 @@ function holdCalc(O, o){
     info.push(`Tasche ${dec(r2(n * tl))} mm tief (${n} Lage${n > 1 ? 'n' : ''} à ${dec(tl)} mm), ${dec(gap)} mm Spiel`, `Halterung ${num(X1 - X0)} × ${num(Y1 - Y0)} × ${num(stack)} mm`);
     return {shapes, info, ox:-X0, oy:-Y0, oz:0, lift:0, sections:[], foot:pockets[0]};
   }
+  if (o.kind === 'pins'){
+    // Anschläge nach dem 3-2-1-Prinzip: 2 Stifte an der langen Seite, 1 an der kurzen; Bauteil liegt auf der Grundplatte
+    const ph = 20, r = 5, d = r + .2, m = 40, polys = [];
+    down.forEach(t => { const c = holdClip(t, 2, ph, 1); if (c.length > 2) polys.push(c.map(p => [p[0], p[1]])); });
+    const foot = holdUnion(polys); if (!foot.length) return {err:'Das Bauteil liegt nicht auf – bitte eine andere Lage wählen.'};
+    const fb = polyBox(foot), alongX = fb.x1 - fb.x0 >= fb.y1 - fb.y0, L = alongX ? fb.x1 - fb.x0 : fb.y1 - fb.y0;
+    const cut = (vert, c) => { const hits = []; foot.forEach(P => P.forEach((p, i) => { const q = P[(i + 1) % P.length], a = (vert ? p[0] : p[1]) - c, b = (vert ? q[0] : q[1]) - c; if (a * b <= 0 && a !== b){ const f = a / (a - b); hits.push(vert ? p[1] + f * (q[1] - p[1]) : p[0] + f * (q[0] - p[0])); } })); return hits; };
+    const pins = [];
+    [.2, .8].forEach(f => { const c = (alongX ? fb.x0 : fb.y0) + f * L, h = cut(alongX, c); if (h.length) pins.push(alongX ? [c, Math.min(...h) - d] : [Math.min(...h) - d, c]); });
+    { const c = alongX ? (fb.y0 + fb.y1) / 2 : (fb.x0 + fb.x1) / 2, h = cut(!alongX, c); if (h.length) pins.push(alongX ? [Math.min(...h) - d, c] : [c, Math.min(...h) - d]); }
+    const X0 = fb.x0 - m, Y0 = fb.y0 - m, X1 = fb.x1 + m, Y1 = fb.y1 + m;
+    shapes.push({type:'rect', name:'Grundplatte', x:r2(X0), y:r2(Y0), w:r2(X1 - X0), h:r2(Y1 - Y0), t:tb, mat, rot:0, hbase:1});
+    pins.forEach(([x, y]) => shapes.push({type:'hole', x:r2(x), y:r2(y), d:10, fit:'frei', tol:'H7'}, {type:'screw', kind:'pin', size:'10', len:30, grade:GRADES.pin[0], view:'top', rot:0, x:r2(x), y:r2(y), z:ph}));
+    if (o.bolt) shapes.push(...holdBolts(X0, Y0, X1, Y1, 15, tb, LENGTHS.find(l => l >= tb + 12) || 200));
+    info.push(`${pins.length} Anschlagstifte Ø10 × 30 (ISO 2338), ${ph} mm hoch – 2 an der langen, 1 an der kurzen Seite`, `Bauteil liegt flach auf, Grundplatte ${num(X1 - X0)} × ${num(Y1 - Y0)} × ${num(tb)} mm`);
+    return {shapes, info, ox:-X0, oy:-Y0, oz:0, lift:0, sections:[], foot};
+  }
   // Konturplatten: quer zur langen Seite (Bauteil liegt längs in Y), Oberkante = Unterseite des Bauteils + Spiel
   const n = Math.max(1, Math.min(8, o.n | 0)), tp = Math.max(3, o.tp), lift = Math.max(0, o.lift), Ly = size.y;
   const depth = o.depth > 0 ? o.depth : Math.min(60, Math.max(10, size.z * .35)), top = lift + depth, wall = 20;
@@ -2779,6 +2808,8 @@ function holdCalc(O, o){
   info.push(`${plates.length} Konturplatte${plates.length > 1 ? 'n' : ''} à ${dec(tp)} mm, Oberkante = Bauteilform + ${dec(gap)} mm Spiel`, `Bauteil ${dec(r2(lift))} mm über der Grundplatte, ${dec(r2(depth))} mm eingefasst`, `Grundplatte ${num(X1 - X0)} × ${num(Y1 - Y0)} × ${num(tb)} mm`);
   return {shapes, info, ox:-X0, oy:-Y0, oz:lift, lift, sections, foot:holdUnion(foot), tp};
 }
+// Gewicht der Platten (ohne Bohrungen) in kg
+const holdKg = shapes => shapes.filter(s => s.type === 'rect').reduce((a, s) => a + (s.outline ? polyArea(s.outline) : s.w * s.h) * s.t * ((MATS[s.mat] || MATS.S235JR).rho) / 1e6, 0);
 // Vorschau: Draufsicht + Konturplatte bzw. Lagen
 function holdSvg(res, O){
   const base = res.shapes.find(s => s.hbase), pad = 8, cs = cssVar('--ink') || '#222', mu = 'var(--muted)';
@@ -2800,7 +2831,56 @@ function holdSvg(res, O){
   }
   return `<div class="holdprev"><figure><figcaption>Draufsicht (orange = Bauteil)</figcaption>${svgTop}</figure>${side ? `<figure><figcaption>Konturplatte 1 (Ansicht)</figcaption>${side}</figure>` : ''}</div>`;
 }
-const HOLD = {src:null, O:null, key:'', res:null, busy:0};
+const HOLD = {src:null, O:null, key:'', res:null, busy:0, oc:{}, vkey:''};
+const HOLD_VAR = [
+  {k:'k2', l:'Konturplatten × 2', o:{kind:'kontur', n:2}, why:'wenig Material, Bauteil liegt sicher in der Form'},
+  {k:'k3', l:'Konturplatten × 3', o:{kind:'kontur', n:3}, why:'für lange oder weiche Teile – stützt auch in der Mitte'},
+  {k:'n1', l:'Nest', o:{kind:'nest', layers:1}, why:'einfach zu fertigen, gut für flache Teile'},
+  {k:'n3', l:'Nest konturgenau', o:{kind:'nest', layers:3}, why:'3 Lagen folgen der Form – sitzt spielarm'},
+  {k:'p', l:'Anschläge 3-2-1', o:{kind:'pins'}, why:'am billigsten, Bauteil wird nur angelegt'},
+];
+const holdO = (lage, plan, kind) => { const k = [lage, plan, kind].join('|'); return HOLD.oc[k] || (HOLD.oc[k] = holdOrient(HOLD.src, lage, plan, kind)); };
+function holdMini(res){
+  const b = res.shapes.find(s => s.hbase), k = 150 / Math.max(b.w, b.h * 150 / 84), W = b.w * k, H = b.h * k, ox = (150 - W) / 2, oy = (84 - H) / 2;
+  const X = x => f1(ox + (x - b.x) * k), Y = y => f1(oy + (b.y + b.h - y) * k), cs = cssVar('--ink') || '#222';
+  let s = `<rect x="${f1(ox)}" y="${f1(oy)}" width="${f1(W)}" height="${f1(H)}" fill="none" stroke="${cs}" stroke-width=".8"/>`;
+  s += (res.foot || []).map(P => `<path d="M${P.map(([x, y]) => X(x) + ',' + Y(y)).join('L')}Z" fill="#f59e0b" fill-opacity=".45"/>`).join('');
+  res.shapes.forEach(q => {
+    if (q.type === 'rect' && !q.hbase){ if (q.tx) s += `<rect x="${X(q.x)}" y="${Y(q.y + q.h / 2 + q.t / 2)}" width="${f1(q.w * k)}" height="${f1(Math.max(1, q.t * k))}" fill="${cs}" fill-opacity=".6"/>`; else s += `<path d="M${q.outline.map(([x, y]) => X(x + q.x) + ',' + Y(y + q.y)).join('L')}Z" fill="${cs}" fill-opacity=".15"/>`; }
+    if (q.type === 'screw' && q.kind === 'pin') s += `<circle cx="${X(q.x)}" cy="${Y(q.y)}" r="2.5" fill="${cs}"/>`;
+  });
+  return `<svg viewBox="0 0 150 84" aria-hidden="true">${s}</svg>`;
+}
+async function holdVariants(o){
+  const key = [o.lage, o.plan, o.gap, o.tb, o.mat, o.bolt, o.tp, o.lift].join('|');
+  if (HOLD.vkey === key) return; HOLD.vkey = key;
+  $('#holdVar').innerHTML = '<p class="holdvarh">Vorschläge werden berechnet …</p>';
+  const out = [];
+  for (const v of HOLD_VAR){
+    await new Promise(r => setTimeout(r, 0));
+    if (HOLD.vkey !== key) return;
+    let res; try { res = holdCalc(holdO(o.lage, o.plan, v.o.kind), Object.assign({}, o, {depth:0, wall:20, grip:true}, v.o)); } catch(e){ res = {err:'x'}; }
+    out.push({v, res});
+  }
+  $('#holdVar').innerHTML = `<p class="holdvarh">Vorschläge – antippen zum Übernehmen</p><div class="holdvar">${out.map(({v, res}) => {
+    if (res.err) return `<button type="button" disabled><b>${esc(v.l)}</b><small>passt bei dieser Lage nicht</small></button>`;
+    const n = res.shapes.filter(s => s.type === 'rect').length, pins = res.shapes.filter(s => s.kind === 'pin').length, b = res.shapes.find(s => s.hbase), hgt = Math.max(...res.shapes.filter(s => s.type === 'rect').map(s => s.tx ? s.h : 0), 0) + b.t;
+    return `<button type="button" data-v="${v.k}">${holdMini(res)}<b>${esc(v.l)}</b><small>${n} Platte${n > 1 ? 'n' : ''}${pins ? ` + ${pins} Stifte` : ''} · ca. ${dec(Math.round(holdKg(res.shapes) * 10) / 10)} kg<br>${num(b.w)} × ${num(b.h)} mm${hgt > b.t ? `, ${num(hgt)} hoch` : ''}<br>${esc(v.why)}</small></button>`;
+  }).join('')}</div>`;
+  holdMark();
+}
+function holdMark(){
+  const o = holdOpts();
+  document.querySelectorAll('#holdVar [data-v]').forEach(b => { const v = HOLD_VAR.find(x => x.k === b.dataset.v); b.classList.toggle('on', v.o.kind === o.kind && (v.o.n == null || v.o.n === o.n) && (v.o.layers == null || v.o.layers === o.layers)); });
+}
+$('#holdVar').addEventListener('click', e => {
+  const b = e.target.closest('[data-v]'); if (!b) return;
+  const v = HOLD_VAR.find(x => x.k === b.dataset.v);
+  document.querySelector(`input[name="holdKind"][value="${v.o.kind}"]`).checked = true;
+  if (v.o.n) $('#hdN').value = v.o.n; if (v.o.layers) $('#hdLay').value = v.o.layers;
+  $('#hdDepth').value = '';
+  holdUpdate();
+});
 function holdOpts(){
   const v = id => parseLen($('#' + id).value);
   return {kind:document.querySelector('input[name="holdKind"]:checked').value, lage:$('#hdLage').value, plan:$('#hdPlan').value, gap:v('hdGap') || 0, n:parseInt($('#hdN').value, 10) || 2, tp:v('hdTp') || 15,
@@ -2811,16 +2891,16 @@ async function holdUpdate(){
   const o = holdOpts(), my = ++HOLD.busy;
   $('#holdDlg').dataset.k = o.kind;
   if (!HOLD.src){ $('#holdOut').innerHTML = ''; return; }
-  const key = [o.lage, o.plan, o.kind].join('|');
-  if (HOLD.key !== key){ HOLD.O = holdOrient(HOLD.src, o.lage, o.plan, o.kind); HOLD.key = key; }
+  HOLD.O = holdO(o.lage, o.plan, o.kind);
   let res;
   try { res = holdCalc(HOLD.O, o); } catch(e){ console.error(e); res = {err:'Die Halterung konnte nicht berechnet werden.'}; }
   if (my !== HOLD.busy) return;
   HOLD.res = res.err ? null : res;
   const z = HOLD.O.size, lageTxt = (HOLD_LAGE.find(l => l[0] === HOLD.O.k) || [])[1] || '';
   $('#holdOut').innerHTML = res.err ? `<p class="note" style="color:var(--danger,#dc2626)">${esc(res.err)}</p>`
-    : holdSvg(res, HOLD.O) + `<p class="note">Bauteil in dieser Lage: <b>${num(z.x)} × ${num(z.y)} × ${num(z.z)} mm</b> (${esc(lageTxt)}${HOLD.O.turn ? ', 90° gedreht' : ''}).<br>${res.info.map(esc).join(' · ')}</p>`;
+    : holdSvg(res, HOLD.O) + `<p class="note">Bauteil in dieser Lage: <b>${num(z.x)} × ${num(z.y)} × ${num(z.z)} mm</b> (${esc(lageTxt)}${HOLD.O.turn ? ', 90° gedreht' : ''}).<br>${res.info.map(esc).join(' · ')} · Halterung ca. ${dec(Math.round(holdKg(res.shapes) * 10) / 10)} kg</p>`;
   $('#holdGo').disabled = !!res.err;
+  holdMark(); holdVariants(o);
 }
 async function openHold(pre){
   const list = selShapes();
@@ -2832,7 +2912,7 @@ async function openHold(pre){
     [['n','hdN'],['gap','hdGap'],['tp','hdTp'],['lift','hdLift'],['depth','hdDepth'],['layers','hdLay'],['tb','hdTb']].forEach(([k, id]) => { if (pre[k] != null) $('#' + id).value = num(pre[k]); });
   }
   $('#holdDlg').hidden = false; $('#holdOut').innerHTML = '<p class="note">Berechne die Form des Bauteils …</p>'; $('#holdGo').disabled = true;
-  HOLD.src = null; HOLD.key = '';
+  HOLD.src = null; HOLD.oc = {}; HOLD.vkey = ''; $('#holdVar').innerHTML = '';
   try {
     await Promise.all([loadThree(), loadScript(CLIPPER_URL, () => window.ClipperLib)]);
     HOLD.src = await holdSource();
@@ -2866,10 +2946,10 @@ $('#holdDlg').addEventListener('input', e => { if (e.target.tagName === 'INPUT' 
 $('#holdGo').onclick = holdMake;
 // Sprache/Eingabezeile: „Halterung hochkant mit 3 Konturplatten, Spiel 2“
 function holdParse(t){
-  if (!/\b(halterung|halter|vorrichtung|aufnahme|konturplatten?|nest)\b/.test(t)) return null;
+  if (!/\b(halterung|halter|vorrichtung|aufnahme|konturplatten?|nest|anschläge)\b/.test(t)) return null;
   const o = {}, W = {ein:1, eine:1, zwei:2, drei:3, vier:4, fünf:5, sechs:6}, m = t.match(/\b(\d|ein|eine|zwei|drei|vier|fünf|sechs)\s*(kontur)?(platten|platte|auflagen|stützen)\b/);
   if (m) o.n = W[m[1]] || +m[1];
-  if (/\b(nest|tasche|einlege|rahmen)/.test(t)) o.kind = 'nest'; else if (/kontur|platten|auflage/.test(t)) o.kind = 'kontur';
+  if (/anschl|stifte|3-2-1|321/.test(t)) o.kind = 'pins'; else if (/\b(nest|tasche|einlege|rahmen)/.test(t)) o.kind = 'nest'; else if (/kontur|platten|auflage/.test(t)) o.kind = 'kontur';
   if (/hochkant|stehend|aufrecht/.test(t)) o.lage = 'y90'; else if (/(auf der|auf die) seite/.test(t)) o.lage = 'x90'; else if (/umgedreht|kopfüber/.test(t)) o.lage = 'x180'; else if (/wie gezeichnet|wie im modell|so wie/.test(t)) o.lage = 'asis'; else if (/flach|liegend|automatisch/.test(t)) o.lage = 'auto';
   const v = re => { const q = t.match(re); return q ? +q[1] : null; };
   const gap = v(/spiel\s*(\d+(?:\.\d+)?)/); if (gap != null) o.gap = gap;
@@ -2877,8 +2957,35 @@ function holdParse(t){
   const lift = v(/(?:abstand|höhe|über (?:der )?grundplatte)\s*(\d+(?:\.\d+)?)/); if (lift != null) o.lift = lift;
   const dp = v(/(?:tiefe|tief|eingefasst)\s*(\d+(?:\.\d+)?)/); if (dp != null) o.depth = dp;
   const ly = v(/(\d)\s*lagen/); if (ly != null) o.layers = ly;
-  const parts = [o.kind === 'nest' ? 'als Nest' : `${o.n || 2} Konturplatten`, o.lage ? (HOLD_LAGE.find(l => l[0] === o.lage) || [])[1] : null, o.gap != null ? `Spiel ${dec(o.gap)} mm` : null].filter(Boolean);
+  const parts = [o.kind === 'nest' ? 'als Nest' : o.kind === 'pins' ? 'mit Anschlägen 3-2-1' : `${o.n || 2} Konturplatten`, o.lage ? (HOLD_LAGE.find(l => l[0] === o.lage) || [])[1] : null, o.gap != null ? `Spiel ${dec(o.gap)} mm` : null].filter(Boolean);
   return {hold:o, n:1, desc:`Halterung für das ausgewählte Bauteil – ${parts.join(', ')} (öffnet die Berechnung)`};
+}
+// Kontur als Tasche: Ausschnitt mit Tiefe von oben, Teil sitzt danach in der Tasche
+async function pocketContour(tool, targets, gap, depth, keep){
+  targets = targets.filter(p => isPlate(p) && p !== tool);
+  if (!targets.length) return 'Bitte das Blech bzw. den Block mit auswählen, in den die Tasche kommt.';
+  if (tool.type === 'screw') return 'Für Schrauben bitte „ganz durchschneiden“ nehmen – dann entsteht die Durchgangsbohrung.';
+  await loadScript(CLIPPER_URL, () => window.ClipperLib);
+  const cutter = clipOffset(worldOutline(tool), gap);
+  let made = 0, deep = 0;
+  const news = [];
+  targets.forEach(p => {
+    if (depth >= p.t){ deep++; return; }
+    // nur der Teil, der auf dem Blech liegt; muss ganz innerhalb bleiben
+    const inter = holdOuter(clipRun(ClipperLib.ClipType.ctIntersection, cutter, worldOutline(p)));
+    inter.forEach(P => {
+      if (polyArea(P) < 1) return;
+      const b = polyBox([P]), cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+      news.push({type:'cutout', name:'Tasche', id:nextId++, layer:tool.layer, x:r2(cx), y:r2(cy), w:r2(b.x1 - b.x0), h:r2(b.y1 - b.y0), r:0, rot:0, depth:r2(depth), pts:P.map(([x, y]) => [r2(x - cx), r2(y - cy)])});
+      made++;
+    });
+  });
+  if (!made) return deep ? `Die Tasche (${dec(depth)} mm) ist so tief wie das Blech – dafür „ganz durchschneiden“ nehmen.` : 'Das Teil liegt nicht über dem Blech – erst darüber schieben.';
+  snapshot();
+  state.shapes.push(...news);
+  if (!keep) state.shapes = state.shapes.filter(o => o !== tool);
+  changed();
+  return `Tasche ${dec(depth)} mm tief${gap ? ` mit ${dec(gap)} mm Spiel` : ''} gefräst${keep ? ' – das Teil sitzt jetzt darin (in 3D prüfen)' : ''}.`;
 }
 function renderMultiProps(){
   const list = selShapes(), counts = {};
@@ -2914,15 +3021,20 @@ function renderMultiProps(){
     $('#props').insertAdjacentHTML('beforeend', `<div class="grpbox" style="margin-top:14px"><p class="note" style="margin:0 0 10px"><b>Bleche bearbeiten</b> – in der Draufsicht</p>
       ${plates.length >= 2 ? `<div class="btnrow" style="margin-top:0"><button class="btn" type="button" id="mMerge">Zusammenführen (${plates.length} Bleche zu einem)</button></div>` : ''}
       <div class="props" style="margin-top:10px"><label for="m-tool">Kontur von</label>${optSelect('m-tool', tools.map(q => [q.id, nm(q)]), def.id)}
-        <label for="m-gap">Spiel rundum <em>mm</em></label><input id="m-gap" value="0" inputmode="decimal"></div>
+        <label for="m-gap">Spiel rundum <em>mm</em></label><input id="m-gap" value="0" inputmode="decimal">
+        <label for="m-how">Art</label>${optSelect('m-how', [['thru', 'ganz durchschneiden'], ['pocket', 'als Tasche – Teil sitzt darin']], 'thru')}
+        <label for="m-depth" class="m-pk" hidden>Taschentiefe <em>mm</em></label><input id="m-depth" class="m-pk" hidden inputmode="decimal"></div>
       <label class="chk" style="margin-top:8px"><input type="checkbox" id="m-keep"${isPlate(def) ? '' : ' checked'}> Werkzeugteil behalten</label>
       <div class="btnrow"><button class="btn primary" type="button" id="mSub">Kontur abziehen</button></div>
       <p class="note" style="margin-bottom:0">Schneidet die Form des gewählten Teils aus den anderen Blechen aus – z. B. Rohr durch Blech stecken (Spiel 1 mm), Ausklinkung, Ronde als Loch. Bei Schrauben entsteht die passende Durchgangsbohrung.</p></div>`);
-    $('#m-tool').onchange = e => { const q = byId(+e.target.value); $('#m-keep').checked = q && !isPlate(q); };
+    const pkDef = () => { const q = byId(+$('#m-tool').value); return q ? r2(q.type === 'rect' || q.type === 'disc' ? q.t : Math.min(10, ...plates.filter(x => x !== q).map(x => x.t / 2))) : 5; };
+    $('#m-tool').onchange = e => { const q = byId(+e.target.value); $('#m-keep').checked = (q && !isPlate(q)) || $('#m-how').value === 'pocket'; if ($('#m-how').value === 'pocket') $('#m-depth').value = num(pkDef(), 'mm'); };
+    $('#m-how').onchange = e => { const on = e.target.value === 'pocket'; document.querySelectorAll('.m-pk').forEach(x => x.hidden = !on); if (on){ $('#m-depth').value = num(pkDef(), 'mm'); $('#m-keep').checked = true; } };
     if ($('#mMerge')) $('#mMerge').onclick = async () => { try { $('#hint').textContent = await mergePlates(selShapes()); } catch(err){ console.error(err); $('#hint').textContent = 'Zusammenführen hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.'; } };
     $('#mSub').onclick = async () => {
       const tool = byId(+$('#m-tool').value), gap = Math.max(0, parseFloat(($('#m-gap').value || '0').replace(',', '.')) || 0);
-      try { $('#hint').textContent = await subtractContour(tool, selShapes().filter(q => q !== tool), gap, $('#m-keep').checked); } catch(err){ console.error(err); $('#hint').textContent = 'Kontur abziehen hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.'; }
+      const depth = $('#m-how').value === 'pocket' ? parseLen($('#m-depth').value) : 0; if ($('#m-how').value === 'pocket' && !(depth > 0)){ flash('m-depth'); return; }
+      try { $('#hint').textContent = await subtractContour(tool, selShapes().filter(q => q !== tool), gap, $('#m-keep').checked, depth); } catch(err){ console.error(err); $('#hint').textContent = 'Kontur abziehen hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.'; }
     };
   }
   const sg = selGroup();
@@ -3201,10 +3313,15 @@ function cutOutline(o){
 }
 const cutArea = o => o.pts ? Math.abs(polyArea(o.pts)) : o.type === 'hole' ? Math.PI * (o.d/2) ** 2 : o.type === 'slot' ? (Math.max(0, o.l - o.b)) * o.b + Math.PI * o.b * o.b / 4 : o.w * o.h - (4 - Math.PI) * Math.min(o.r || 0, o.w/2, o.h/2) ** 2;
 const isCut = o => o.type === 'hole' || o.type === 'slot' || o.type === 'cutout';
+// Tasche = Ausschnitt mit Tiefe (nicht durch). Ein Blech, das ganz im Ausschnitt liegt (eingesetztes Teil), wird nicht mitgeschnitten.
+const isPocket = c => c.type === 'cutout' && c.depth > 0;
+const cutInside = (p, c) => { const b = bbox(p), q = bbox(c); return b.x0 >= q.x0 - .05 && b.x1 <= q.x1 + .05 && b.y0 >= q.y0 - .05 && b.y1 <= q.y1 + .05; };
+const cutHits = (p, c) => inRect(p, c.x, c.y) && !cutInside(p, c);
+const inCut = (c, x, y) => inPoly(worldToLocal(c, {x, y}), cutOutline(c));
 function discMass(s){
   let area = Math.PI / 4 * (s.d**2 - (s.di || 0)**2);
-  state.shapes.forEach(h => { if (isCut(h) && inRect(s, h.x, h.y)) area -= cutArea(h); });
-  return Math.max(0, area) * s.t / 1e6 * MATS[s.mat].rho;
+  let vol = 0; state.shapes.forEach(h => { if (isCut(h) && cutHits(s, h)){ if (isPocket(h) && h.depth < s.t) vol += cutArea(h) * h.depth; else area -= cutArea(h); } });
+  return Math.max(0, area * s.t - vol) / 1e6 * MATS[s.mat].rho;
 }
 function inRect(r, x, y){
   if (r.type === 'disc'){ const d = Math.hypot(x - r.x, y - r.y); return d < r.d/2 && d > (r.di || 0)/2; } if (r.outline){ const l = worldToLocal(r, {x, y}); return inPoly(l, r.outline); } const l = r.rot ? worldToLocal(r, {x, y}) : {x:x - r.x, y:y - r.y}; return l.x > 0 && l.x < r.w && l.y > 0 && l.y < r.h; }
@@ -3248,8 +3365,8 @@ function objSnap(p, exclude){
 }
 function rectMass(s){
   let area = s.w * s.h - cornerLoss(s);
-  state.shapes.forEach(h => { if (isCut(h) && inRect(s, h.x, h.y)) area -= cutArea(h); });
-  return Math.max(0, area) * s.t / 1e6 * MATS[s.mat].rho;
+  let vol = 0; state.shapes.forEach(h => { if (isCut(h) && cutHits(s, h)){ if (isPocket(h) && h.depth < s.t) vol += cutArea(h) * h.depth; else area -= cutArea(h); } });
+  return Math.max(0, area * s.t - vol) / 1e6 * MATS[s.mat].rho;
 }
 function bomRows(list = state.shapes){
   const rows = [], map = new Map();
@@ -3289,7 +3406,7 @@ function bomRows(list = state.shapes){
 function holeRows(){
   const map = new Map();
   state.shapes.filter(isCut).forEach(s => {
-    const key = s.type === 'slot' ? `Langloch ${num(s.l, 'mm')} × ${num(s.b, 'mm')} mm` : s.type === 'cutout' ? `${s.pts ? 'Kontur-Ausschnitt ca.' : 'Ausschnitt'} ${num(s.w, 'mm')} × ${num(s.h, 'mm')} mm${s.r ? ' R' + num(s.r, 'mm') : ''}`
+    const key = s.type === 'slot' ? `Langloch ${num(s.l, 'mm')} × ${num(s.b, 'mm')} mm` : s.type === 'cutout' ? `${isPocket(s) ? (s.pts ? 'Kontur-Tasche ca.' : 'Tasche') : s.pts ? 'Kontur-Ausschnitt ca.' : 'Ausschnitt'} ${num(s.w, 'mm')} × ${num(s.h, 'mm')} mm${isPocket(s) ? ', ' + num(s.depth, 'mm') + ' mm tief' : ''}${s.r ? ' R' + num(s.r, 'mm') : ''}`
       : s.fit && s.fit !== 'frei' ? FITS[s.fit] : 'Bohrung Ø' + num(s.d, 'mm') + ' mm';
     map.set(key, (map.get(key) || 0) + 1);
   });
@@ -3957,7 +4074,7 @@ function workPlan(lot, surf){
   const others = S.filter(s => (s.type === 'rect' || s.type === 'disc') && soft(s) && !s.equip), plates = S.filter(s => (s.type === 'rect' || s.type === 'disc') && !soft(s) && !s.equip), equips = S.filter(s => s.equip), profs = S.filter(s => s.type === 'profile' && s.view !== 'section');
   const bends = S.filter(s => s.type === 'bend'), shafts = S.filter(s => s.type === 'shaft'), welds = S.filter(s => s.type === 'weld'), screws = S.filter(s => s.type === 'screw');
   const holes = S.filter(s => s.type === 'hole'), mills = S.filter(s => s.type === 'slot' || s.type === 'cutout');
-  const inside = p => S.filter(c => isCut(c) && inRect(p, c.x, c.y));
+  const inside = p => S.filter(c => isCut(c) && cutHits(p, c));
   const thread = h => (h.fit || '').startsWith('G-');
   // Laser, wenn rund, dick, mit Ecken/Ausschnitten oder vielen Bohrungen – sonst Tafelschere
   const laser = new Set(plates.filter(p => p.type === 'disc' || pd(p).t > 6 || cornerLoss(p) > 0 || p.rot % 90 || inside(p).some(c => c.type !== 'hole') || inside(p).length >= 4));
@@ -4532,9 +4649,9 @@ async function exportSheet(o){
   const feats = [], notes = [];
   const pt = part && part.type;
   if (pt === 'rect' || pt === 'disc'){
-    state.shapes.filter(c => isCut(c) && inRect(part, c.x, c.y)).forEach(c => {
+    state.shapes.filter(c => isCut(c) && cutHits(part, c)).forEach(c => {
       const l = pt === 'rect' ? worldToLocal(part, c) : {x:c.x - part.x, y:c.y - part.y};
-      const lab = c.type === 'slot' ? `Langloch ${mmTxt(c.l)}×${mmTxt(c.b)}` : c.type === 'cutout' ? `Ausschnitt ${mmTxt(c.w)}×${mmTxt(c.h)}${c.r ? ' R' + mmTxt(c.r) : ''}`
+      const lab = c.type === 'slot' ? `Langloch ${mmTxt(c.l)}×${mmTxt(c.b)}` : c.type === 'cutout' ? `${isPocket(c) ? 'Tasche' : 'Ausschnitt'} ${mmTxt(c.w)}×${mmTxt(c.h)}${isPocket(c) ? ' T' + mmTxt(c.depth) : ''}${c.r ? ' R' + mmTxt(c.r) : ''}`
         : c.fit && c.fit.startsWith('G-') ? c.fit.slice(2) : 'Ø' + mmTxt(c.d) + (c.tol ? ' ' + c.tol : '');
       feats.push({x:part.x + l.x, y:part.y + l.y, lx:l.x, ly:l.y, r:c.type === 'hole' ? c.d/2 : 0, lab, hole:c.type === 'hole'});
     });
@@ -5027,17 +5144,20 @@ function catDef(s, o){
     const holes = state.shapes.filter(h => h.type === 'hole' && isVis(h) && inside(h)), by = new Map(), thr = [], fill = [];
     holes.forEach(h => { const q = toLocal(h.x, h.y), g = (h.fit || '').startsWith('G-') && o.thread ? h.fit.slice(2) : null;
       if (g) thr.push({q, g, d:h.d}); else { const k = h.d + (h.tol ? ' ' + h.tol : '') + (h.fit && h.fit.startsWith('G-') ? ' G' + h.fit.slice(2) : ''); if (!by.has(k)) by.set(k, {d:h.d, h, list:[]}); by.get(k).list.push(q); } });
-    const cuts = state.shapes.filter(c => (c.type === 'slot' || c.type === 'cutout') && isVis(c) && inside(c)).map(c => ({c, p:cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y), q = toLocal(w.x, w.y); return [q.x, q.y]; })}));
-    if (!o.feat){ by.forEach(g => g.list.forEach(q => fill.push(circ(q.x, q.y, g.d/2)))); cuts.forEach(c => fill.push(poly(c.p))); thr.forEach(h => fill.push(circ(h.q.x, h.q.y, h.d/2))); return {fill, after:() => {}}; }
+    const cuts = state.shapes.filter(c => (c.type === 'slot' || c.type === 'cutout') && isVis(c) && inside(c) && !(isPocket(c) && c.depth >= t)).map(c => ({c, p:cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y), q = toLocal(w.x, w.y); return [q.x, q.y]; })}));
+    const pks = cuts.filter(c => isPocket(c.c)), thru = cuts.filter(c => !isPocket(c.c));
+    // Tasche: Skizze in halber Tiefe, Tasche nach beiden Seiten = genau von der Oberfläche bis zur Tiefe
+    const pkAfter = () => pks.forEach(c => { sk(t - c.c.depth / 2, [poly(c.p)]); pocket(c.c.depth / 2, `Tasche ${dec(r2(c.c.w))} × ${dec(r2(c.c.h))}, ${dec(r2(c.c.depth))} tief`); });
+    if (!o.feat){ by.forEach(g => g.list.forEach(q => fill.push(circ(q.x, q.y, g.d/2)))); thru.forEach(c => fill.push(poly(c.p))); thr.forEach(h => fill.push(circ(h.q.x, h.q.y, h.d/2))); return {fill, after:pkAfter}; }
     return {fill, after:() => {
       by.forEach(g => { sk(0, g.list.map(q => circ(q.x, q.y, g.d/2))); pocket(t, `Bohrung Ø${dec(r2(g.d))}${g.h.tol ? ' ' + g.h.tol : ''}${g.h.fit && g.h.fit.startsWith('G-') ? ' (Kernloch ' + g.h.fit.slice(2) + ')' : ''}${g.list.length > 1 ? ' (' + g.list.length + '×)' : ''}`); });
-      cuts.forEach(c => { sk(0, [poly(c.p)]); pocket(t, c.c.type === 'slot' ? `Langloch ${dec(r2(c.c.l))} × ${dec(r2(c.c.b))}` : `Ausschnitt ${dec(r2(c.c.w))} × ${dec(r2(c.c.h))}`); });
+      pkAfter(); thru.forEach(c => { sk(0, [poly(c.p)]); pocket(t, c.c.type === 'slot' ? `Langloch ${dec(r2(c.c.l))} × ${dec(r2(c.c.b))}` : `Ausschnitt ${dec(r2(c.c.w))} × ${dec(r2(c.c.h))}`); });
       thr.forEach(h => { const P = PITCH[h.g] || 1;
         L.push(`  ThrHole part1, body1, sf, ${vbN(h.q.x)}, ${vbN(h.q.y)}, ${vbN(t)}, ${vbN(h.d)}, ${vbS(h.g)}, ${vbN(P)}`); });
     }};
   };
   if (s.type === 'rect' || s.type === 'disc'){
-    const isR = s.type === 'rect', cutsI = plateCuts(s.t, isR ? (x, y) => worldToLocal(s, {x, y}) : (x, y) => ({x:x - s.x, y:y - s.y}), c => inRect(s, c.x, c.y));
+    const isR = s.type === 'rect', cutsI = plateCuts(s.t, isR ? (x, y) => worldToLocal(s, {x, y}) : (x, y) => ({x:x - s.x, y:y - s.y}), c => cutHits(s, c));
     if (s.equip){ sk(0, [poly([[0,0],[s.w,0],[s.w,s.h],[0,s.h]])]); pad(s.t, `${s.name} – Platzhalter (Aufstellfläche)`); return L; }
     sk(0, [isR ? poly(rectOutline(s)) : circ(0, 0, s.d/2), ...(!isR && s.di > 0 ? [circ(0, 0, s.di/2)] : []), ...cutsI.fill]);
     pad(s.t, `${isR ? 'Blech' : 'Ronde'} t=${dec(s.t)}`); cutsI.after(); return L;
@@ -5170,14 +5290,14 @@ function makeDxf(){
 }
 // Laser: Bleche und Ronden an ihrer Stelle, Biegeteile als Abwicklung darunter
 function dxfLaser(){
-  const D = makeDxf(), K = D.layer('KONTUR', 7), B = D.layer('BIEGELINIE', 1), T = D.layer('BESCHRIFTUNG', 3);
+  const D = makeDxf(), K = D.layer('KONTUR', 7), B = D.layer('BIEGELINIE', 1), T = D.layer('BESCHRIFTUNG', 3), PK = D.layer('TASCHE_FRAESEN', 4);
   const plates = state.shapes.filter(s => (s.type === 'rect' || s.type === 'disc') && !s.equip);
   const holes = state.shapes.filter(s => s.type === 'hole');
   plates.forEach(p => {
     if (p.type === 'rect') D.poly(K, rectOutline(p).map(([x, y]) => { const w = localToWorld(p, x, y); return [w.x, w.y]; }), true);
     else { D.circle(K, p.x, p.y, p.d/2); if (p.di > 0) D.circle(K, p.x, p.y, p.di/2); }
     holes.filter(h => inRect(p, h.x, h.y)).forEach(h => D.circle(K, h.x, h.y, h.d/2));
-    state.shapes.filter(c => (c.type === 'slot' || c.type === 'cutout') && inRect(p, c.x, c.y)).forEach(c => D.poly(K, cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y); return [w.x, w.y]; }), true));
+    state.shapes.filter(c => (c.type === 'slot' || c.type === 'cutout') && cutHits(p, c)).forEach(c => D.poly(isPocket(c) ? PK : K, cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y); return [w.x, w.y]; }), true));
     const b = bbox(p); D.text(T, b.x0, b.y1 + 4, 5, `${p.name || 'Blech'} t=${num(p.t, 'mm')} ${MATS[p.mat].name}`);
   });
   const all = state.shapes.length ? allBox(false) : {x0:0, y0:0, x1:0, y1:0};
@@ -5902,6 +6022,29 @@ $('#props').addEventListener('click', e => {
   else if (t.id === 'gEnd') guideEnd();
   else if (t.id === 'gPdf') guidePdf().catch(() => { t.textContent = 'PDF ging nicht – Internet?'; });
 });
+// Blech mit Taschen als ein geschlossener Körper: Boden, Deckfläche mit Taschen, Taschenböden, Wände
+function pocketSolid(sh, pockets, t){
+  const V = a => a.map(v => [v.x, v.y]), outer = V(sh.getPoints(24)), holes = sh.holes.map(h => V(h.getPoints(24)));
+  const cw = P => THREE.ShapeUtils.isClockWise(P.map(([x, y]) => new THREE.Vector2(x, y)));
+  const ccwP = P => cw(P) ? P.slice().reverse() : P, cwP = P => cw(P) ? P : P.slice().reverse();
+  const O = ccwP(outer), pk = pockets.map(q => ({p:cwP(q.p), d:Math.min(q.d, t - .01)}));
+  const H = holes.map(h => { const c = h.reduce((a, [x, y]) => [a[0] + x / h.length, a[1] + y / h.length], [0, 0]), in_ = pk.find(q => inPoly({x:c[0], y:c[1]}, q.p)); return {p:cwP(h), top:in_ ? t - in_.d : t, pk:in_}; });
+  const pos = [];
+  const face = (contour, hs, z, up) => {
+    const C = ccwP(contour), Hs = hs.map(cwP), all = C.concat(...Hs);
+    THREE.ShapeUtils.triangulateShape(C.map(([x, y]) => new THREE.Vector2(x, y)), Hs.map(h => h.map(([x, y]) => new THREE.Vector2(x, y)))).forEach(([a, b, c]) => {
+      const A = all[a], B = all[b], D = all[c], n = (B[0] - A[0]) * (D[1] - A[1]) - (B[1] - A[1]) * (D[0] - A[0]);
+      (n > 0) === up ? pos.push(A[0], A[1], z, B[0], B[1], z, D[0], D[1], z) : pos.push(A[0], A[1], z, D[0], D[1], z, B[0], B[1], z);
+    });
+  };
+  const wall = (L, z0, z1) => L.forEach((p, i) => { const q = L[(i + 1) % L.length]; pos.push(p[0], p[1], z0, q[0], q[1], z0, q[0], q[1], z1, p[0], p[1], z0, q[0], q[1], z1, p[0], p[1], z1); });
+  face(O, H.map(h => h.p), 0, false);
+  face(O, [...H.filter(h => !h.pk).map(h => h.p), ...pk.map(q => q.p)], t, true);
+  pk.forEach(q => face(q.p, H.filter(h => h.pk === q).map(h => h.p), t - q.d, true));
+  wall(O, 0, t); H.forEach(h => wall(h.p, 0, h.top)); pk.forEach(q => wall(q.p, t - q.d, t));
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
+  return g;
+}
 function build3d(){
   const SH = state.shapes.filter(isVis);
   const {root, scene} = three;
@@ -5964,7 +6107,11 @@ function build3d(){
   // Gewindebohrung (G-Mx) im 3D-Druck: Loch größer, Innengewinde-Ring hinein
   const thrSize = h => printThreads && (h.fit || '').startsWith('G-') && PITCH[h.fit.slice(2)] ? h.fit.slice(2) : null, thrRings = [];
   rects.forEach((r, i) => {
-    let z = 0; if (!isElev(r)) rects.slice(0, i).forEach(q => { if (!isElev(q) && !tilted(q) && over(r, q)) z = Math.max(z, base.get(q.id) + q.t); });   // aufgestellte Bleche tragen nichts
+    let z = 0; const rb = bbox(r), rc = {x:(rb.x0 + rb.x1) / 2, y:(rb.y0 + rb.y1) / 2};
+    if (!isElev(r)) rects.slice(0, i).forEach(q => { if (!isElev(q) && !tilted(q) && over(r, q)){
+      // sitzt das Teil in einer Tasche von q, liegt es auf dem Taschenboden
+      const pk = cuts.find(c => isPocket(c) && cutHits(q, c) && inCut(c, rc.x, rc.y) && cutInside(r, c));
+      z = Math.max(z, base.get(q.id) + q.t - (pk ? Math.min(pk.depth, q.t) : 0)); } });   // aufgestellte Bleche tragen nichts
     base.set(r.id, z);
     if (r.equip && r.equip.kind === 'robot'){ dg.add(robotMesh(r, z, mesh)); return; }
     if (r.equip){ const g = new THREE.BoxGeometry(r.w, r.h, r.t); g.translate(r.w/2, r.h/2, r.t/2); g.rotateZ((r.rot || 0) * Math.PI / 180); g.translate(r.x, r.y, z); const m = mesh(g, r, 'plate');
@@ -5977,20 +6124,22 @@ function build3d(){
         const d = Math.hypot(h.x - r.x, h.y - r.y);
         if (d + h.d/2 < r.d/2 && d - h.d/2 > (r.di || 0)/2){ const tz = thrSize(h), p = new THREE.Path(); p.absarc(h.x - r.x, h.y - r.y, tz ? thrHoleR(tz) : h.d/2, 0, Math.PI*2, true); sh.holes.push(p); if (tz) thrRings.push([h, r, z]); }
       });
-      cuts.filter(c => inRect(r, c.x, c.y)).forEach(c => sh.holes.push(new THREE.Path(cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y); return new THREE.Vector2(w.x - r.x, w.y - r.y); }))));
+      cuts.filter(c => cutHits(r, c) && !isPocket(c)).forEach(c => sh.holes.push(new THREE.Path(cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y); return new THREE.Vector2(w.x - r.x, w.y - r.y); }))));
       const g = extrude(sh, r.t); g.translate(r.x, r.y, z);
       dg.add(withL(mesh(g, r, 'plate'), locM(r.x, r.y, z, 0))); return;
     }
     // im lokalen System des Blechs bauen, dann drehen und verschieben
     const sh = new THREE.Shape(rectOutline(r).map(([x, y]) => new THREE.Vector2(x, y)));
-    cuts.filter(c => inRect(r, c.x, c.y)).forEach(c => sh.holes.push(new THREE.Path(cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y), l = worldToLocal(r, w); return new THREE.Vector2(l.x, l.y); }))));
+    const locCut = c => cutOutline(c).map(([x, y]) => { const w = localToWorld(c, x, y), l = worldToLocal(r, w); return [l.x, l.y]; });
+    cuts.filter(c => cutHits(r, c) && !isPocket(c)).forEach(c => sh.holes.push(new THREE.Path(locCut(c).map(([x, y]) => new THREE.Vector2(x, y)))));
+    const pockets = cuts.filter(c => isPocket(c) && cutHits(r, c) && c.depth < r.t).map(c => ({p:locCut(c), d:c.depth}));
     holes.forEach(h => {
       const l = worldToLocal(r, h);
       if (l.x - h.d/2 > 0 && l.x + h.d/2 < r.w && l.y - h.d/2 > 0 && l.y + h.d/2 < r.h && (!r.outline || inPoly(l, r.outline))){
         const tz = thrSize(h), p = new THREE.Path(); p.absarc(l.x, l.y, tz ? thrHoleR(tz) : h.d/2, 0, Math.PI*2, true); sh.holes.push(p); if (tz) thrRings.push([h, r, z]);
       }
     });
-    const g = extrude(sh, r.t); g.rotateZ((r.rot || 0) * Math.PI / 180); g.translate(r.x, r.y, z);
+    const g = pockets.length ? pocketSolid(sh, pockets, r.t) : extrude(sh, r.t); g.rotateZ((r.rot || 0) * Math.PI / 180); g.translate(r.x, r.y, z);
     dg.add(withL(mesh(g, r, 'plate'), locM(r.x, r.y, z, r.rot)));
   });
   thrRings.forEach(([h, r, z]) => { const g = threadRing(h.fit.slice(2), r.t, printThreads.c); g.translate(h.x, h.y, z); dg.add(mesh(g, r, 'plate')); });
