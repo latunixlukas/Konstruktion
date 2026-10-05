@@ -667,6 +667,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         </div>
         <label class="opt"><input type="checkbox" id="shHidden" checked> Verdeckte Kanten gestrichelt</label>
         <label class="opt"><input type="checkbox" id="shBom" checked> Stückliste als zweite Seite</label>
+        <label class="opt"><input type="checkbox" id="shGuide" checked> Bauanleitung – eine Seite je Schritt</label>
         <label class="opt" id="shSelRow" hidden><input type="checkbox" id="shSel"> <span id="shSelTxt">Nur die Auswahl zeichnen</span></label>
         <label class="opt" id="shCadRow" hidden><input type="checkbox" id="shCad"> CAD-Modell mitzeichnen</label>
         <p class="note">Ansichten nach Projektionsmethode 1 (europäisch): Draufsicht unter der Vorderansicht, Seitenansicht von links rechts daneben. Ausgeblendete Ebenen fehlen.</p>
@@ -4094,7 +4095,7 @@ async function exportSheet(o){
     doc.lines([[7, 1.3], [0, 2.6], [-7, 1.3], [0, -5.2]], cx + 5, cy - 2.6, [1, 1], 'S', true);
     doc.setLineWidth(.13); doc.setLineDashPattern([2, .6, .4, .6], 0); doc.line(cx - 3.6, cy, cx + 13, cy); doc.line(cx, cy - 3.4, cx, cy + 3.4); doc.setLineDashPattern([], 0);
   };
-  const pages = o.bom && !ids && bomRows().length ? 2 : 1;
+  const GD = o.guideImgs || [], bomP = o.bom && !ids && bomRows().length ? 1 : 0, pages = 1 + bomP + GD.length;
   sheetFrame('1 / ' + pages);
 
   const P = (vw, h, v) => [org[vw.k][0] + (h - vw.hmin)*k, org[vw.k][1] + (vw.vmax - v)*k];
@@ -4207,11 +4208,32 @@ async function exportSheet(o){
   doc.text(T.name, tx + X*k/2, ty + Y*k + DB + 5, {align:'center'});
   doc.text(S.name, sx + Y*k/2, sy + Z*k + 5, {align:'center'});
   doc.setTextColor(0);
-  if (pages > 1){
-    doc.addPage(paper, 'landscape'); sheetFrame('2 / 2');
+  if (bomP){
+    doc.addPage(paper, 'landscape'); sheetFrame('2 / ' + pages);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('Stückliste', fx0 + 8, fy0 + 10); doc.setFont('helvetica', 'normal');
-    pdfBom(doc, fx0 + 8, fx1 - 8, fy0 + 20, tby - 8, () => { doc.addPage(paper, 'landscape'); sheetFrame('2 / 2'); return fy0 + 14; });
+    pdfBom(doc, fx0 + 8, fx1 - 8, fy0 + 20, tby - 8, () => { doc.addPage(paper, 'landscape'); sheetFrame('2 / ' + pages); return fy0 + 14; });
   }
+  // Bauanleitung: eine Seite je Schritt, Bild links, Schritt und Teile rechts
+  GD.forEach((g, i) => {
+    doc.addPage(paper, 'landscape'); sheetFrame(`${2 + bomP + i} / ${pages}`);
+    const st = g.st, ix = fx0 + 8, iy = fy0 + 16, colW = Math.min(95, (fx1 - fx0) * .3), iw = fx1 - fx0 - 24 - colW, ih = Math.min(iw / 1.4286, tby - iy - 6);
+    const w2 = ih * 1.4286, X = ix + w2 + 8, Wc = fx1 - 8 - X;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(`Bauanleitung – Schritt ${i + 1} von ${GD.length}`, ix, fy0 + 10); doc.setFont('helvetica', 'normal');
+    doc.addImage(g.img, 'JPEG', ix, iy, w2, ih, undefined, 'FAST'); doc.setDrawColor(190); doc.rect(ix, iy, w2, ih); doc.setDrawColor(0);
+    let y = iy + 5;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.splitTextToSize(`${i + 1}. ${st.title}`, Wc).forEach(l => { doc.text(l, X, y); y += 5; }); doc.setFont('helvetica', 'normal');
+    y += 1; doc.setFontSize(8.5); doc.setTextColor(70); doc.splitTextToSize(st.hint, Wc).forEach(l => { doc.text(l, X, y); y += 4.2; }); doc.setTextColor(0);
+    y += 4;
+    if (st.rows.length){
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text('Teile in diesem Schritt', X, y); doc.setFont('helvetica', 'normal'); y += 1.8; doc.setLineWidth(.2); doc.line(X, y, X + Wc, y); y += 4.5;
+      st.rows.forEach(rw => {
+        if (y > tby - 10) return;
+        doc.setFontSize(8.5); doc.text(`${rw.qty} ×`, X, y); doc.splitTextToSize(rw.name, Wc - 10).slice(0, 2).forEach(l => { doc.text(l, X + 9, y); y += 3.8; });
+        doc.setFontSize(7); doc.setTextColor(100); doc.splitTextToSize(rw.dim, Wc - 10).slice(0, 2).forEach(l => { doc.text(l, X + 9, y); y += 3.2; }); doc.setTextColor(0); y += 1.6;
+      });
+    } else if (st.done){ doc.setFontSize(8.5); doc.text(`${st.total} Teile verbaut.`, X, y); }
+    doc.setFontSize(6.5); doc.setTextColor(120); doc.text('Neu in diesem Schritt = farbig, schon verbaut = grau', ix, iy + ih + 4); doc.setTextColor(0);
+  });
   doc.save(fileBase() + (part ? '_' + partName.replace(/[^\wäöüÄÖÜß-]+/g, '_') : ids ? '_auswahl' : '') + '_zeichnung.pdf');
   return scTxt;
 }
@@ -4479,7 +4501,7 @@ $('#expForm').addEventListener('submit', async e => {
   if (opt.fmt === 'sheet'){
     const btn = $('#expGo'); btn.disabled = true; btn.textContent = 'Wird erstellt …'; $('#expErr').textContent = '';
     try {
-      const m = await exportSheet({paper:$('#shPaper').value, scale:$('#shScale').value, hidden:$('#shHidden').checked, bom:$('#shBom').checked, cad:$('#shCad').checked, ids:$('#shSel').checked ? selShapes().filter(s => Z_TYPES.includes(s.type)).map(s => s.id) : null});
+      const m = await exportSheet({paper:$('#shPaper').value, scale:$('#shScale').value, hidden:$('#shHidden').checked, bom:$('#shBom').checked, cad:$('#shCad').checked, ids:$('#shSel').checked ? selShapes().filter(s => Z_TYPES.includes(s.type)).map(s => s.id) : null, guideImgs:$('#shGuide').checked && !$('#shSel').checked ? await guideImages() : null});
       $('#expDlg').hidden = true; $('#hint').textContent = `Technische Zeichnung im Maßstab ${m} gespeichert.`;
     } catch(err){
       $('#expErr').textContent = err.message === 'leer' ? 'Noch keine Teile für die Zeichnung da.' : err.fit ? `Passt im Maßstab ${$('#shScale').value.replace(':', ' : ')} nicht auf das Blatt. Bitte „automatisch“, einen kleineren Maßstab oder A3 wählen.` : 'Zeichnung hat nicht geklappt. Beim ersten Mal braucht die Seite Internet.';
