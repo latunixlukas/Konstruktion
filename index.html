@@ -136,6 +136,8 @@ html.locked,html.locked body{overflow:hidden}
 .chip:hover{background:var(--surface)}.chip:active{transform:scale(.96)}
 .chip.go{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
 .chip.ghost{border-style:dashed;color:var(--muted)}
+.chip.on{background:var(--sel-soft);border-color:var(--sel);color:var(--sel);font-weight:600}
+.chips.aft .chip{font-size:.82rem;min-height:36px;padding:6px 12px}
 .chips.acts{margin-top:4px}
 .askq{font-size:.8rem;color:var(--muted);margin:2px 0 -2px 4px}
 .pcard{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--raised);font-size:.86rem;display:grid;gap:6px}
@@ -3114,7 +3116,7 @@ function wizUpdate(){
 }
 function openWiz(){ if (!project) return; wizRender(); $('#wizDlg').hidden = false; }
 $('#bWiz').onclick = openWiz;
-$('#wizClose').onclick = $('#wizCancel').onclick = () => { $('#wizDlg').hidden = true; };
+$('#wizClose').onclick = $('#wizCancel').onclick = () => { $('#wizDlg').hidden = true; wizAfter = null; };
 $('#wizTabs').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (!b) return; try { WIZ[WIZ.tab] = wizRead(); } catch(err){} WIZ.tab = b.dataset.w; wizRender(); });
 $('#wizFields').addEventListener('input', wizUpdate);
 $('#wizFields').addEventListener('change', wizUpdate);
@@ -3128,6 +3130,7 @@ $('#wizForm').addEventListener('submit', e => {
   shapes.forEach(o => { moveBy(o, dx, dy); o.id = nextId++; o.layer = state.activeLayer || 'L1'; state.shapes.push(o); });
   const g = makeGroup(shapes, {name:r.name, elev:r.elev, tx:r.tx});
   setSel(shapes.map(o => o.id)); setTool('select'); $('#wizDlg').hidden = true; fit(); changed();
+  if (wizAfter){ const a = wizAfter; wizAfter = null; setTimeout(() => runAfter(a), 300); }
   $('#hint').textContent = `„${g.name}“ erzeugt: ${shapes.length} Teile als Baugruppe.${r.elev ? ' In 2D als Ansicht von vorn, in 3D steht sie aufrecht.' : ''} Alt + Klick wählt ein einzelnes Teil.`;
 });
 
@@ -5992,7 +5995,17 @@ $('#spScanIn').onchange = async e => { const f = e.target.files[0]; e.target.val
   });
 })();
 /* ---------- Start-Chat: sagen oder tippen, was gebaut werden soll – mit Rückfragen ---------- */
-const chat = {cur:'', r:null, items:[], wait:null};
+const chat = {cur:'', r:null, items:[], wait:null, after:null};
+// Was nach dem Erstellen gleich passieren soll (antippen oder sagen: „mit Zeichnung“, „und PDF“ …)
+const CHAT_AFTER = {pdf:['📄 PDF mit Bauanleitung', /\bpdf\b/i], sheet:['📐 Technische Zeichnung', /zeichnung/i], guide:['🔧 Bauanleitung in 3D', /bauanleitung|montageanleitung|anleitung/i], wp:['⏱ Arbeitsplan', /arbeitsplan|arbeitszeit|kalkulation/i]};
+let wizAfter = null;
+function runAfter(a){
+  if (a === 'pdf'){ openExport('pdf'); $('#exGuide').checked = true; setTimeout(() => $('#expGo').click(), 60); }
+  else if (a === 'sheet'){ openExport('sheet'); $('#shSel').checked = false; $('#shGuide').checked = true; setTimeout(() => $('#expGo').click(), 60); }
+  else if (a === 'guide') guideStart();
+  else if (a === 'wp') openWp();
+}
+const afterChips = () => `<div class="askq">Danach gleich …</div><div class="chips aft">${Object.entries(CHAT_AFTER).map(([k, [l]]) => `<button type="button" class="chip${chat.after === k ? ' on' : ''}" data-act="after-${k}" aria-pressed="${chat.after === k}">${l}</button>`).join('')}</div>`;
 const CHAT_EX = [['Blech 200 × 100 × 10', 'Blech 200x100x10'], ['Flansch Ø200 innen 60', 'Ronde 200 innen 60'], ['Rahmen 800 × 600', 'Rahmen 800x600'], ['4 Bohrungen M10', '4 Bohrungen M10 Lochkreis 100'], ['Geländer 3 m', 'Geländer 3 m'], ['Tisch 1200 × 700', 'Tisch 1200x700']];
 const PART_WORDS = /blech|platte|rechteck|quadrat|ronde|flansch|scheibe|kreis|bohrung|loch|gewinde|langloch|schraube|mutter|stift|lager|sicherungs|rohr|profil|winkel|stahl|flach|rund|vierkant|\bu\s?\d|welle|kant|text|rahmen|gel(ä|ae)nder|\btor\b|treppe|podest|tisch|werkbank|regal|leiter|konsole|naht/i;
 // cmdParse braucht einen Zustand (Einheit usw.) – auf der Startseite gibt es evtl. noch keinen
@@ -6009,12 +6022,24 @@ const chips = (opts, cls = '') => `<div class="chips${cls ? ' ' + cls : ''}">${o
 function chatHello(){
   $('#chatLog').innerHTML = '';
   chatSay('bot', 'Hallo! Was soll ich dir zeichnen? Sag es einfach oder tippe es ein – z. B.:', chips(CHAT_EX));
+  chatSay('bot', 'Danach kann ich auch gleich ein <b>PDF mit Bauanleitung</b>, die <b>technische Zeichnung</b>, die <b>Bauanleitung in 3D</b> oder den <b>Arbeitsplan</b> machen – sag es einfach dazu, z. B. „Rahmen 800 × 600 mit Zeichnung“.');
 }
 // Antwort verstehen: neues Teil oder Ergänzung zur letzten Eingabe („Dicke 5“, „aus Edelstahl“, „3 Stück“)
 function chatInput(text){
   text = String(text).trim(); if (!text) return;
   chatSay('me', esc(text));
   if (chat.wait === 'name'){ chat.wait = null; $('#npBy').value = text; lsSet(LS_BY, text); chatSay('bot', `Danke, ${esc(text)}!`); chatCreate(); return; }
+  // „… und mach eine Zeichnung / PDF / Bauanleitung / Arbeitsplan“
+  const aft = Object.keys(CHAT_AFTER).find(k => CHAT_AFTER[k][1].test(text));
+  if (aft){
+    chat.after = aft;
+    text = text.replace(/\b(technische|zeichnung|pdf|bauanleitung|montageanleitung|anleitung|arbeitsplan|arbeitszeit|kalkulation|mit|und|als|mach|mache|mir|dazu|danach|auch|bitte|eine|einen|ein|gleich|noch|in 3d)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+    if (!text){
+      const has = chat.r || chat.items.length;
+      chatSay('bot', `Alles klar – nach dem Erstellen: <b>${CHAT_AFTER[aft][0].replace(/^\S+\s/, '')}</b>.${has ? '' : ' Was soll ich zeichnen?'}`, has ? chips([['✓ Erstellen', '#make', 'go']]) + afterChips() : chips(CHAT_EX));
+      return;
+    }
+  }
   let t = text, m;
   const cnt = text.match(/^(\d{1,2})\s*(stück|stk\.?|x|mal)?$/i);
   const good = r => r && (r.make || r.wiz);
@@ -6037,7 +6062,7 @@ function chatAnswer(r, t){
   const asks = r && r.ask ? r.ask.map(a => `<div class="askq">${a.q}</div>${chips(a.o)}`).join('') : '';
   if (!r){ chatSay('bot', 'Das habe ich nicht verstanden. Sag z. B. was es ist und die Maße:', chips(CHAT_EX)); return; }
   const n = chat.items.length;
-  const acts = chips([['✓ Erstellen', '#make', 'go'], ['+ Noch ein Teil dazu', '#add'], ...(n ? [] : []), ['Neu anfangen', '#reset', 'ghost']], 'acts');
+  const acts = chips([['✓ Erstellen', '#make', 'go'], ['+ Noch ein Teil dazu', '#add'], ['Neu anfangen', '#reset', 'ghost']], 'acts') + afterChips();
   if (r.make){
     chat.cur = t; chat.r = r;
     chatSay('bot', `Verstanden: ${r.desc}`, partCard(r) + (asks ? `<div class="askq">Passt das? Sonst antippen:</div>${asks.replace('<div class="askq">', '<div class="askq sub">')}` : '') + acts);
@@ -6049,8 +6074,13 @@ function chatAnswer(r, t){
     chatSay('bot', r.desc, asks);
   }
 }
-function chatAct(a){
-  if (a === 'reset'){ chat.cur = ''; chat.r = null; chat.items = []; chatHello(); return; }
+function chatAct(a, btn){
+  if (a.startsWith('after-')){
+    const k = a.slice(6); chat.after = chat.after === k ? null : k;
+    document.querySelectorAll('#chatLog .chips.aft .chip').forEach(b => { const on = b.dataset.act === 'after-' + chat.after; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    return;
+  }
+  if (a === 'reset'){ chat.cur = ''; chat.r = null; chat.items = []; chat.after = null; chatHello(); return; }
   if (a === 'add'){
     if (chat.r){ chat.items.push({r:chat.r, t:chat.cur}); chat.r = null; chat.cur = ''; }
     chatSay('bot', `Gemerkt – ${chat.items.length} Teil${chat.items.length > 1 ? 'e' : ''} im Projekt. Was kommt noch dazu?`, chips([['✓ Jetzt erstellen', '#make', 'go'], ...CHAT_EX.slice(0, 3)]));
@@ -6067,7 +6097,7 @@ async function chatCreate(){
   const name = (first.charAt(0).toUpperCase() + first.slice(1)).slice(0, 60) + (items.length > 1 ? ` + ${items.length - 1} weitere${items.length > 2 ? '' : 's'} Teil${items.length > 2 ? 'e' : ''}` : '');
   chatSay('bot', `Ich lege das Projekt „${esc(name)}“ an …`);
   if (!await autoProject(name)){ chatSay('bot', esc($('#spErr').textContent || 'Das hat nicht geklappt.')); return; }
-  const list = items.slice(); chat.items = []; chat.r = null; chat.cur = '';
+  const list = items.slice(), after = chat.after; chat.items = []; chat.r = null; chat.cur = ''; chat.after = null;
   setTimeout(() => {
     const parts = list.filter(x => x.r.make), wz = list.find(x => x.r.wiz);
     if (parts.length){
@@ -6077,14 +6107,15 @@ async function chatCreate(){
       snapshot(); placeNew(all); fit(); render();
     }
     $('#hint').textContent = `Aus dem Chat erstellt: ${list.map(x => plain(x.r.desc)).join(' · ')}. Rechts genau einstellen, in 3D ansehen.`;
-    if (wz){ WIZ.tab = wz.r.wiz.tab; Object.assign(WIZ[wz.r.wiz.tab], wz.r.wiz.v); openWiz(); }
+    if (wz){ wizAfter = after; WIZ.tab = wz.r.wiz.tab; Object.assign(WIZ[wz.r.wiz.tab], wz.r.wiz.v); openWiz(); }
+    else if (after) setTimeout(() => runAfter(after), 300);
     chatHello(); $('#chatTxt').placeholder = 'z. B. Blech 200 mal 100 mal 10';
   }, 120);
 }
 $('#chatForm').addEventListener('submit', e => { e.preventDefault(); const v = $('#chatTxt').value; $('#chatTxt').value = ''; chatInput(v); });
 $('#chatLog').addEventListener('click', e => {
   const b = e.target.closest('.chip'); if (!b) return;
-  if (b.dataset.act){ chatAct(b.dataset.act); return; }
+  if (b.dataset.act){ chatAct(b.dataset.act, b); return; }
   chatSay('me', esc(b.textContent));
   chatAnswer(chatParse(b.dataset.c), b.dataset.c);
 });
