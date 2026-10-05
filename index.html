@@ -225,6 +225,33 @@ input[type="color"]{width:100%;height:34px;padding:2px;border:1px solid var(--li
 .cutgroup h4{margin:0;font:600 .92rem var(--f-body)}
 .cutsum{font-size:.84rem;color:var(--muted)}
 .cutsum b{color:var(--fg)}
+.guide{position:absolute;left:12px;bottom:52px;width:min(360px,calc(100% - 24px));max-height:calc(100% - 130px);overflow:auto;background:var(--raised);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;display:grid;gap:8px;z-index:6}
+.guide .ghead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.guide .gstep{font:600 .78rem var(--f-body);color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.guide .gtitle{font:600 1rem var(--f-body)}
+.guide .note{margin:0}
+.guide table{width:100%;font-size:.82rem;border-collapse:collapse}
+.guide td{padding:3px 4px;border-top:1px solid var(--line);vertical-align:top}
+.guide td.num{text-align:right;white-space:nowrap}
+.guide .gnav{display:flex;gap:6px;flex-wrap:wrap}
+.guide .gnav .btn{flex:1}
+.gbar{height:4px;border-radius:2px;background:var(--line);overflow:hidden}.gbar span{display:block;height:100%;background:var(--sel)}
+.gsteps{display:grid;gap:4px;margin:0;padding:0;list-style:none}
+.gsteps button{width:100%;text-align:left;display:flex;gap:8px;align-items:baseline;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:none;color:inherit;font:inherit;font-size:.86rem;cursor:pointer}
+.gsteps button[aria-current="step"]{border-color:var(--sel);background:var(--sel-soft)}
+.gsteps b{min-width:1.6em;color:var(--muted)}
+.wptbl td,.wptbl th{vertical-align:top}
+.wptbl .sub{display:block}
+.cutset select{max-width:100%}
+.cutpanel>*{min-width:0}
+@media (max-width:600px){
+  .wptbl th:nth-child(3),.wptbl td:nth-child(3),.wptbl th:nth-child(4),.wptbl td:nth-child(4){display:none}
+  body.guiding .status{display:none}
+  .guide{left:8px;width:calc(100% - 16px);bottom:8px;max-height:48%;padding:10px 12px;gap:6px}
+  .guide #gHint{display:none}
+  .guide .gtitle{font-size:.92rem}
+  .guide table tr:nth-child(n+4){display:none}
+}
 .cutwarn{color:#dc2626;font-size:.84rem}
 .barvis{display:flex;height:22px;border:1px solid var(--line-strong);border-radius:4px;overflow:hidden;background:repeating-linear-gradient(45deg,var(--surface),var(--surface) 4px,var(--line) 4px,var(--line) 6px)}
 .barvis span{background:var(--part);border-right:2px solid var(--fg);font:500 .66rem var(--f-mono);display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;color:var(--fg)}
@@ -538,6 +565,19 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
       <div class="btnrow"><button class="btn" type="button" id="cutCopy">Als Text kopieren</button></div>
     </div>
   </div>
+  <div class="modal" id="wpDlg" hidden>
+    <div class="panel cutpanel" role="dialog" aria-labelledby="wpTitle">
+      <div class="cuthead"><h3 id="wpTitle">Arbeitsplan</h3><button class="btn icon" type="button" id="wpClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="cutset">
+        <label>Stückzahl <input id="wpLot" value="1" inputmode="numeric"></label>
+        <label>Oberfläche <select id="wpSurf"><option value="keine">keine (roh)</option><option value="lack">Lackieren (Grund + Deckanstrich)</option><option value="pulver">Pulverbeschichten (extern)</option><option value="zink">Feuerverzinken (extern)</option></select></label>
+        <label>Stundensatz <input id="wpRate" value="60" inputmode="decimal"> €/h</label>
+      </div>
+      <div id="wpOut"></div>
+      <p class="note">Grobe Richtwerte für die Planung (Werkstatt, Stahl S235, MAG-Schweißen). tr = Rüstzeit einmal je Auftrag, te = Zeit je Stück. Echte Zeiten hängen von Maschinen, Vorrichtungen und Übung ab.</p>
+      <div class="btnrow"><button class="btn" type="button" id="wpCopy">Als Text kopieren</button><button class="btn primary" type="button" id="wpPdf">Als PDF</button></div>
+    </div>
+  </div>
   <div class="modal" id="expDlg" hidden>
     <form class="panel expform" id="expForm" novalidate>
       <h3>Exportieren</h3>
@@ -618,6 +658,13 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
           <label class="chk"><input type="checkbox" id="cutFlip"> andere Seite</label>
         </div>
         <div id="pins3d"></div>
+        <div class="guide" id="guideCard" hidden>
+          <div class="ghead"><span class="gstep" id="gStep"></span><button type="button" class="btn icon" id="gClose" aria-label="Bauanleitung beenden" title="Bauanleitung beenden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+          <div class="gtitle" id="gTitle"></div>
+          <p class="note" id="gHint"></p>
+          <div id="gParts"></div>
+          <div class="gnav"><button type="button" class="btn" id="gPrev">◀ Zurück</button><button type="button" class="btn" id="gPlay">Abspielen</button><button type="button" class="btn primary" id="gNext">Weiter ▶</button></div>
+        </div>
         <div class="m3" id="m3x" hidden></div><div class="m3" id="m3y" hidden></div><div class="m3" id="m3z" hidden></div>
       </div>
       <div class="cadbar pill" id="cadBar" hidden>
@@ -650,6 +697,8 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
             <li><b>Schraube</b> (Normteile): Sechskant-, Zylinder- und Senkschraube, Gewindestift, Mutter, Sicherungsmutter, Scheibe, Zylinderstift, Sicherungsring, Kugellager.</li>
             <li><b>Schraube</b>: tippen. Auf einer Bohrung rastet sie mittig ein. Art, Größe und Länge oben wählen.</li>
             <li><b>Ronde</b>: runde Bleche und Flansche mit Innenloch. <b>Kreis</b>: Kreis, Bogen oder Lochkreis mit gleichmäßig verteilten Bohrungen.</li>
+            <li><b>Arbeitsplan</b>: In der Stückliste auf „Arbeitsplan“ tippen. Die App plant Sägen, Schneiden, Bohren, Gewinde, Kanten, Schweißen, Oberfläche und Montage mit groben Zeiten. Stückzahl und Oberfläche oben einstellen, als PDF speichern.</li>
+            <li><b>Bauanleitung</b>: In der Stückliste auf „Bauanleitung“ tippen. Die 3D-Ansicht zeigt Schritt für Schritt, welches Teil wann dazukommt (neu = farbig, schon verbaut = grau), mit Teileliste je Schritt. Weiter/Zurück unten links oder mit den Pfeiltasten.</li>
             <li><b>Biegeteil</b>: Schenkel als Außenmaße und Biegewinkel eintragen. Die gestreckte Länge (Zuschnitt) wird nach DIN 6935 berechnet.</li>
             <li><b>Passungen</b>: an Wellenabsätze die Toleranz schreiben (z. B. <kbd>30k6×25</kbd>), bei Bohrungen „Toleranz“ wählen (z. B. H7). Abmaße und Spiel/Übermaß nach ISO 286 stehen dann bei den Eigenschaften.</li>
             <li><b>Welle</b>: tippen, dann rechts die Absätze als Ø×Länge eintragen, z. B. <kbd>25×40; 35×100; 25×40</kbd>. Passfedernut nach DIN 6885 auswählbar.</li>
@@ -692,7 +741,7 @@ kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line-strong);border-bot
         <div class="layers" id="layers"></div>
       </section>
       <section>
-        <h2>Stückliste <span class="row"><button class="btn" type="button" id="bCut">Zuschnitt</button><button class="btn" type="button" id="bCopyBom">Kopieren</button></span></h2>
+        <h2>Stückliste <span class="row"><button class="btn" type="button" id="bCut">Zuschnitt</button><button class="btn" type="button" id="bWp">Arbeitsplan</button><button class="btn" type="button" id="bGuide">Bauanleitung</button><button class="btn" type="button" id="bCopyBom">Kopieren</button></span></h2>
         <div id="bom"></div>
       </section>
       <section>
@@ -2126,6 +2175,7 @@ function getVal(s, k){
 }
 const TYPENAMES = {pin:'Kommentar', text:'Text', balloon:'Positionsnummer', leader:'Hinweispfeil', slot:'Langloch', cutout:'Ausschnitt', disc:'Ronde / Flansch', circle:'Kreis / Bogen', bend:'Biegeteil', rect:'Rechteck / Blech', hole:'Bohrung', screw:'Verbindungselement', line:'Linie', dim:'Maß', profile:'Profil', weld:'Schweißnaht', shaft:'Welle'};
 function renderProps(){
+  if (guide && is3()){ renderGuidePanel(); return; }
   if (mode === 'demo'){ renderDemoPanel(); return; }
   const s = byId(selId), el = $('#props');
   if (s && multi.size){ renderMultiProps(); return; }
@@ -2660,9 +2710,9 @@ function holeRows(){
   });
   return [...map];
 }
-function weldRows(){
+function weldRows(list = state.shapes){
   const map = new Map();
-  state.shapes.filter(s => s.type === 'weld').forEach(s => {
+  list.filter(s => s.type === 'weld').forEach(s => {
     const key = `${WELDS[s.kind].name} ${WELDS[s.kind].pre}${dec(s.a)}${s.around ? ' ringsum' : ''}`;
     const r = map.get(key) || {n:0, len:0}; r.n++; r.len += Math.hypot(s.x2 - s.x1, s.y2 - s.y1); map.set(key, r);
   });
@@ -3236,7 +3286,8 @@ function openKeys(){
     sec('Bearbeiten', [[K('Strg', 'Z'), 'Rückgängig'], [K('Strg', 'Y'), 'Wiederholen'], [K('Strg', 'C') + ' ' + K('Strg', 'V'), 'Kopieren, an der Maus einfügen'], [K('Strg', 'X'), 'Ausschneiden'], [K('Strg', 'D'), 'Duplizieren'], [K('Strg', 'A'), 'Alles auswählen'], [K('Strg', 'G'), 'Baugruppe bilden (mit Shift: auflösen)'], [K('Alt') + ' + Klick', 'Einzelnes Teil in einer Baugruppe'], [K('Entf'), 'Löschen'], [K('Esc'), 'Auswahl aufheben'], [K('←') + ' ' + K('→') + ' ' + K('↑') + ' ' + K('↓'), 'Verschieben um ein Rasterkästchen (mit Shift: 1 mm)'], [K('Bild↑') + ' ' + K('Bild↓'), 'Höhe Z in 3D ändern'], [K('X') + ' ' + K('Y'), 'Teil um X bzw. Y um 90° kippen (mit Shift zurück)'], [K('/') + ' ' + K('Strg', 'K'), 'Eingabezeile: tippen, was du brauchst'], [K('?'), 'Diese Übersicht']]) +
     sec('Maus', [['Klick', 'Teil auswählen'], [K('Shift') + ' + Klick', 'Teil dazu oder heraus'], ['Rahmen nach rechts', 'nur Teile ganz drin'], ['Rahmen nach links', 'alle berührten Teile'], ['Rechte Maustaste ziehen', 'Ansicht verschieben (auch ' + K('Leertaste') + ' + ziehen)'], ['Mausrad', 'Zoomen'], [K('Shift') + ' beim Zeichnen', 'ohne Raster und Fang']]) +
     sec('Tablet / Handy', [['Tippen', 'Teil auswählen bzw. setzen'], ['Leere Fläche ziehen', 'Ansicht verschieben'], ['Zwei Finger', 'Zoomen'], ['Lange drücken auf Teil', 'Teil zur Auswahl dazu oder heraus'], ['Lange drücken auf leerer Fläche, dann ziehen', 'Rahmen aufziehen, mehrere Teile wählen']]) +
-    sec('3D-Ansicht', [['Ziehen', 'Drehen'], ['Rechte Maustaste ziehen', 'Ansicht verschieben'], ['Ausgewähltes Teil ziehen', 'Verschieben'], [K('Shift') + ' + ziehen', 'Teil anheben'], ['3D-Lage', 'rechts „Aufstellen ↥ X / Y“ oder „Flach legen“'], ['Demo', 'bunte Ansicht, Teil antippen = Farbe wählen']]);
+    sec('3D-Ansicht', [['Ziehen', 'Drehen'], ['Rechte Maustaste ziehen', 'Ansicht verschieben'], ['Ausgewähltes Teil ziehen', 'Verschieben'], [K('Shift') + ' + ziehen', 'Teil anheben'], ['3D-Lage', 'rechts „Aufstellen ↥ X / Y“ oder „Flach legen“'], ['Demo', 'bunte Ansicht, Teil antippen = Farbe wählen']]) +
+    sec('Bauanleitung', [[K('→'), 'Nächster Schritt'], [K('←'), 'Schritt zurück'], [K('Esc'), 'Bauanleitung beenden']]);
   $('#keysDlg').hidden = false; $('#keysClose').focus();
 }
 $('#bKeys').onclick = openKeys;
@@ -3249,6 +3300,191 @@ $('#cutCopy').onclick = async () => {
   try { await navigator.clipboard.writeText(cutText); b.textContent = 'Kopiert'; } catch(e){ b.textContent = 'Nicht möglich'; }
   setTimeout(() => b.textContent = 'Als Text kopieren', 1600);
 };
+/* ---------- Arbeitsplan: Arbeitsgänge mit groben Zeiten ---------- */
+const partVol = s => s.type === 'profile' ? section(s).area * s.len : s.type === 'disc' ? s.d * s.d * s.t : s.type === 'bend' ? bendCalc(s).L * s.w * s.t : s.type === 'rect' ? s.w * s.h * s.t : 0;
+const hm = min => { const m = Math.round(min); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min'; };
+const m1 = v => dec((Math.round(v * 10) / 10).toFixed(1));
+const polyLen = p => p.reduce((a, [x, y], i) => { const [u, v] = p[(i + 1) % p.length]; return a + Math.hypot(u - x, v - y); }, 0);
+const plateOf = (x, y) => state.shapes.filter(r => (r.type === 'rect' || r.type === 'disc') && inRect(r, x, y)).sort((a, b) => b.t - a.t)[0] || null;
+// Schneidgeschwindigkeit Laser (Baustahl, mm/min) nach Blechdicke
+const laserV = t => t <= 3 ? 4000 : t <= 6 ? 2500 : t <= 10 ? 1500 : t <= 15 ? 900 : t <= 20 ? 600 : 400;
+// Oberfläche in m² (außen; mit inner = true auch die Innenseite von Rohren, z. B. beim Verzinken)
+function surfArea(s, inner){
+  if (s.type === 'rect') return (2 * (s.w * s.h - cornerLoss(s)) + polyLen(rectOutline(s)) * s.t) / 1e6;
+  if (s.type === 'disc') return (Math.PI / 2 * (s.d**2 - (s.di || 0)**2) + Math.PI * (s.d + (s.di || 0)) * s.t) / 1e6;
+  if (s.type === 'bend'){ const L = bendCalc(s).L; return (2 * L * s.w + 2 * (L + s.w) * s.t) / 1e6; }
+  if (s.type === 'profile'){ const q = section(s); return ((polyLen(q.outer) + (inner && q.hole ? polyLen(q.hole) : 0)) * s.len + 2 * q.area) / 1e6; }
+  if (s.type === 'shaft') return s.steps.reduce((a, t) => a + Math.PI * t.d * t.l, 0) / 1e6 + Math.PI / 2 * shaftDmax(s)**2 / 1e6;
+  return 0;
+}
+function workPlan(lot, surf){
+  const S = state.shapes, ops = [], add = (name, place, lines, tr, te) => { if (te > 0) ops.push({name, place, lines, tr, te}); };
+  const count = (map, key, v = 1) => map.set(key, (map.get(key) || 0) + v);
+  const join = map => [...map].map(([k, n]) => `${typeof n === 'number' ? n : n.n} × ${k}`);
+  const soft = s => s.mat === 'HOLZ' || s.mat === 'GR', pd = p => { if (p.type === 'disc') return {t:p.t, a:p.d, b:p.d}; const [t, a, b] = [p.w, p.h, p.t].sort((x, y) => x - y); return {t, a:Math.max(a, b), b:Math.min(a, b), up:t !== p.t}; };
+  const others = S.filter(s => (s.type === 'rect' || s.type === 'disc') && soft(s)), plates = S.filter(s => (s.type === 'rect' || s.type === 'disc') && !soft(s)), profs = S.filter(s => s.type === 'profile' && s.view !== 'section');
+  const bends = S.filter(s => s.type === 'bend'), shafts = S.filter(s => s.type === 'shaft'), welds = S.filter(s => s.type === 'weld'), screws = S.filter(s => s.type === 'screw');
+  const holes = S.filter(s => s.type === 'hole'), mills = S.filter(s => s.type === 'slot' || s.type === 'cutout');
+  const inside = p => S.filter(c => isCut(c) && inRect(p, c.x, c.y));
+  const thread = h => (h.fit || '').startsWith('G-');
+  // Laser, wenn rund, dick, mit Ecken/Ausschnitten oder vielen Bohrungen – sonst Tafelschere
+  const laser = new Set(plates.filter(p => p.type === 'disc' || pd(p).t > 6 || cornerLoss(p) > 0 || p.rot % 90 || inside(p).some(c => c.type !== 'hole') || inside(p).length >= 4));
+  const lasered = new Set();
+  plates.forEach(p => { if (laser.has(p)) inside(p).forEach(c => { if (c.type !== 'hole' || (c.d >= p.t && !thread(c) && !c.tol)) lasered.add(c); }); });
+  // 1 Sägen
+  const saw = new Map(); let sawT = 0, angles = new Set();
+  profs.forEach(p => {
+    const q = section(p), m = hasMiter(p), cuts = m ? 2 : 1;
+    sawT += 1 + cuts * (q.area / 2500 * (m ? 1.4 : 1) + .2);
+    if (m){ angles.add(Math.abs(p.cutA || 0)); angles.add(Math.abs(p.cutB || 0)); }
+    count(saw, `${PROFILES[p.kind].name} ${p.size}, L = ${num(p.len, 'mm')} mm${m ? ' · ' + miterTxt(p) : ''}`);
+  });
+  shafts.forEach(s => { const D = shaftDmax(s); sawT += 1.2 + Math.PI / 4 * D * D / 2500; count(saw, `Rundstahl Ø${num(D, 'mm')}, L = ${num(shaftLen(s) + 2, 'mm')} mm (Rohteil Welle)`); });
+  angles.delete(0);
+  add('Sägen', 'Bandsäge', [...join(saw), ...(angles.size ? [`Gehrungswinkel einstellen: ${[...angles].map(a => dec(a) + '°').join(', ')}`] : [])], 10 + 3 * angles.size, sawT);
+  // 2 Bleche zuschneiden
+  const shear = new Map(), las = new Map(); let shearT = 0, lasT = 0, lasLen = 0;
+  plates.forEach(p => {
+    const q = pd(p), nm = p.type === 'disc' ? `${p.name || 'Ronde'} Ø${num(p.d, 'mm')}${p.di > 0 ? '/Ø' + num(p.di, 'mm') : ''} × ${num(p.t, 'mm')}` : `${p.name || 'Blech'} ${num(q.a, 'mm')} × ${num(q.b, 'mm')} × ${num(q.t, 'mm')}`;
+    if (!laser.has(p)){ shearT += 2.2; count(shear, nm + ' mm'); return; }
+    const inn = q.up ? [] : inside(p).filter(c => lasered.has(c)), len = (p.type === 'disc' ? Math.PI * (p.d + (p.di || 0)) : q.up ? 2 * (q.a + q.b) : polyLen(rectOutline(p))) + inn.reduce((a, c) => a + polyLen(c.type === 'hole' ? circPts(0, 0, c.d / 2, 24) : cutOutline(c)), 0);
+    const pierce = 1 + inn.length + (p.di > 0 ? 1 : 0);
+    lasT += 1.5 + len / laserV(q.t) + pierce * (.05 + q.t * .02); lasLen += len;
+    count(las, nm + ' mm' + (inn.length ? ` (mit ${inn.length} Innenkontur${inn.length > 1 ? 'en' : ''})` : ''));
+  });
+  bends.forEach(b => { const L = bendCalc(b).L, nm = `Zuschnitt ${b.name || 'Biegeteil'} ${num(L, 'mm')} × ${num(b.w, 'mm')} × ${num(b.t, 'mm')} mm`; if (b.t <= 6){ shearT += 2.2; count(shear, nm); } else { lasT += 1.5 + 2 * (L + b.w) / laserV(b.t); lasLen += 2 * (L + b.w); count(las, nm); } });
+  add('Blech schneiden', 'Tafelschere', join(shear), 10, shearT);
+  add('Laserschneiden', 'Laser / Plasma', [...join(las), `Schnittlänge ca. ${m1(lasLen / 1000)} m`], 15, lasT);
+  const wood = others.filter(p => p.mat === 'HOLZ'), grat = others.filter(p => p.mat === 'GR'), oM = m => { const r = new Map(); m.forEach(p => { const q = pd(p); count(r, `${p.name || MATS[p.mat].name} ${num(q.a, 'mm')} × ${num(q.b, 'mm')} × ${num(q.t, 'mm')} mm`); }); return join(r); };
+  add('Holz zuschneiden', 'Formatkreissäge', oM(wood), 10, wood.length * 3);
+  add('Gitterrost zuschneiden und einfassen', 'Trennschleifer / Zukauf', oM(grat), 10, grat.length * 8);
+  // 3 Drehen und Nuten
+  if (shafts.length){
+    const lines = shafts.map(s => `Welle ${stepsText(s)} (${s.steps.length} Absätze${s.steps.some(t => t.tol) ? ', mit Passungen – feindrehen/schleifen' : ''})`);
+    add('Drehen', 'Drehmaschine', lines, 20, shafts.reduce((a, s) => a + 10 + 4 * s.steps.length + shaftLen(s) / 100 * 2 + s.steps.filter(t => t.tol).length * 4, 0));
+    const keys = shafts.map(shaftKey).filter(Boolean);
+    add('Passfedernut fräsen', 'Fräsmaschine', keys.map(k => `Nut ${k.b} × ${dec(k.l)} mm, Tiefe ${dec(k.t1)} mm (DIN 6885)`), 15, keys.length * 8);
+  }
+  // 4 Fräsen: Langlöcher und Ausschnitte, die nicht gelasert werden
+  const mill = mills.filter(c => !lasered.has(c)), millM = new Map();
+  mill.forEach(c => count(millM, c.type === 'slot' ? `Langloch ${num(c.l, 'mm')} × ${num(c.b, 'mm')} mm` : `Ausschnitt ${num(c.w, 'mm')} × ${num(c.h, 'mm')} mm`));
+  add('Fräsen', 'Fräsmaschine', join(millM), 20, mill.reduce((a, c) => a + (c.type === 'slot' ? 6 + c.l / 50 : 5 + 2 * (c.w + c.h) / 60), 0));
+  // 5 Bohren, Reiben, Gewinde, Senken
+  const drill = holes.filter(h => !lasered.has(h)), drM = new Map(), dias = new Set(); let drT = 0;
+  drill.forEach(h => {
+    const p = plateOf(h.x, h.y), t = p ? p.t : 10, d = thread(h) ? NORM[h.fit.slice(2)].kl : h.d;
+    const n = 25000 / (Math.PI * d), f = Math.min(.35, Math.max(.05, .015 * d)), L = t + .3 * d;
+    drT += .6 + L / (f * n) * (d > 13 ? 1.6 : 1) + (h.tol ? 1.5 : 0); dias.add(d);
+    count(drM, `Ø${num(d, 'mm')}${thread(h) ? ' (Kernloch ' + h.fit.slice(2) + ')' : h.fit && h.fit !== 'frei' ? ' (Durchgang ' + h.fit.slice(2) + ')' : ''}${h.tol ? ' ' + h.tol + ' – vorbohren und reiben' : ''}, ${num(t, 'mm')} mm tief${d > 13 ? ', vorbohren' : ''}`);
+  });
+  add('Bohren', 'Säulenbohrmaschine', [...join(drM), 'Anreißen und körnen inklusive'], 8 + 2 * dias.size, drT);
+  const thr = holes.filter(thread), thM = new Map();
+  thr.forEach(h => { const p = plateOf(h.x, h.y); count(thM, `${h.fit.slice(2)}, ${num(p ? p.t : 10, 'mm')} mm tief`); });
+  add('Gewinde schneiden', 'Bohrmaschine / Handgewindebohrer', join(thM), 5, thr.reduce((a, h) => { const p = plateOf(h.x, h.y); return a + 1.5 + (p ? p.t : 10) * .05; }, 0));
+  const csk = screws.filter(s => s.kind === 'csk'), skM = new Map();
+  csk.forEach(s => count(skM, `90° für ${s.size} (Kopf Ø${CSK[s.size][0]})`));
+  add('Senken', 'Säulenbohrmaschine', join(skM), 3, csk.length * .8);
+  // 6 Entgraten
+  const pieces = plates.length + profs.length + bends.length + shafts.length + others.length, ends = profs.reduce((a, p) => a + (p.cutA ? 1 : 0) + (p.cutB ? 1 : 0), 0);
+  add('Entgraten', 'Werkbank', [`${pieces} Teile, ${holes.length} Bohrungen${ends ? `, ${ends} Gehrungsenden` : ''} – Kanten brechen`], 0, pieces * 1 + holes.length * .2 + ends * .3);
+  // 7 Kanten
+  if (bends.length){
+    const bM = new Map(); bends.forEach(b => count(bM, `${b.name || 'Biegeteil'} t = ${num(b.t, 'mm')} mm, ${b.legs.length - 1} Biegung${b.legs.length > 2 ? 'en' : ''} (${b.angles.slice(0, b.legs.length - 1).map(a => dec(Math.abs(a ?? 90)) + '°').join(', ')}), Ri = ${num(b.r, 'mm')}`));
+    add('Kanten', 'Abkantpresse', join(bM), 15 + 5 * bM.size, bends.reduce((a, b) => a + 1 + .8 * (b.legs.length - 1), 0));
+  }
+  // 8 Heften und Schweißen
+  const wpc = plates.length + profs.length + bends.length, est = !welds.length && !screws.length && wpc >= 2, wig = [...plates, ...profs, ...bends].some(s => /^1\.4|AlMg/.test(s.mat));
+  if (welds.length || est){
+    const joined = Math.max(1, wpc - 1);
+    add('Heften', 'Schweißtisch', [`${joined} Teile anlegen, ausrichten (Winkel, Diagonale) und heften`], 15, joined * 2);
+    let arc = 0; const wM = new Map();
+    welds.forEach(w => {
+      const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1), a = Math.max(1, w.a || 3);
+      const v = w.kind === 'kehl' ? 350 * (3 / a) ** 2 : w.kind === 'i' ? 400 * (3 / a) : 250 * (3 / a) ** 2;
+      arc += L / Math.max(30, Math.min(500, v));
+      const k = `${WELDS[w.kind].name} ${WELDS[w.kind].pre}${dec(w.a)}${w.around ? ' ringsum' : ''}`, r = wM.get(k) || {n:0, len:0}; r.n++; r.len += L; wM.set(k, r);
+    });
+    let estLen = 0;
+    if (est){
+      const big = [...plates, ...profs, ...bends].sort((a, b) => partVol(b) - partVol(a))[0];
+      [...plates, ...bends].forEach(p => { if (p !== big){ const q = p.type === 'bend' ? {b:Math.min(bendCalc(p).L, p.w)} : pd(p); estLen += 2 * q.b; } });
+      profs.forEach(p => { if (p !== big) estLen += polyLen(section(p).outer); });
+      arc = estLen / 350; wM.set('Kehlnaht a3 (geschätzt)', {n:joined, len:estLen});
+    }
+    if (wig) arc *= 1.8;
+    add(`Schweißen (${wig ? 'WIG' : 'MAG'})`, 'Schweißplatz', [...[...wM].map(([k, r]) => `${r.n} × ${k}, zusammen ${m1(r.len / 1000)} m`), ...(est ? ['Nähte sind nicht gezeichnet – Stöße ringsum geschätzt'] : []), 'Lichtbogenzeit ca. ' + hm(arc) + ' – wechselseitig schweißen gegen Verzug'], 0, arc / .35 + (welds.length || joined) * .5);
+    add('Richten und Prüfen', 'Richtplatte', ['Maße und Winkel prüfen, Verzug richten, Schweißspritzer entfernen'], 0, 5 + pieces * .5);
+  }
+  // 9 Oberfläche
+  const parts = [...plates, ...profs, ...bends, ...shafts], A = parts.reduce((a, s) => a + surfArea(s, surf === 'zink'), 0), kg = rowsMass(bomRows(parts));
+  if (surf === 'lack') add('Lackieren', 'Lackierstand', [`Fläche ca. ${m1(A)} m²`, 'Entfetten, Grundierung, Deckanstrich – Trocknen zwischen den Schichten'], 20, 5 + A * 21);
+  if (surf === 'pulver') add('Pulverbeschichten (extern)', 'Fremdleistung', [`Fläche ca. ${m1(A)} m²`, 'Hier nur Verpacken, Transport, Kontrolle – Lieferzeit meist 3–5 Arbeitstage'], 15, 10 + A * 2);
+  if (surf === 'zink'){
+    const hollow = profs.some(p => ['QR', 'RR', 'RO'].includes(p.kind));
+    add('Feuerverzinken (extern)', 'Fremdleistung', [`Gewicht ca. ${m1(kg)} kg, verzinkt ca. ${m1(kg * 1.07)} kg (+ ca. 7 % Zink), Fläche ca. ${m1(A)} m²`, ...(hollow ? ['Hohlprofile brauchen Entlüftungs- und Ablaufbohrungen (mind. Ø10 mm) an den Enden!'] : []), 'Hier nur Verpacken, Transport, Kontrolle'], 15, 15 + kg * .05);
+  }
+  // 10 Montage
+  const MT = {hex:1, cyl:1, csk:1, set:.8, nut:.4, lock:.6, washer:.2, pin:1.5, circlip:1, bearing:5}, mM = new Map();
+  screws.forEach(s => count(mM, `${KINDS[s.kind].name} ${s.size}${KINDS[s.kind].len ? ' × ' + s.len : ''}`));
+  const keyN = shafts.filter(shaftKey).length;
+  if (keyN) count(mM, 'Passfeder einsetzen', keyN);
+  add('Montieren', 'Werkbank', join(mM), 5, screws.reduce((a, s) => a + (MT[s.kind] || 1), 0) + keyN);
+  // 11 Endkontrolle
+  if (pieces) add('Endkontrolle', 'Prüfplatz', ['Maße nach Zeichnung, Stückliste vollständig, Sichtprüfung Nähte und Oberfläche'], 0, 5 + pieces * .3);
+  ops.forEach((o, i) => { o.ag = (i + 1) * 10; o.sum = o.tr + o.te * lot; });
+  const tr = ops.reduce((a, o) => a + o.tr, 0), te = ops.reduce((a, o) => a + o.te, 0);
+  return {ops, tr, te, total:tr + te * lot, kg, A};
+}
+let wpText = '';
+const wpVals = () => ({lot:Math.max(1, Math.round(parseFloat(($('#wpLot').value || '1').replace(',', '.')) || 1)), surf:$('#wpSurf').value, rate:Math.max(0, parseFloat(($('#wpRate').value || '0').replace(',', '.')) || 0)});
+function renderWp(){
+  const {lot, surf, rate} = wpVals(), w = workPlan(lot, surf);
+  if (!w.ops.length){ $('#wpOut').innerHTML = '<p class="empty">Noch keine Teile im Projekt.</p>'; wpText = ''; return; }
+  let h = `<div class="tbl-wrap"><table class="wptbl"><thead><tr><th class="num">AG</th><th>Arbeitsgang</th><th class="num">tr</th><th class="num">te</th><th class="num">Summe</th></tr></thead><tbody>`;
+  w.ops.forEach(o => { h += `<tr><td class="num">${o.ag}</td><td><b>${esc(o.name)}</b> · ${esc(o.place)}${o.lines.filter(Boolean).map(l => `<span class="sub">${esc(l)}</span>`).join('')}</td><td class="num">${hm(o.tr)}</td><td class="num">${hm(o.te)}</td><td class="num">${hm(o.sum)}</td></tr>`; });
+  h += `</tbody><tfoot><tr><td></td><td>Gesamt für ${lot} Stück</td><td class="num">${hm(w.tr)}</td><td class="num">${hm(w.te)}</td><td class="num"><b>${hm(w.total)}</b></td></tr></tfoot></table></div>`;
+  h += `<div class="cutsum">Je Stück ca. <b>${hm(w.total / lot)}</b> · Material ca. ${m1(w.kg)} kg je Stück${rate ? ` · Lohnkosten ca. <b>${Math.round(w.total / 60 * rate).toLocaleString('de-DE')} €</b> (${dec(rate)} €/h, ohne Material und Fremdleistung)` : ''}</div>`;
+  $('#wpOut').innerHTML = h;
+  wpText = `Arbeitsplan – ${state.title.name} – ${lot} Stück\n` + w.ops.map(o => `AG ${o.ag}  ${o.name} (${o.place})  tr ${hm(o.tr)}  te ${hm(o.te)}  Summe ${hm(o.sum)}\n${o.lines.filter(Boolean).map(l => '    ' + l).join('\n')}`).join('\n') + `\nGesamt: ${hm(w.total)} (je Stück ${hm(w.total / lot)})${rate ? `, Lohnkosten ca. ${Math.round(w.total / 60 * rate)} €` : ''}\nGrobe Richtwerte.`;
+}
+function openWp(){
+  const fins = state.shapes.map(s => s.finish).filter(Boolean);
+  if (fins.includes('verzinkt')) $('#wpSurf').value = 'zink'; else if (fins.includes('pulver')) $('#wpSurf').value = 'pulver';
+  renderWp(); $('#wpDlg').hidden = false;
+}
+async function wpPdf(){
+  const {lot, surf, rate} = wpVals(), w = workPlan(lot, surf);
+  await loadScript(JSPDF_URL, () => window.jspdf);
+  const doc = new window.jspdf.jsPDF({unit:'mm', format:'a4'}), x0 = 14, x1 = 196, cN = x0 + 14, cT = 150, cE = 168, cS = x1;
+  let y = 18;
+  const head = () => { doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text('AG', x0, y); doc.text('Arbeitsgang / Platz / Beschreibung', cN, y); doc.text('tr', cT, y, {align:'right'}); doc.text('te', cE, y, {align:'right'}); doc.text('Summe', cS, y, {align:'right'}); y += 2; doc.setLineWidth(.2); doc.line(x0, y, x1, y); y += 5; doc.setFont('helvetica', 'normal'); };
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text('Arbeitsplan', x0, y);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(`${state.title.name}${state.title.no ? ' · ' + state.title.no : ''} · Stückzahl ${lot} · Oberfläche: ${$('#wpSurf').selectedOptions[0].textContent} · ${state.title.date}`, x0, y + 6);
+  y += 16; head();
+  w.ops.forEach(o => {
+    const lines = o.lines.filter(Boolean).flatMap(l => doc.splitTextToSize(l, cT - cN - 18));
+    if (y + 6 + lines.length * 4 > 282){ doc.addPage(); y = 18; head(); }
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text(String(o.ag), x0, y); doc.text(`${o.name}`, cN, y); doc.setFont('helvetica', 'normal');
+    doc.text(o.place, cN + doc.getTextWidth(o.name + '  ') + 2, y);
+    doc.text(hm(o.tr), cT, y, {align:'right'}); doc.text(hm(o.te), cE, y, {align:'right'}); doc.text(hm(o.sum), cS, y, {align:'right'});
+    y += 4.5; doc.setFontSize(8); doc.setTextColor(90); lines.forEach(l => { doc.text(l, cN, y); y += 4; }); doc.setTextColor(0);
+    y += 2; doc.setDrawColor(220); doc.line(x0, y - 3, x1, y - 3); doc.setDrawColor(0);
+  });
+  y += 2; doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text(`Gesamt für ${lot} Stück: ${hm(w.total)}   (je Stück ca. ${hm(w.total / lot)})`, x0, y);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); y += 6;
+  doc.text(`Rüstzeit gesamt ${hm(w.tr)} · Stückzeit ${hm(w.te)} · Material ca. ${m1(w.kg)} kg je Stück${rate ? ` · Lohnkosten ca. ${Math.round(w.total / 60 * rate)} € (${dec(rate)} €/h)` : ''}`, x0, y);
+  y += 6; doc.setFontSize(8); doc.setTextColor(110);
+  doc.text('Grobe Richtwerte für die Planung (Stahl S235, MAG). tr = Rüstzeit je Auftrag, te = Zeit je Stück.', x0, y); doc.setTextColor(0);
+  download(fileBase() + '_arbeitsplan.pdf', doc.output('blob'));
+}
+$('#bWp').onclick = openWp;
+$('#wpClose').onclick = () => { $('#wpDlg').hidden = true; };
+$('#wpDlg').addEventListener('click', e => { if (e.target.id === 'wpDlg') $('#wpDlg').hidden = true; });
+['wpLot', 'wpRate'].forEach(id => $('#' + id).addEventListener('input', renderWp));
+$('#wpSurf').addEventListener('change', renderWp);
+$('#wpCopy').onclick = () => { if (wpText) navigator.clipboard.writeText(wpText).then(() => { $('#wpCopy').textContent = 'Kopiert ✓'; setTimeout(() => $('#wpCopy').textContent = 'Als Text kopieren', 1500); }).catch(() => {}); };
+$('#wpPdf').onclick = () => wpPdf().catch(() => { $('#wpPdf').textContent = 'PDF ging nicht – Internet?'; });
 $('#bCopyBom').onclick = async () => {
   const rows = bomRows();
   let t = `Stückliste – ${state.title.name}\nPos\tStk\tBenennung\tAbmessung\tWerkstoff\tkg/Stk\n`;
@@ -4128,12 +4364,18 @@ document.addEventListener('keydown', e => {
   if (!$('#libSaveDlg').hidden){ if (e.key === 'Escape') $('#libSaveDlg').hidden = true; return; }
   if (!$('#libDlg').hidden){ if (e.key === 'Escape') $('#libDlg').hidden = true; return; }
   if (!$('#cutDlg').hidden){ if (e.key === 'Escape') $('#cutDlg').hidden = true; return; }
+  if (!$('#wpDlg').hidden){ if (e.key === 'Escape') $('#wpDlg').hidden = true; return; }
   if (!$('#expDlg').hidden){ if (e.key === 'Escape') $('#expDlg').hidden = true; return; }
   if (!$('#wizDlg').hidden){ if (e.key === 'Escape') $('#wizDlg').hidden = true; return; }
   if (!$('#keysDlg').hidden){ if (e.key === 'Escape' || e.key === '?') $('#keysDlg').hidden = true; return; }
   if (e.key === '?'){ e.preventDefault(); openKeys(); return; }
   if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')){ e.preventDefault(); $('#cmd').focus(); return; }
   const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+  if (guide && is3()){
+    if (e.key === 'ArrowRight'){ e.preventDefault(); guidePlay(false); guideGo(guide.k + 1); return; }
+    if (e.key === 'ArrowLeft'){ e.preventDefault(); guidePlay(false); guideGo(guide.k - 1); return; }
+    if (e.key === 'Escape'){ guideEnd(); return; }
+  }
   if (mode === 'demo' && !(ctrl && (k === 'z' || k === 'y')) && e.key !== 'Escape') return;
   if (ctrl && k === 'z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
   if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))){ e.preventDefault(); redo(); return; }
@@ -4179,6 +4421,7 @@ function renderModeSeg(){ document.querySelectorAll('#viewmode button').forEach(
 $('#viewmode').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b && b.dataset.m !== mode) setMode(b.dataset.m); });
 async function setMode(m){
   const was = mode; mode = m; renderModeSeg();
+  if (m === '2d' && guide){ clearTimeout(guide.timer); guide = null; $('#guideCard').hidden = true; document.body.classList.remove('guiding'); }
   const m3 = m !== '2d';
   $('#v3').hidden = !m3; svg.style.visibility = m3 ? 'hidden' : '';
   if (m === '2d' && cad){ requestAnimationFrame(() => { fit(); render(); }); }
@@ -4471,7 +4714,7 @@ function renderDemoPanel(){
       <label for="dPerson">Person 1,80 m</label><label class="chk"><input type="checkbox" id="dPerson"${env.person ? ' checked' : ''}> zum Größenvergleich</label></div></div>`;
   h += `<div class="tblock" style="margin-top:14px"><div class="props"><label for="dExp">Explosion</label><input type="range" id="dExp" min="0" max="100" value="${Math.round(explodeF * 100)}"></div>
     <div class="btnrow" style="margin-top:8px"><button class="btn primary" type="button" id="dExpBtn">${explodeF > .5 ? 'Zusammenfahren' : 'Auseinanderfahren'}</button></div></div>`;
-  h += `<div class="btnrow"><button class="btn" type="button" id="dTour">${tourOn ? 'Stopp' : 'Kamerafahrt'}</button><button class="btn" type="button" id="dVideo"${tourOn ? ' disabled' : ''}>Video speichern</button><button class="btn" type="button" id="dSpin" aria-pressed="${spinOn}">Langsam drehen</button><button class="btn" type="button" id="dShot">Bild speichern</button>${list.length ? '' : '<button class="btn" type="button" id="dResetAll">Alle Farben zurücksetzen</button>'}</div>`;
+  h += `<div class="btnrow"><button class="btn" type="button" id="dTour">${tourOn ? 'Stopp' : 'Kamerafahrt'}</button><button class="btn" type="button" id="dVideo"${tourOn ? ' disabled' : ''}>Video speichern</button><button class="btn" type="button" id="dSpin" aria-pressed="${spinOn}">Langsam drehen</button><button class="btn" type="button" id="dShot">Bild speichern</button><button class="btn" type="button" id="dGuide">Bauanleitung</button>${list.length ? '' : '<button class="btn" type="button" id="dResetAll">Alle Farben zurücksetzen</button>'}</div>`;
   el.innerHTML = h;
 }
 function demoApply(targets, hex){ if (!targets.length) return; snapshot(); targets.forEach(s => { if (hex) s.color = hex; else delete s.color; }); changed(); }
@@ -4487,6 +4730,7 @@ $('#props').addEventListener('click', e => {
   else if (t.id === 'dSame'){ const o = list[0]; snapshot(); state.shapes.filter(s => s.type === o.type && (s.name || '') === (o.name || '') && (s.size || '') === (o.size || '') && (s.kind || '') === (o.kind || '')).forEach(x => { x.color = demoColor(o); if (o.finish) x.finish = o.finish; else delete x.finish; if (o.ral) x.ral = o.ral; }); changed(); }
   else if (t.id === 'dResetAll'){ snapshot(); state.shapes.forEach(s => { delete s.color; delete s.finish; delete s.ral; }); state.demoCols = {}; changed(); }
   else if (t.id === 'dSpin') demoSpin(!spinOn);
+  else if (t.id === 'dGuide') guideStart();
   else if (t.id === 'dExpBtn') animateExplode(explodeF > .5 ? 0 : 1);
   else if (t.id === 'dShot'){ draw3d(); three.renderer.domElement.toBlob(b => { if (b) download(fileBase() + '_demo.png', b); }, 'image/png'); }
 });
@@ -4504,6 +4748,187 @@ $('#props').addEventListener('change', e => {
   if (id === 'dRal'){ snapshot(); list.forEach(x => { x.finish = 'pulver'; x.ral = v; }); changed(); return; }
   if (id === 'dFloor'){ env.floor = v; } else if (id === 'dWall'){ env.wall = v; } else if (id === 'dPerson'){ env.person = e.target.checked; } else return;
   save(); build3d(); draw3d();
+});
+/* ---------- Bauanleitung: Schritt für Schritt in 3D ---------- */
+let guide = null;   // {k, steps, play, timer}
+const GUIDE_PART = ['rect', 'disc', 'profile', 'bend', 'shaft'];
+// „Zarge vorne“, „Zarge links“ … → „Zarge“: gleiche Teile mit Lage im Namen kommen in einen Schritt
+const guideBase = s => (s.name || '').replace(/\s+(vorne|hinten|links|rechts|oben|unten|mitte|innen|außen|\d+)\b/gi, '').replace(/\s+\d+$/, '').trim();
+// Reihenfolge: von unten nach oben, große Teile zuerst; gleiche Teile kommen zusammen in einen Schritt.
+// Danach fertig schweißen, dann Stifte, Lager, Sicherungsringe und Schrauben (je Größe).
+function guideSteps(ents){
+  const box = o => { o.updateMatrixWorld(true); return new THREE.Box3().setFromObject(o); };
+  const parts = ents.filter(e => GUIDE_PART.includes(e.sh.type) && e.sh.type !== 'shaft').map(e => { const b = box(e.ch), z = b.getSize(new THREE.Vector3()); return {e, b, z0:b.min.z, vol:z.x * z.y * z.z}; }).sort((a, b) => a.z0 - b.z0);
+  let lv = -1, start = -Infinity;
+  parts.forEach(p => { if (p.z0 > start + 2){ lv++; start = p.z0; } p.lv = lv; });
+  const map = new Map();
+  const gkey = s => [guideBase(s), s.type, s.kind || '', s.size || '', s.w || '', s.h || '', s.t || '', s.d || '', s.len || '', [Math.abs(s.cutA || 0), Math.abs(s.cutB || 0)].sort().join('/'), s.mat].join('|');
+  parts.forEach(p => { const k = gkey(p.e.sh); if (!map.has(k)) map.set(k, {lv:p.lv, vol:0, list:[], ps:[]}); const g = map.get(k); g.vol = Math.max(g.vol, p.vol); g.list.push(p.e.sh); g.ps.push(p); });
+  // was andere Teile trägt (z. B. Fußplatten unter dem Rahmen), kommt in seiner Höhe zuerst
+  const xy = (a, b) => a.min.x < b.max.x - .5 && b.min.x < a.max.x - .5 && a.min.y < b.max.y - .5 && b.min.y < a.max.y - .5;
+  map.forEach(g => { g.sup = parts.filter(q => !g.ps.includes(q) && g.ps.some(p => q.z0 >= p.b.max.z - 1 && q.z0 <= p.b.max.z + 1 && xy(p.b, q.b))).length; });
+  // Teile, die nichts tragen und an größere Teile stoßen (z. B. Querstrebe im Rahmen), kommen nach diesen
+  const touch = (a, b) => a.min.x <= b.max.x + 1 && b.min.x <= a.max.x + 1 && a.min.y <= b.max.y + 1 && b.min.y <= a.max.y + 1 && a.min.z <= b.max.z + 1 && b.min.z <= a.max.z + 1;
+  const gs = [...map.values()];
+  gs.forEach(g => { g.lvE = g.lv; g.late = 0; if (g.sup) return; gs.forEach(o => { if (o !== g && o.vol > g.vol && o.ps.some(q => g.ps.some(p => touch(p.b, q.b)))){ g.lvE = Math.max(g.lvE, o.lv); g.late = 1; } }); });
+  const welded = ents.some(e => e.sh.type === 'weld') || (!ents.some(e => e.sh.type === 'screw') && parts.filter(p => p.e.sh.mat !== 'HOLZ' && p.e.sh.mat !== 'GR').length >= 2), steps = [];
+  const rowsOf = list => bomRows(list).map(r => ({qty:r.qty, name:r.name, dim:r.dim}));
+  gs.sort((a, b) => a.lvE - b.lvE || a.late - b.late || b.sup - a.sup || b.vol - a.vol).forEach((g, i) => {
+    const s0 = g.list[0], n = g.list.length, base = guideBase(s0), lab = s0.type === 'profile' ? `${PROFILES[s0.kind].name} ${s0.size}` : (bomRows([s0])[0] || {}).name || TYPENAMES[s0.type];
+    const what = base ? (s0.type === 'profile' ? `${base} – ${lab}` : base) : lab;
+    const verb = i === 0 ? 'Auslegen' : welded ? 'Anlegen und heften' : 'Aufsetzen und ausrichten';
+    const hint = i === 0 ? 'Auf ebener Unterlage (Richtplatte, Schweißtisch) auslegen und ausrichten. Maße prüfen.'
+      : welded ? 'Anlegen, mit Winkel und Maßband ausrichten (Diagonalen gleich lang?) und an den Stößen heften.' : 'Aufsetzen, ausrichten und Bohrungen zueinander prüfen.';
+    steps.push({title:`${verb}: ${n} × ${what}`, hint, ids:new Set(g.list.map(s => s.id)), rows:rowsOf(g.list)});
+  });
+  const ws = ents.filter(e => e.sh.type === 'weld').map(e => e.sh);
+  if (!ws.length && welded && parts.length >= 2) steps.push({title:'Fertig schweißen', hint:'Alle Stöße ringsum verschweißen (die Nähte sind nicht gezeichnet). Wechselseitig schweißen gegen Verzug, danach Maße prüfen.', ids:new Set(), rows:[]});
+  if (ws.length) steps.push({title:'Fertig schweißen', hint:'Nähte wechselseitig schweißen, damit sich nichts verzieht. Danach Maße prüfen und richten.', ids:new Set(ws.map(s => s.id)),
+    rows:weldRows(ws).map(([k, r]) => ({qty:r.n, name:k, dim:'zusammen ' + fmt(r.len)}))});
+  const sh = ents.filter(e => e.sh.type === 'shaft').map(e => e.sh);
+  if (sh.length) steps.push({title:`Einsetzen: ${sh.length} × Welle`, hint:'Welle einsetzen (Passfeder vorher in die Nut) und auf Leichtgängigkeit prüfen.', ids:new Set(sh.map(s => s.id)), rows:rowsOf(sh)});
+  const scr = new Map(), SK = {pin:['0', 'Stifte einschlagen', 'Bohrung gerieben (H7)? Stift mit Kunststoffhammer gerade eintreiben.'],
+    bearing:['1', 'Lager montieren', 'Lager gerade aufpressen – die Kraft nur über den Ring geben, der die Passung hat.'],
+    circlip:['2', 'Sicherungsringe setzen', 'Mit der Sicherungsringzange in die Nut setzen und den Sitz prüfen.']};
+  ents.filter(e => e.sh.type === 'screw').forEach(e => {
+    const s = e.sh, k = SK[s.kind] ? s.kind : 'M|' + s.size;
+    if (!scr.has(k)) scr.set(k, SK[s.kind] ? {o:SK[s.kind][0], title:SK[s.kind][1], hint:SK[s.kind][2], list:[]}
+      : {o:'3' + String(NORM[s.size] ? NORM[s.size].d : 0).padStart(3, '0'), title:`Verschrauben ${s.size}`, hint:'Schrauben durchstecken, Scheiben unterlegen, Muttern aufdrehen und anziehen (Anzugsmoment nach Tabelle).', list:[]});
+    scr.get(k).list.push(s);
+  });
+  [...scr.values()].sort((a, b) => a.o.localeCompare(b.o)).forEach(g => steps.push({title:g.title, hint:g.hint, ids:new Set(g.list.map(s => s.id)), rows:rowsOf(g.list)}));
+  if (steps.length) steps.push({title:'Fertig', hint:'Alles verbaut? Mit Zeichnung und Stückliste vergleichen, Maße und Nähte prüfen.', ids:new Set(), rows:[], done:true,
+    total:ents.filter(e => GUIDE_PART.includes(e.sh.type) || e.sh.type === 'screw').length});
+  return steps;
+}
+// in build3d: spätere Schritte ausblenden, aktuellen Schritt hervorheben
+function applyGuide(ents){
+  guide.steps = guideSteps(ents);
+  if (!guide.steps.length){ guide.cur = []; return; }
+  guide.k = Math.max(0, Math.min(guide.k, guide.steps.length - 1));
+  const stepOf = new Map(), last = guide.steps.length - 1, hi = new THREE.Color(cssVar('--sel') || '#2563eb'), grey = new THREE.Color(isDark() ? '#59606b' : '#a9b0b9');
+  guide.steps.forEach((st, i) => st.ids.forEach(id => stepOf.set(id, i)));
+  guide.cur = [];
+  ents.forEach(e => {
+    const i = stepOf.has(e.sh.id) ? stepOf.get(e.sh.id) : (guide.k === last ? 0 : Infinity);
+    if (i > guide.k){ e.ch.traverse(x => { x.visible = false; x.layers.set(1); }); return; }
+    // schon verbaut = grau, aktueller Schritt = farbig mit blauen Kanten
+    if (guide.k === last) return;
+    const now = i === guide.k;
+    e.ch.traverse(x => {
+      if (!x.material) return;
+      x.material = x.material.clone();
+      if (x.isMesh && x.material.color){ if (now){ if (x.material.emissive) x.material.emissive = x.material.color.clone().multiplyScalar(.18); } else x.material.color.lerp(grey, .8); }
+      else if (x.isLineSegments && now){ x.material.color = hi.clone(); x.material.opacity = 1; }
+    });
+    if (!now) return;
+    guide.cur.push({o:e.ch, base:e.ch.position.clone()});
+  });
+  renderGuide();
+}
+function guideFly(){
+  if (!guide || !guide.cur || !guide.cur.length || !three) return;
+  const all = new THREE.Box3().setFromObject(three.root), lift = Math.max(60, all.getSize(new THREE.Vector3()).length() * .18);
+  const cur = guide.cur, t0 = performance.now(), id = guide.anim = (guide.anim || 0) + 1;
+  const step = t => {
+    if (!guide || guide.anim !== id || !is3()) return;
+    const k = Math.min(1, (t - t0) / 650), e = 1 - (1 - k) ** 3;
+    cur.forEach(c => { c.o.position.z = c.base.z + lift * (1 - e); });
+    draw3d(); if (k < 1) requestAnimationFrame(step);
+  };
+  cur.forEach(c => { c.o.position.z = c.base.z + lift; }); draw3d();
+  requestAnimationFrame(step);
+}
+function renderGuide(){
+  const c = $('#guideCard'), on = !!(guide && is3() && guide.steps.length);
+  document.body.classList.toggle('guiding', on);
+  if (!on){ c.hidden = true; return; }
+  const st = guide.steps[guide.k], n = guide.steps.length;
+  c.hidden = false;
+  $('#gStep').textContent = `Schritt ${guide.k + 1} von ${n}`;
+  $('#gTitle').textContent = st.title; $('#gHint').textContent = st.hint;
+  $('#gParts').innerHTML = `<div class="gbar"><span style="width:${(guide.k + 1) / n * 100}%"></span></div>` + (st.rows.length ? `<table>${st.rows.map(r => `<tr><td class="num">${r.qty} ×</td><td>${esc(r.name)}<span class="sub">${esc(r.dim)}</span></td></tr>`).join('')}</table>` : st.done ? `<p class="note" style="margin:6px 0 0">${st.total} Teile verbaut ✓</p>` : '');
+  $('#gPrev').disabled = guide.k === 0;
+  $('#gNext').textContent = guide.k === n - 1 ? 'Beenden' : 'Weiter ▶';
+  $('#gPlay').textContent = guide.play ? 'Pause' : 'Abspielen';
+}
+function renderGuidePanel(){
+  $('#selInfo').innerHTML = '<span class="badge">Bauanleitung</span>';
+  $('#props').innerHTML = `<p class="note" style="margin:0 0 10px">Schritt antippen zum Springen. Mit den Pfeiltasten ← → blättern, Esc beendet.</p>
+    <ol class="gsteps">${guide.steps.map((st, i) => `<li><button type="button" data-gstep="${i}"${i === guide.k ? ' aria-current="step"' : ''}><b>${i + 1}</b><span>${esc(st.title)}</span></button></li>`).join('')}</ol>
+    <div class="btnrow" style="margin-top:12px"><button class="btn" type="button" id="gPdf">Als PDF</button><button class="btn" type="button" id="gEnd">Beenden</button></div>`;
+}
+function guideGo(k, fly = true){
+  if (!guide || !three) return;
+  if (k >= guide.steps.length){ guideEnd(); return; }
+  guide.k = Math.max(0, k); build3d(); draw3d(); renderGuide(); renderProps();
+  if (fly) guideFly();
+}
+async function guideStart(){
+  if (!state.shapes.some(s => isVis(s) && (GUIDE_PART.includes(s.type) || s.type === 'screw'))){ $('#hint').textContent = 'Für die Bauanleitung braucht es Teile (Bleche, Profile, Schrauben …).'; return; }
+  if (mode === '2d') await setMode('demo');
+  if (!three || !is3()) return;
+  explodeAnim++; explodeF = 0; demoSpin(false);
+  guide = {k:0, steps:[], play:false};
+  build3d(); fit3d(); draw3d(); renderGuide(); renderProps(); guideFly();
+  $('#hint').textContent = 'Bauanleitung: Weiter/Zurück unten links · ← → blättern · Esc beendet';
+}
+function guideEnd(){
+  if (!guide) return;
+  clearTimeout(guide.timer); guide = null; $('#guideCard').hidden = true; document.body.classList.remove('guiding');
+  if (three && is3()){ build3d(); draw3d(); }
+  renderProps();
+}
+function guidePlay(on){
+  if (!guide) return;
+  guide.play = on; clearTimeout(guide.timer);
+  if (on){
+    if (guide.k >= guide.steps.length - 1) guideGo(0);
+    const tick = () => { if (!guide || !guide.play) return; if (guide.k >= guide.steps.length - 1){ guide.play = false; renderGuide(); return; } guideGo(guide.k + 1); guide.timer = setTimeout(tick, 2400); };
+    guide.timer = setTimeout(tick, 2000);
+  }
+  renderGuide();
+}
+async function guidePdf(){
+  if (!guide || !three) return;
+  guidePlay(false);
+  await loadScript(JSPDF_URL, () => window.jspdf);
+  const doc = new window.jspdf.jsPDF({orientation:'landscape', unit:'mm', format:'a4'}), k0 = guide.k, cv = three.renderer.domElement;
+  const n = guide.steps.length;
+  for (let i = 0; i < n; i++){
+    if (i) doc.addPage();
+    guide.k = i; build3d(); draw3d();
+    const st = guide.steps[i], img = cv.toDataURL('image/jpeg', .9), ar = cv.width / Math.max(1, cv.height);
+    let w = 182, h = w / ar; if (h > 165){ h = 165; w = h * ar; }
+    doc.setFontSize(9); doc.setTextColor(110); doc.text(`Bauanleitung – ${state.title.name}`, 12, 11); doc.text(`Schritt ${i + 1} von ${n}`, 285, 11, {align:'right'}); doc.setTextColor(0);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text(doc.splitTextToSize(`${i + 1}. ${st.title}`, 270)[0], 12, 20); doc.setFont('helvetica', 'normal');
+    doc.setDrawColor(200); doc.rect(12, 26, w, h); doc.addImage(img, 'JPEG', 12, 26, w, h); doc.setDrawColor(0);
+    let y = 30; const X = 200, W = 85;
+    doc.setFontSize(10); doc.splitTextToSize(st.hint, W).forEach(l => { doc.text(l, X, y); y += 5; });
+    y += 4;
+    if (st.rows.length){
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('Teile in diesem Schritt', X, y); doc.setFont('helvetica', 'normal'); y += 2; doc.line(X, y, X + W, y); y += 5;
+      st.rows.forEach(r => {
+        if (y > 195) return;
+        doc.setFontSize(9); doc.text(`${r.qty} ×`, X, y); doc.splitTextToSize(r.name, W - 12).slice(0, 2).forEach(l => { doc.text(l, X + 11, y); y += 4.2; });
+        doc.setFontSize(7.5); doc.setTextColor(100); doc.splitTextToSize(r.dim, W - 12).slice(0, 2).forEach(l => { doc.text(l, X + 11, y); y += 3.6; }); doc.setTextColor(0); y += 2;
+      });
+    } else if (st.done){ doc.setFontSize(9); doc.text(`${st.total} Teile verbaut.`, X, y); }
+  }
+  guide.k = k0; build3d(); draw3d();
+  download(fileBase() + '_bauanleitung.pdf', doc.output('blob'));
+}
+$('#bGuide').onclick = () => guideStart();
+$('#gPrev').onclick = () => { if (guide){ guidePlay(false); guideGo(guide.k - 1); } };
+$('#gNext').onclick = () => { if (guide){ guidePlay(false); guideGo(guide.k + 1); } };
+$('#gPlay').onclick = () => { if (guide) guidePlay(!guide.play); };
+$('#gClose').onclick = () => guideEnd();
+$('#props').addEventListener('click', e => {
+  if (!guide) return;
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.gstep != null){ guidePlay(false); guideGo(+t.dataset.gstep); }
+  else if (t.id === 'gEnd') guideEnd();
+  else if (t.id === 'gPdf') guidePdf().catch(() => { t.textContent = 'PDF ging nicht – Internet?'; });
 });
 function build3d(){
   const SH = state.shapes.filter(isVis);
@@ -4779,9 +5204,10 @@ function build3d(){
     list.forEach(e => { e.ch.position.z += b0.min.z - b1.min.z; });
   });
   three.ents = ents;
+  if (guide) applyGuide(ents);
   // Explosionsansicht (Demo): jedes Teil fährt vom Mittelpunkt weg, Schrauben nach oben heraus
   three.expl = null;
-  if (demo && ents.length > 1){
+  if (demo && ents.length > 1 && !guide){
     const all = new THREE.Box3(); ents.forEach(e => all.union(boxOf(e.ch)));
     const C = all.getCenter(new THREE.Vector3()), S = all.getSize(new THREE.Vector3()), lift = Math.max(S.z, S.x * .15, S.y * .15, 40);
     three.expl = ents.map(e => {
@@ -4849,7 +5275,7 @@ function build3d(){
 // Bemaßung in 3D: Maßlinien mit Pfeilen und Hilfslinien an Länge, Breite und Höhe
 function dims3dLines(root, b, color){
   const S = b.getSize(new THREE.Vector3()), o = Math.max(S.x, S.y, S.z, 20) * .09, L = [], mids = [];
-  const mat = new THREE.MeshBasicMaterial({color}), V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const mat = new THREE.MeshBasicMaterial({color, depthTest:false, transparent:true}), V = (x, y, z) => new THREE.Vector3(x, y, z);
   const seg = (a, c) => L.push(a.x, a.y, a.z, c.x, c.y, c.z);
   const dim = (p1, p2, off) => {
     const a = p1.clone().add(off), c = p2.clone().add(off), n = off.clone().normalize();
@@ -4857,7 +5283,7 @@ function dims3dLines(root, b, color){
     [[a, c], [c, a]].forEach(([tip, other]) => {
       const d = tip.clone().sub(other); if (d.lengthSq() < 1e-9) return; d.normalize();
       const h = Math.min(o * .32, tip.distanceTo(other) / 3), cone = new THREE.Mesh(new THREE.ConeGeometry(h * .3, h, 12), mat);
-      cone.position.copy(tip).addScaledVector(d, -h / 2); cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d); root.add(cone);
+      cone.position.copy(tip).addScaledVector(d, -h / 2); cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d); cone.renderOrder = 999; root.add(cone);
     });
     mids.push(a.clone().add(c).multiplyScalar(.5));
   };
@@ -4866,7 +5292,7 @@ function dims3dLines(root, b, color){
   dim(V(M.x, m.y, m.z), V(M.x, M.y, m.z), V(o, 0, 0));
   dim(V(M.x, m.y, m.z), V(M.x, m.y, M.z), V(o * .7, -o * .7, 0));
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(L, 3));
-  root.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({color})));
+  const ls = new THREE.LineSegments(g, new THREE.LineBasicMaterial({color, depthTest:false, transparent:true})); ls.renderOrder = 999; root.add(ls);
   three.dimMids = mids;
 }
 function fit3d(){
